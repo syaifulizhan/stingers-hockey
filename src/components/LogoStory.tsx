@@ -2,6 +2,7 @@
 
 import Honeycomb from "@/components/ui/Honeycomb";
 import Reveal from "@/components/ui/Reveal";
+import SmartImage from "@/components/ui/SmartImage";
 
 const features = [
   {
@@ -52,31 +53,16 @@ export default function LogoStory() {
       <Honeycomb opacity={0.09} radius={32} className="-z-0" />
 
       <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-16 px-6 lg:grid-cols-2 lg:gap-20">
-        {/* Kiri — visual logo */}
+        {/* Kiri — visual kisah logo (logo + kelulut sebenar) */}
         <Reveal className="flex justify-center">
-          <div className="relative flex aspect-square w-full max-w-md items-center justify-center">
-            {/* 3 bulatan konsentrik */}
-            <div className="absolute inset-0 rounded-full border border-line" />
-            <div className="absolute inset-[12%] rounded-full border border-amber/40" />
-            <div className="absolute inset-[24%] rounded-full border border-line" />
-            {/* Glow amber */}
-            <div className="absolute inset-[30%] rounded-full bg-amber/20 blur-3xl" />
-            {/* Logo di tengah */}
-            {/* eslint-disable-next-line @next/next/no-img-element -- fallback teks bila imej tiada */}
-            <img
-              src="/images/logo.png"
-              alt="Logo Stingers Hockey — kelulut Terminata"
-              className="relative z-10 w-2/5 object-contain drop-shadow-[0_0_24px_rgba(245,180,0,0.4)]"
-              onError={(e) => {
-                const el = e.currentTarget as HTMLImageElement;
-                el.style.display = "none";
-                el.nextElementSibling?.classList.remove("hidden");
-              }}
-            />
-            <span className="display absolute z-10 hidden text-7xl text-amber">
-              SH
-            </span>
-          </div>
+          <SmartImage
+            src="/images/kisah-logo.png"
+            alt="Logo Stingers Hockey berbanding kelulut Terminata sebenar"
+            label="Kisah Logo"
+            className="aspect-square w-full max-w-md rounded-2xl border border-line"
+            sizes="(max-width: 1024px) 100vw, 40vw"
+            fit="cover"
+          />
         </Reveal>
 
         {/* Kanan — teks */}

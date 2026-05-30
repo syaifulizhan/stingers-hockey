@@ -37,7 +37,7 @@ export default function HustleGear() {
 
               {/* Kanan — visual */}
               <SmartImage
-                src="/images/hustle-gear-2026.png"
+                src="/images/hustle-gear-2026.jpg"
                 alt="Hustle Gear training kit Stingers Hockey 2026"
                 label="Hustle Gear"
                 className="aspect-square w-full rounded-xl border border-line"

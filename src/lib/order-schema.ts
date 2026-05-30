@@ -6,11 +6,20 @@ import { z } from "zod";
 // Harga seunit (RM). Digunakan oleh borang & API untuk kira jumlah.
 export const UNIT_PRICE = 20;
 
-// Saiz budak — ikut lilit dada (inci).
-export const childSizes = ['24"', '26"', '28"', '30"', '32"'] as const;
-
-// Saiz dewasa.
-export const adultSizes = ["XS", "S", "M", "L", "XL", "XXL", "3XL"] as const;
+// Saiz mengikut carta rasmi Hustle Gear 2026.
+export const childSizes = ["24", "26", "28", "30", "32"] as const;
+export const adultSizes = [
+  "2XS",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "2XL",
+  "3XL",
+  "5XL",
+  "7XL",
+] as const;
 
 export const sizeOptions = [...childSizes, ...adultSizes] as const;
 

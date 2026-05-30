@@ -205,14 +205,14 @@ export default function OrderForm() {
                       <option value="" disabled>
                         Pilih saiz…
                       </option>
-                      <optgroup label="Budak (lilit dada)">
+                      <optgroup label="Saiz Nombor (24–32)">
                         {childSizes.map((s) => (
                           <option key={s} value={s}>
                             {s}
                           </option>
                         ))}
                       </optgroup>
-                      <optgroup label="Dewasa">
+                      <optgroup label="Saiz Huruf (2XS–7XL)">
                         {adultSizes.map((s) => (
                           <option key={s} value={s}>
                             {s}
