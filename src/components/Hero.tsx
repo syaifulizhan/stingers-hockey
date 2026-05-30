@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import Honeycomb from "@/components/ui/Honeycomb";
-import SmartImage from "@/components/ui/SmartImage";
 import Button from "@/components/ui/Button";
 
 // Dua foto pemain bersilih ganti (crossfade) sebagai latar.
@@ -40,23 +39,18 @@ export default function Hero() {
       id="top"
       className="relative flex min-h-screen items-center overflow-hidden"
     >
-      {/* Latar foto pemain — crossfade antara dua foto */}
+      {/* Latar foto pemain — crossfade antara dua foto (img biasa = kukuh prod) */}
       {heroImages.map((src, i) => (
-        <div
+        // eslint-disable-next-line @next/next/no-img-element -- latar hero penuh, perlu render konsisten prod
+        <img
           key={src}
-          className={`absolute inset-0 -z-20 transition-opacity duration-[1500ms] ${
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className={`absolute inset-0 -z-20 h-full w-full object-cover transition-opacity duration-[1500ms] ${
             i === idx ? "opacity-100" : "opacity-0"
           }`}
-        >
-          <SmartImage
-            src={src}
-            alt="Pemain Stingers Hockey beraksi di padang"
-            label="Stingers Hockey"
-            priority
-            sizes="100vw"
-            className="h-full w-full"
-          />
-        </div>
+        />
       ))}
       {/* Gradient overlay gelap — di sisi & bawah supaya teks jelas */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/85 to-ink/45" />
