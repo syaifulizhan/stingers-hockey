@@ -107,6 +107,67 @@ body::before {
   }
 }
 
+/* Splash pembuka — flash-in logo + nama bila app dibuka */
+@keyframes splash-fade {
+  0%,
+  70% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes splash-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes splash-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes splash-sweep {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+.splash {
+  animation: splash-fade 2s ease forwards;
+}
+.splash-logo {
+  animation: splash-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.splash-name {
+  animation: splash-rise 0.6s ease 0.35s both;
+}
+.splash-line {
+  transform-origin: center;
+  animation: splash-sweep 0.6s ease 0.55s both;
+}
+.splash-tag {
+  animation: splash-rise 0.6s ease 0.7s both;
+}
+
 /* Honour reduced-motion: kill marquee + transitions */
 @media (prefers-reduced-motion: reduce) {
   *,
