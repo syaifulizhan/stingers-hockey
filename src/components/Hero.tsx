@@ -1,10 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import Honeycomb from "@/components/ui/Honeycomb";
 import SmartImage from "@/components/ui/SmartImage";
 import Button from "@/components/ui/Button";
+
+// Dua foto pemain bersilih ganti (crossfade) sebagai latar.
+const heroImages = ["/images/hero-player.jpg", "/images/hero-player2.jpg"];
 
 // Reveal tajuk perkataan demi perkataan
 const container = {
@@ -21,23 +25,38 @@ const word = {
 };
 
 export default function Hero() {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(
+      () => setIdx((i) => (i + 1) % heroImages.length),
+      6000
+    );
+    return () => clearInterval(t);
+  }, []);
+
   return (
     <section
       id="top"
       className="relative flex min-h-screen items-center overflow-hidden"
     >
-      {/* Latar foto pemain */}
-      <SmartImage
-        src="/images/hero-player.jpg"
-        alt="Pemain Stingers Hockey beraksi di padang"
-        label="Hero — Gee Shariff"
-        priority
-        sizes="100vw"
-        className="absolute inset-0 -z-20 h-full w-full"
-      />
-      {/* Gradient overlay gelap */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/85 to-ink/40" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink/90 to-transparent" />
+      {/* Latar foto pemain — crossfade antara dua foto */}
+      {heroImages.map((src, i) => (
+        <SmartImage
+          key={src}
+          src={src}
+          alt="Pemain Stingers Hockey beraksi di padang"
+          label="Stingers Hockey"
+          priority
+          sizes="100vw"
+          className={`absolute inset-0 -z-20 h-full w-full transition-opacity duration-[1500ms] ${
+            i === idx ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      ))}
+      {/* Gradient overlay gelap — di sisi & bawah supaya teks jelas */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/85 to-ink/45" />
+      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
       {/* Honeycomb halus */}
       <Honeycomb opacity={0.07} className="-z-10" />
 
