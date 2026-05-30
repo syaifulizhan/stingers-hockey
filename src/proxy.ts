@@ -18,6 +18,7 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  // Hanya /portal/* — bukan laluan public.
-  matcher: ["/portal/:path*"],
+  // Hanya laluan portal — termasuk API portal supaya auth() berfungsi di sana.
+  // Laluan public (/, /hustle-gear, /api/register, /api/order) tidak disentuh.
+  matcher: ["/portal/:path*", "/api/portal/:path*"],
 };
