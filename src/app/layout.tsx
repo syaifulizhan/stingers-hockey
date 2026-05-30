@@ -110,6 +110,14 @@ export default function RootLayout({
       className={`${anton.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ink text-paper">
+        {/* Gate splash: tunjuk hanya SEKALI setiap sesi. Jalan sebelum paint
+            supaya tiada kelip pada muat seterusnya dalam sesi yang sama. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(sessionStorage.getItem('splashSeen')){document.documentElement.setAttribute('data-splash-seen','1')}else{sessionStorage.setItem('splashSeen','1')}}catch(e){}",
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
