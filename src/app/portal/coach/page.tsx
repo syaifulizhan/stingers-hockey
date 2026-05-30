@@ -7,6 +7,7 @@ import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MemberRow from "@/components/portal/coach/MemberRow";
+import DeleteButton from "@/components/portal/coach/DeleteButton";
 
 type Member = {
   clerk_user_id: string;
@@ -87,13 +88,23 @@ export default async function CoachPage() {
         </h2>
         <NewsForm />
         {news.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-1.5">
+          <ul className="mt-4 flex flex-col gap-1">
             {news.map((n) => (
-              <li key={n.id} className="font-sans text-sm text-paper/80">
-                • {n.title}{" "}
-                <span className="text-muted">
-                  ({new Date(n.published_at).toLocaleDateString("ms-MY")})
+              <li
+                key={n.id}
+                className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 font-sans text-sm text-paper/80 hover:bg-bg-soft/50"
+              >
+                <span>
+                  • {n.title}{" "}
+                  <span className="text-muted">
+                    ({new Date(n.published_at).toLocaleDateString("ms-MY")})
+                  </span>
                 </span>
+                <DeleteButton
+                  endpoint="/api/portal/coach/news"
+                  id={n.id}
+                  confirmMsg={`Padam berita "${n.title}"?`}
+                />
               </li>
             ))}
           </ul>
@@ -107,14 +118,24 @@ export default async function CoachPage() {
         </h2>
         <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }))} />
         {tasks.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-1.5">
+          <ul className="mt-4 flex flex-col gap-1">
             {tasks.map((t) => (
-              <li key={t.id} className="font-sans text-sm text-paper/80">
-                • {t.title}{" "}
-                <span className="text-muted">
-                  → {t.assigned_to ? nameById.get(t.assigned_to) || "ahli" : "Semua ahli"}
-                  {t.due_date ? ` · akhir ${t.due_date}` : ""}
+              <li
+                key={t.id}
+                className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 font-sans text-sm text-paper/80 hover:bg-bg-soft/50"
+              >
+                <span>
+                  • {t.title}{" "}
+                  <span className="text-muted">
+                    → {t.assigned_to ? nameById.get(t.assigned_to) || "ahli" : "Semua ahli"}
+                    {t.due_date ? ` · akhir ${t.due_date}` : ""}
+                  </span>
                 </span>
+                <DeleteButton
+                  endpoint="/api/portal/coach/task"
+                  id={t.id}
+                  confirmMsg={`Padam tugasan "${t.title}"? Hantaran ahli untuk tugasan ini juga akan terpadam.`}
+                />
               </li>
             ))}
           </ul>

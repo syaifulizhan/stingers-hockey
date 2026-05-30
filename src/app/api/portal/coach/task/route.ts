@@ -51,3 +51,23 @@ export async function POST(request: Request) {
   }
   return NextResponse.json({ ok: true });
 }
+
+// Padam tugasan (RLS: hanya coach/admin). Hantaran berkaitan turut terpadam (cascade).
+export async function DELETE(request: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
+  }
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ ok: false, error: "id diperlukan." }, { status: 400 });
+  }
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
+  if (error) {
+    console.error("[coach/task] padam gagal:", error.message);
+    return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
+  }
+  return NextResponse.json({ ok: true });
+}
