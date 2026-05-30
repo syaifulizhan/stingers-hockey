@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
-import { Newspaper, ClipboardList, CalendarCheck } from "lucide-react";
+import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import TaskCard from "@/components/portal/TaskCard";
 
@@ -120,26 +120,36 @@ export default async function DashboardPage() {
         <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
           <Newspaper className="h-4 w-4" /> Berita Pasukan
         </h2>
-        {news && news.length > 0 ? (
-          <div className="flex flex-col gap-3">
+        {news.length > 0 ? (
+          <div className="flex flex-col gap-2">
             {news.map((n) => (
-              <article key={n.id} className="overflow-hidden rounded-xl border border-line bg-bg-soft/50">
-                {n.image_url && (
+              <Link
+                key={n.id}
+                href={`/portal/news/${n.id}`}
+                className="flex items-center gap-4 rounded-xl border border-line bg-bg-soft/50 p-3 transition-colors hover:border-amber/60"
+              >
+                {n.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
                   <img
                     src={n.image_url}
-                    alt={n.title}
-                    className="aspect-video w-full object-cover"
+                    alt=""
+                    className="h-16 w-16 shrink-0 rounded-lg object-cover"
                   />
+                ) : (
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-ink text-amber">
+                    <Newspaper className="h-6 w-6" />
+                  </div>
                 )}
-                <div className="p-5">
-                  <h3 className="font-sans text-base font-semibold text-paper">{n.title}</h3>
-                  {n.body && <p className="mt-1 font-sans text-sm text-muted">{n.body}</p>}
-                  <p className="mt-2 font-sans text-xs text-muted">
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-sans text-base font-semibold text-paper">
+                    {n.title}
+                  </h3>
+                  <p className="font-sans text-xs text-muted">
                     {new Date(n.published_at).toLocaleDateString("ms-MY")}
                   </p>
                 </div>
-              </article>
+                <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
+              </Link>
             ))}
           </div>
         ) : (
