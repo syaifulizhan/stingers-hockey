@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { navLinks } from "@/lib/site";
 
 export default function Navigation() {
@@ -39,7 +40,7 @@ export default function Navigation() {
         className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6"
       >
         {/* Logo */}
-        <a href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
+        <Link href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
           {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks bila tiada */}
           <img
             src="/images/logo.png"
@@ -53,29 +54,38 @@ export default function Navigation() {
             <span>Stingers</span>
             <span className="text-amber">Hockey</span>
           </span>
-        </a>
+        </Link>
 
         {/* Pautan desktop */}
         <ul className="hidden items-center gap-8 md:flex">
           {navLinks.map((link) => (
             <li key={link.href}>
-              <a
+              <Link
                 href={link.href}
                 className="font-sans text-sm font-medium uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
               >
                 {link.label}
-              </a>
+              </Link>
             </li>
           ))}
         </ul>
 
-        {/* CTA desktop */}
-        <a
-          href="/#daftar"
-          className="hidden rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep md:inline-flex"
-        >
-          Sertai Skuad
-        </a>
+        {/* Akaun + CTA desktop */}
+        <div className="hidden items-center gap-5 md:flex">
+          <Link
+            href="/portal"
+            className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
+          >
+            <LogIn className="h-4 w-4" />
+            Log Masuk
+          </Link>
+          <Link
+            href="/#daftar"
+            className="rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
+          >
+            Sertai Skuad
+          </Link>
+        </div>
 
         {/* Hamburger mobile */}
         <button
@@ -115,22 +125,30 @@ export default function Navigation() {
                 <X className="h-7 w-7" />
               </button>
               {navLinks.map((link) => (
-                <a
+                <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
                   className="display py-2 text-2xl text-paper transition-colors hover:text-amber"
                 >
                   {link.label}
-                </a>
+                </Link>
               ))}
-              <a
+              <Link
+                href="/portal"
+                onClick={() => setOpen(false)}
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+              >
+                <LogIn className="h-4 w-4" />
+                Log Masuk
+              </Link>
+              <Link
                 href="/#daftar"
                 onClick={() => setOpen(false)}
-                className="mt-4 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
+                className="rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
               >
                 Sertai Skuad
-              </a>
+              </Link>
             </motion.div>
           </>
         )}
