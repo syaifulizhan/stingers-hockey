@@ -1,22 +1,41 @@
-import Link from "next/link";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { createServerSupabase } from "@/lib/supabase/server";
+import OnboardingForm from "@/components/portal/OnboardingForm";
+import type { ProfileInput } from "@/lib/portal-schema";
 
-export default function OnboardingPage() {
-  return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-6 py-10 text-center">
-      <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-        Langkah Seterusnya
-      </span>
-      <h1 className="display mt-4 text-4xl text-paper">Lengkapkan Profil</h1>
-      <p className="mt-3 font-sans text-muted">
-        Borang profil (nama penuh, tahun, kelas, dan lain-lain) akan dibina di
-        Fasa 3. Buat masa ini, anda boleh terus ke dashboard.
-      </p>
-      <Link
-        href="/portal/dashboard"
-        className="mx-auto mt-7 rounded-full bg-amber px-7 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
-      >
-        Ke Dashboard →
-      </Link>
-    </div>
-  );
+export default async function OnboardingPage() {
+  const { userId } = await auth();
+  const user = await currentUser();
+
+  // Ambil profil sedia ada (jika ada) untuk pra-isi borang.
+  const supabase = await createServerSupabase();
+  const { data } = await supabase
+    .from("users")
+    .select("*")
+    .eq("clerk_user_id", userId!)
+    .maybeSingle();
+
+  const defaultName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.username ||
+    "";
+
+  const initial: Partial<ProfileInput> = {
+    fullName: data?.full_name ?? defaultName,
+    year: data?.year ?? "",
+    className: data?.class ?? "",
+    dateOfBirth: data?.date_of_birth ?? "",
+    gender: data?.gender ?? undefined,
+    icNumber: data?.ic_number ?? "",
+    school: data?.school ?? "",
+    schoolRegNo: data?.school_reg_no ?? "",
+    playerPhone: data?.player_phone ?? "",
+    guardianPhone: data?.guardian_phone ?? "",
+    guardianEmail: data?.guardian_email ?? "",
+    experience: data?.experience ?? undefined,
+    position: data?.position ?? undefined,
+    notes: data?.notes ?? "",
+  };
+
+  return <OnboardingForm initial={initial} />;
 }

@@ -25,6 +25,7 @@ create table if not exists public.users (
   year            text,                                 -- Tahun
   class           text,                                 -- Kelas
   -- Maklumat penuh (sama seperti borang "Sertai Skuad")
+  date_of_birth   date,
   ic_number       text,
   gender          text,
   school          text,
