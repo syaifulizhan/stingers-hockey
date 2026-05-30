@@ -42,17 +42,21 @@ export default function Hero() {
     >
       {/* Latar foto pemain — crossfade antara dua foto */}
       {heroImages.map((src, i) => (
-        <SmartImage
+        <div
           key={src}
-          src={src}
-          alt="Pemain Stingers Hockey beraksi di padang"
-          label="Stingers Hockey"
-          priority
-          sizes="100vw"
-          className={`absolute inset-0 -z-20 h-full w-full transition-opacity duration-[1500ms] ${
+          className={`absolute inset-0 -z-20 transition-opacity duration-[1500ms] ${
             i === idx ? "opacity-100" : "opacity-0"
           }`}
-        />
+        >
+          <SmartImage
+            src={src}
+            alt="Pemain Stingers Hockey beraksi di padang"
+            label="Stingers Hockey"
+            priority
+            sizes="100vw"
+            className="h-full w-full"
+          />
+        </div>
       ))}
       {/* Gradient overlay gelap — di sisi & bawah supaya teks jelas */}
       <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/85 to-ink/45" />
