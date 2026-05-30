@@ -20,6 +20,8 @@ export const positionOptions = [
   "Tidak Pasti",
 ] as const;
 
+const optionalText = z.string().trim().optional().or(z.literal(""));
+
 export const registerSchema = z.object({
   // Maklumat Pemain
   fullName: z
@@ -27,9 +29,7 @@ export const registerSchema = z.object({
     .trim()
     .min(3, { message: "Sila masukkan nama penuh." })
     .transform((v) => v.toUpperCase()),
-  dateOfBirth: z
-    .string()
-    .min(1, { message: "Sila pilih tarikh lahir." }),
+  dateOfBirth: z.string().min(1, { message: "Sila pilih tarikh lahir." }),
   gender: z.enum(genderOptions, {
     message: "Sila pilih jantina.",
   }),
@@ -40,14 +40,12 @@ export const registerSchema = z.object({
 
   // Maklumat Sekolah
   school: z.string().trim().min(2, { message: "Sila masukkan sekolah sekarang." }),
-  form: z.string().trim().min(1, { message: "Sila masukkan tingkatan/tahun." }),
+  schoolRegNo: optionalText, // No. Pendaftaran Sekolah (optional)
+  year: z.string().trim().min(1, { message: "Sila masukkan tahun." }),
   className: z.string().trim().min(1, { message: "Sila masukkan kelas." }),
 
   // Maklumat Hubungan
-  playerPhone: z
-    .string()
-    .trim()
-    .min(9, { message: "Sila masukkan nombor telefon pemain yang sah." }),
+  playerPhone: optionalText, // optional
   guardianPhone: z
     .string()
     .trim()
@@ -62,7 +60,11 @@ export const registerSchema = z.object({
   // Maklumat Tambahan
   experience: z.enum(experienceOptions).optional(),
   position: z.enum(positionOptions).optional(),
-  notes: z.string().trim().max(500, { message: "Catatan terlalu panjang." }).optional(),
+  notes: z
+    .string()
+    .trim()
+    .max(500, { message: "Catatan terlalu panjang." })
+    .optional(),
 
   // Pengesahan
   consent: z.literal(true, {

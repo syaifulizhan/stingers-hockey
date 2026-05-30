@@ -40,6 +40,20 @@ export default function RegisterForm() {
     mode: "onBlur",
   });
 
+  // Auto-UPPERCASE: paksa huruf besar secara langsung semasa menaip.
+  const upper = (name: keyof RegisterInput) => {
+    const r = register(name);
+    return {
+      ...r,
+      onChange: (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+      ) => {
+        e.target.value = e.target.value.toUpperCase();
+        return r.onChange(e);
+      },
+    };
+  };
+
   const onSubmit = async (data: RegisterInput) => {
     setSubmitError(false);
     try {
@@ -124,10 +138,10 @@ export default function RegisterForm() {
                     </label>
                     <input
                       id="fullName"
-                      className={inputCls}
+                      className={`${inputCls} uppercase`}
                       placeholder="CONTOH BIN CONTOH"
                       aria-invalid={!!errors.fullName}
-                      {...register("fullName")}
+                      {...upper("fullName")}
                     />
                     <FieldError msg={errors.fullName?.message} />
                   </div>
@@ -150,10 +164,11 @@ export default function RegisterForm() {
                     </label>
                     <input
                       id="icNumber"
-                      className={inputCls}
-                      placeholder="000000-00-0000"
+                      inputMode="numeric"
+                      className={`${inputCls} uppercase`}
+                      placeholder="000000000000 (tanpa -)"
                       aria-invalid={!!errors.icNumber}
-                      {...register("icNumber")}
+                      {...upper("icNumber")}
                     />
                     <FieldError msg={errors.icNumber?.message} />
                   </div>
@@ -190,23 +205,37 @@ export default function RegisterForm() {
                     </label>
                     <input
                       id="school"
-                      className={inputCls}
+                      className={`${inputCls} uppercase`}
                       aria-invalid={!!errors.school}
-                      {...register("school")}
+                      {...upper("school")}
                     />
                     <FieldError msg={errors.school?.message} />
                   </div>
-                  <div>
-                    <label htmlFor="form" className={labelCls}>
-                      Tingkatan / Tahun *
+                  <div className="sm:col-span-2">
+                    <label htmlFor="schoolRegNo" className={labelCls}>
+                      No. Pendaftaran Sekolah
                     </label>
                     <input
-                      id="form"
-                      className={inputCls}
-                      aria-invalid={!!errors.form}
-                      {...register("form")}
+                      id="schoolRegNo"
+                      className={`${inputCls} uppercase`}
+                      placeholder="Pilihan"
+                      aria-invalid={!!errors.schoolRegNo}
+                      {...upper("schoolRegNo")}
                     />
-                    <FieldError msg={errors.form?.message} />
+                    <FieldError msg={errors.schoolRegNo?.message} />
+                  </div>
+                  <div>
+                    <label htmlFor="year" className={labelCls}>
+                      Tahun *
+                    </label>
+                    <input
+                      id="year"
+                      className={`${inputCls} uppercase`}
+                      placeholder="Cth: 5"
+                      aria-invalid={!!errors.year}
+                      {...upper("year")}
+                    />
+                    <FieldError msg={errors.year?.message} />
                   </div>
                   <div>
                     <label htmlFor="className" className={labelCls}>
@@ -214,9 +243,9 @@ export default function RegisterForm() {
                     </label>
                     <input
                       id="className"
-                      className={inputCls}
+                      className={`${inputCls} uppercase`}
                       aria-invalid={!!errors.className}
-                      {...register("className")}
+                      {...upper("className")}
                     />
                     <FieldError msg={errors.className?.message} />
                   </div>
@@ -229,13 +258,14 @@ export default function RegisterForm() {
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
                     <label htmlFor="playerPhone" className={labelCls}>
-                      No. Telefon Pemain *
+                      No. Telefon Pemain
                     </label>
                     <input
                       id="playerPhone"
                       type="tel"
+                      inputMode="numeric"
                       className={inputCls}
-                      placeholder="01X-XXX XXXX"
+                      placeholder="0123456789 (pilihan)"
                       aria-invalid={!!errors.playerPhone}
                       {...register("playerPhone")}
                     />
@@ -248,8 +278,9 @@ export default function RegisterForm() {
                     <input
                       id="guardianPhone"
                       type="tel"
+                      inputMode="numeric"
                       className={inputCls}
-                      placeholder="01X-XXX XXXX"
+                      placeholder="0123456789 (tanpa -)"
                       aria-invalid={!!errors.guardianPhone}
                       {...register("guardianPhone")}
                     />
@@ -323,9 +354,9 @@ export default function RegisterForm() {
                     <textarea
                       id="notes"
                       rows={4}
-                      className={`${inputCls} resize-y`}
+                      className={`${inputCls} resize-y uppercase`}
                       placeholder="Sebarang maklumat tambahan…"
-                      {...register("notes")}
+                      {...upper("notes")}
                     />
                     <FieldError msg={errors.notes?.message} />
                   </div>
