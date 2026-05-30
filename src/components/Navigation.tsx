@@ -49,7 +49,7 @@ export default function Navigation() {
             }}
           />
           <span className="display flex flex-col text-xl leading-none text-paper">
-            <span>Stingers<span className="text-amber">.</span></span>
+            <span>Stingers</span>
             <span className="text-amber">Hockey</span>
           </span>
         </a>
