@@ -5,6 +5,7 @@ import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashScreen from "@/components/SplashScreen";
+import PullToRefresh from "@/components/PullToRefresh";
 
 // Tema Clerk (gelap + amber) — dikongsi laman utama & portal.
 const clerkAppearance = {
@@ -133,6 +134,7 @@ export default function RootLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
           />
           {children}
+          <PullToRefresh />
           <SplashScreen />
           <ServiceWorker />
           <InstallPrompt />
