@@ -7,9 +7,14 @@ type Submission = {
   content: string | null;
   status: string;
   submitted_at: string;
+  media_url: string | null;
   task_title: string;
   member_name: string;
 };
+
+function isVideo(url: string) {
+  return /\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(url);
+}
 
 const STATUS_LABEL: Record<string, string> = {
   submitted: "Dihantar",
@@ -82,6 +87,23 @@ export default function SubmissionsReview({
                 {s.content}
               </p>
             )}
+
+            {/* Bukti gambar/video */}
+            {s.media_url && (
+              <div className="mt-3 overflow-hidden rounded-lg border border-line">
+                {isVideo(s.media_url) ? (
+                  <video src={s.media_url} controls className="max-h-72 w-full" />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element -- bukti dari Supabase Storage
+                  <img
+                    src={s.media_url}
+                    alt="Bukti"
+                    className="max-h-72 w-full object-contain"
+                  />
+                )}
+              </div>
+            )}
+
             <p className="mt-2 font-sans text-xs text-muted">
               {new Date(s.submitted_at).toLocaleDateString("ms-MY")}
             </p>

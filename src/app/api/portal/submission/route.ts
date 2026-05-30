@@ -11,6 +11,7 @@ const schema = z.object({
     .trim()
     .min(1, { message: "Sila tulis sesuatu." })
     .max(2000, { message: "Terlalu panjang." }),
+  mediaUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -46,6 +47,7 @@ export async function POST(request: Request) {
       task_id: parsed.data.taskId,
       user_id: userId,
       content: parsed.data.content,
+      media_url: parsed.data.mediaUrl || null,
       status: "submitted",
       submitted_at: new Date().toISOString(),
     },
