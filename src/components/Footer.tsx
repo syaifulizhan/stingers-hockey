@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { contact, navLinks, social } from "@/lib/site";
+import Wordmark from "@/components/ui/Wordmark";
 
 // Ikon brand — versi lucide ini tiada glyph brand, jadi guna SVG inline.
 function XIcon({ className }: { className?: string }) {
@@ -45,9 +47,7 @@ export default function Footer() {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="display text-2xl text-paper">
-                Stingers<span className="text-amber">.</span>
-              </span>
+              <Wordmark className="text-2xl" />
             </div>
             <p className="mt-5 max-w-sm font-sans text-sm leading-relaxed text-muted">
               Pasukan hoki rasmi Sekolah Kebangsaan Taman Desaminium, diuruskan
@@ -91,12 +91,12 @@ export default function Footer() {
             <ul className="mt-5 flex flex-col gap-3 font-sans text-sm text-muted">
               {navLinks.map((link) => (
                 <li key={link.href}>
-                  <a
+                  <Link
                     href={link.href}
                     className="transition-colors hover:text-amber"
                   >
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

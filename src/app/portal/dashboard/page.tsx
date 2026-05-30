@@ -5,6 +5,7 @@ import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-re
 import { createServerSupabase } from "@/lib/supabase/server";
 import TaskCard from "@/components/portal/TaskCard";
 import NotificationBell from "@/components/portal/NotificationBell";
+import Wordmark from "@/components/ui/Wordmark";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -82,8 +83,8 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-line pb-5">
-        <Link href="/portal/dashboard" className="display text-2xl text-paper">
-          Stingers<span className="text-amber">.</span>
+        <Link href="/portal/dashboard" aria-label="Stingers Hockey">
+          <Wordmark className="text-xl" />
         </Link>
         <div className="flex items-center gap-2">
           <NotificationBell />

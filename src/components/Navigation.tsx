@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, LogIn } from "lucide-react";
 import { navLinks } from "@/lib/site";
+import Wordmark from "@/components/ui/Wordmark";
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
@@ -50,10 +51,7 @@ export default function Navigation() {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
-          <span className="display flex flex-col text-xl leading-none text-paper">
-            <span>Stingers</span>
-            <span className="text-amber">Hockey</span>
-          </span>
+          <Wordmark className="text-xl" />
         </Link>
 
         {/* Pautan desktop */}

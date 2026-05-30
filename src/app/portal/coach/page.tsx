@@ -11,6 +11,7 @@ import DeleteButton from "@/components/portal/coach/DeleteButton";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 import NotificationBell from "@/components/portal/NotificationBell";
+import Wordmark from "@/components/ui/Wordmark";
 
 type Member = {
   clerk_user_id: string;
@@ -84,8 +85,8 @@ export default async function CoachPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <header className="flex items-center justify-between border-b border-line pb-5">
         <div className="flex items-center gap-3">
-          <Link href="/portal/dashboard" className="display text-2xl text-paper">
-            Stingers<span className="text-amber">.</span>
+          <Link href="/portal/dashboard" aria-label="Stingers Hockey">
+            <Wordmark className="text-xl" />
           </Link>
           <span className="rounded-full bg-amber/20 px-2.5 py-1 font-sans text-xs font-semibold uppercase text-amber">
             Jurulatih
