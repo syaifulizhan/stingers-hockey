@@ -7,6 +7,7 @@ import InstallPrompt from "@/components/InstallPrompt";
 import SplashScreen from "@/components/SplashScreen";
 import PullToRefresh from "@/components/PullToRefresh";
 import IdleLogout from "@/components/portal/IdleLogout";
+import LogoutRefresh from "@/components/portal/LogoutRefresh";
 
 // Tema Clerk (gelap + amber) — dikongsi laman utama & portal.
 const clerkAppearance = {
@@ -137,6 +138,7 @@ export default function RootLayout({
           {children}
           <PullToRefresh />
           <IdleLogout />
+          <LogoutRefresh />
           <SplashScreen />
           <ServiceWorker />
           <InstallPrompt />
