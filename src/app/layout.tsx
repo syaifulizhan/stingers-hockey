@@ -107,6 +107,7 @@ export default function RootLayout({
   return (
     <html
       lang="ms"
+      suppressHydrationWarning
       className={`${anton.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ink text-paper">
