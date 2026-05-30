@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { registerSchema } from "@/lib/schema";
 
-// Placeholder endpoint pendaftaran Pencarian Bakat.
-// Sahkan input dengan zod, log ke server, dan pulangkan kejayaan.
+// Endpoint pendaftaran Pencarian Bakat.
+// 1. Sahkan input dengan zod.
+// 2. Forward ke Google Apps Script webhook → tambah baris ke Google Sheet.
 //
-// TODO: hook to email service (Resend / SendGrid) — lihat README.md.
-//   Contoh: hantar email ke hstingers@gmail.com dengan butiran pendaftar,
-//   atau simpan ke pangkalan data / Google Sheet.
+// Set env var SHEETS_WEBHOOK_URL (local: .env.local, prod: Vercel env vars)
+// kepada URL Web App Apps Script. Lihat README.md §4 + google-apps-script.gs.
 
 export async function POST(request: Request) {
   let body: unknown;
@@ -27,9 +27,42 @@ export async function POST(request: Request) {
     );
   }
 
-  console.log("[register] pendaftar baharu:", parsed.data);
+  const webhookUrl = process.env.SHEETS_WEBHOOK_URL;
+  if (!webhookUrl) {
+    console.error(
+      "[register] SHEETS_WEBHOOK_URL belum diset — data TIDAK disimpan:",
+      parsed.data
+    );
+    return NextResponse.json(
+      { ok: false, error: "Servis pendaftaran belum dikonfigurasi." },
+      { status: 503 }
+    );
+  }
 
-  // TODO: hantar email / simpan rekod di sini.
+  try {
+    const res = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...parsed.data,
+        submittedAt: new Date().toISOString(),
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("[register] webhook gagal:", res.status, await res.text());
+      return NextResponse.json(
+        { ok: false, error: "Gagal menyimpan pendaftaran." },
+        { status: 502 }
+      );
+    }
+  } catch (err) {
+    console.error("[register] ralat menghubungi webhook:", err);
+    return NextResponse.json(
+      { ok: false, error: "Gagal menyimpan pendaftaran." },
+      { status: 502 }
+    );
+  }
 
   return NextResponse.json({ ok: true });
 }

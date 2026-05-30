@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, TriangleAlert } from "lucide-react";
 import {
   registerSchema,
   type RegisterInput,
@@ -28,6 +28,7 @@ function FieldError({ msg }: { msg?: string }) {
 
 export default function RegisterForm() {
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState(false);
 
   const {
     register,
@@ -40,17 +41,18 @@ export default function RegisterForm() {
   });
 
   const onSubmit = async (data: RegisterInput) => {
-    console.log("Pendaftaran Pencarian Bakat:", data);
-
-    // TODO: hook to email service (Resend/SendGrid) melalui /api/register
+    setSubmitError(false);
     try {
-      await fetch("/api/register", {
+      const res = await fetch("/api/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
+      if (!res.ok) throw new Error("Gagal menyimpan");
     } catch {
-      // senyap — borang masih dikira berjaya untuk UX (lihat README untuk integrasi sebenar)
+      // Jangan tunjuk "berjaya" palsu — biar pemain tahu & boleh cuba lagi
+      setSubmitError(true);
+      return;
     }
 
     setSubmitted(true);
@@ -345,6 +347,20 @@ export default function RegisterForm() {
                 </label>
                 <FieldError msg={errors.consent?.message} />
               </div>
+
+              {submitError && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber/50 bg-amber/10 p-4">
+                  <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber" />
+                  <p className="font-sans text-sm text-paper/90">
+                    Maaf, pendaftaran gagal dihantar. Sila cuba sekali lagi, atau
+                    hubungi kami terus di{" "}
+                    <a href="tel:+60389413905" className="text-amber underline">
+                      03-8941 3905
+                    </a>
+                    .
+                  </p>
+                </div>
+              )}
 
               <Button type="submit" fullWidth disabled={isSubmitting}>
                 {isSubmitting ? "Menghantar…" : "Daftar Sekarang →"}
