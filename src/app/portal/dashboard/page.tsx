@@ -64,6 +64,8 @@ export default async function DashboardPage() {
 
   const name =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
+  const role = (profile?.role as string) ?? "member";
+  const isCoachOrAdmin = role === "coach" || role === "admin";
   const percent = profile
     ? Math.round((filledCount(profile) / PROFILE_COLS.length) * 100)
     : 0;
@@ -83,6 +85,15 @@ export default async function DashboardPage() {
       <h1 className="display mt-8 text-4xl text-paper">
         Hai, <span className="text-amber">{name}</span> 👋
       </h1>
+
+      {isCoachOrAdmin && (
+        <Link
+          href="/portal/coach"
+          className="mt-4 inline-flex items-center gap-2 rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
+        >
+          🏑 Panel Jurulatih →
+        </Link>
+      )}
 
       {/* Kad: kelengkapan profil */}
       <section className="mt-6 rounded-2xl border border-line bg-bg-soft/50 p-6">
