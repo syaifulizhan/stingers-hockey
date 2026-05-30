@@ -94,6 +94,7 @@ create table if not exists public.news (
   id           uuid primary key default gen_random_uuid(),
   title        text not null,
   body         text,
+  image_url    text,
   author       text,
   published_at timestamptz not null default now()
 );
@@ -227,3 +228,20 @@ create policy news_write on public.news for all to authenticated
 grant usage on schema public to authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant execute on all functions in schema public to authenticated;
+
+-- ============================================================================
+-- STORAGE — bucket "news-images" untuk gambar berita
+--   • Bucket public  → sesiapa boleh LIHAT gambar melalui pautan (untuk papar).
+--   • Muat naik       → hanya coach/admin (is_coach()).
+-- ============================================================================
+insert into storage.buckets (id, name, public)
+values ('news-images', 'news-images', true)
+on conflict (id) do nothing;
+
+drop policy if exists "coach upload news images" on storage.objects;
+create policy "coach upload news images" on storage.objects for insert to authenticated
+  with check (bucket_id = 'news-images' and public.is_coach());
+
+drop policy if exists "coach delete news images" on storage.objects;
+create policy "coach delete news images" on storage.objects for delete to authenticated
+  using (bucket_id = 'news-images' and public.is_coach());

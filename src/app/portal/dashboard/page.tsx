@@ -31,7 +31,7 @@ function filledCount(row: Record<string, unknown> | null) {
   }).length;
 }
 
-type NewsRow = { id: string; title: string; body: string | null; published_at: string };
+type NewsRow = { id: string; title: string; body: string | null; image_url: string | null; published_at: string };
 type TaskRow = { id: string; title: string; description: string | null; due_date: string | null };
 type SubmissionRow = { task_id: string; content: string | null; status: string };
 type AttendanceRow = {
@@ -122,13 +122,23 @@ export default async function DashboardPage() {
         </h2>
         {news && news.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {news.map((n: { id: string; title: string; body: string | null; published_at: string }) => (
-              <article key={n.id} className="rounded-xl border border-line bg-bg-soft/50 p-5">
-                <h3 className="font-sans text-base font-semibold text-paper">{n.title}</h3>
-                {n.body && <p className="mt-1 font-sans text-sm text-muted">{n.body}</p>}
-                <p className="mt-2 font-sans text-xs text-muted">
-                  {new Date(n.published_at).toLocaleDateString("ms-MY")}
-                </p>
+            {news.map((n) => (
+              <article key={n.id} className="overflow-hidden rounded-xl border border-line bg-bg-soft/50">
+                {n.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
+                  <img
+                    src={n.image_url}
+                    alt={n.title}
+                    className="aspect-video w-full object-cover"
+                  />
+                )}
+                <div className="p-5">
+                  <h3 className="font-sans text-base font-semibold text-paper">{n.title}</h3>
+                  {n.body && <p className="mt-1 font-sans text-sm text-muted">{n.body}</p>}
+                  <p className="mt-2 font-sans text-xs text-muted">
+                    {new Date(n.published_at).toLocaleDateString("ms-MY")}
+                  </p>
+                </div>
               </article>
             ))}
           </div>
