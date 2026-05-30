@@ -1,18 +1,31 @@
+import Navigation from "@/components/Navigation";
+import Hero from "@/components/Hero";
+import Marquee from "@/components/Marquee";
+import About from "@/components/About";
+import Training from "@/components/Training";
+import LogoStory from "@/components/LogoStory";
+import JerseyGallery from "@/components/JerseyGallery";
+import HustleGear from "@/components/HustleGear";
+import RegisterForm from "@/components/RegisterForm";
+import Sponsors from "@/components/Sponsors";
+import Footer from "@/components/Footer";
+
 export default function Home() {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
-      <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-        SK Taman Desaminium · Seri Kembangan
-      </span>
-      <h1 className="font-display text-6xl uppercase leading-none sm:text-8xl">
-        Stingers
-        <br />
-        <span className="text-amber">Hockey</span>
-      </h1>
-      <p className="max-w-md font-sans text-base text-ink/70">
-        Setup asas siap. Tema, fonts, dan stack sedia untuk dibina mengikut spec
-        penuh.
-      </p>
-    </main>
+    <>
+      <Navigation />
+      <main className="flex-1">
+        <Hero />
+        <Marquee />
+        <About />
+        <Training />
+        <LogoStory />
+        <JerseyGallery />
+        <HustleGear />
+        <RegisterForm />
+        <Sponsors />
+      </main>
+      <Footer />
+    </>
   );
 }
