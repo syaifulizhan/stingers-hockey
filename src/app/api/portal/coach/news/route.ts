@@ -32,12 +32,16 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.from("news").insert({
-    title: parsed.data.title,
-    body: parsed.data.body || null,
-    image_url: parsed.data.imageUrl || null,
-    author: userId,
-  });
+  const { data, error } = await supabase
+    .from("news")
+    .insert({
+      title: parsed.data.title,
+      body: parsed.data.body || null,
+      image_url: parsed.data.imageUrl || null,
+      author: userId,
+    })
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.error("[coach/news] gagal:", error.message);
@@ -46,6 +50,14 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+
+  // Notifikasi broadcast kepada semua ahli.
+  await supabase.from("notifications").insert({
+    user_id: null,
+    title: `Berita baharu: ${parsed.data.title}`,
+    link: data?.id ? `/portal/news/${data.id}` : "/portal/dashboard",
+  });
+
   return NextResponse.json({ ok: true });
 }
 

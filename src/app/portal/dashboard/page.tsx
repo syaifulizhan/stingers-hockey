@@ -4,6 +4,7 @@ import { UserButton } from "@clerk/nextjs";
 import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import TaskCard from "@/components/portal/TaskCard";
+import NotificationBell from "@/components/portal/NotificationBell";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -84,7 +85,10 @@ export default async function DashboardPage() {
         <Link href="/portal/dashboard" className="display text-2xl text-paper">
           Stingers<span className="text-amber">.</span>
         </Link>
-        <UserButton />
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <UserButton />
+        </div>
       </header>
 
       <h1 className="display mt-8 text-4xl text-paper">

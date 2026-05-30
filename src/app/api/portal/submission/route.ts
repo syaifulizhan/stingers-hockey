@@ -64,3 +64,28 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true });
 }
+
+// Ahli padam hantaran sendiri untuk satu tugasan (RLS: pemilik sahaja).
+export async function DELETE(request: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
+  }
+  const taskId = new URL(request.url).searchParams.get("taskId");
+  if (!taskId) {
+    return NextResponse.json({ ok: false, error: "taskId diperlukan." }, { status: 400 });
+  }
+
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("submissions")
+    .delete()
+    .eq("task_id", taskId)
+    .eq("user_id", userId);
+
+  if (error) {
+    console.error("[portal/submission] padam gagal:", error.message);
+    return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
+  }
+  return NextResponse.json({ ok: true });
+}

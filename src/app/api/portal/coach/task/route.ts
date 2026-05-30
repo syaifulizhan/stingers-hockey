@@ -49,6 +49,14 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+
+  // Notifikasi (kepada ahli tertentu, atau broadcast jika "Semua ahli").
+  await supabase.from("notifications").insert({
+    user_id: d.assignedTo || null,
+    title: `Tugasan baharu: ${d.title}`,
+    link: "/portal/dashboard",
+  });
+
   return NextResponse.json({ ok: true });
 }
 

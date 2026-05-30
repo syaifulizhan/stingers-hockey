@@ -267,3 +267,37 @@ on conflict (id) do nothing;
 drop policy if exists "members upload task proof" on storage.objects;
 create policy "members upload task proof" on storage.objects for insert to authenticated
   with check (bucket_id = 'task-proof');
+
+-- ============================================================================
+-- PADAM HANTARAN — ahli boleh padam hantaran sendiri; coach boleh padam apa saja
+-- ============================================================================
+drop policy if exists submissions_delete on public.submissions;
+create policy submissions_delete on public.submissions for delete to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+
+-- ============================================================================
+-- NOTIFIKASI — loceng untuk ahli (hantaran disemak, berita baru, tugasan baru)
+--   user_id null = broadcast untuk semua ahli.
+--   "Belum baca" dikira guna users.last_seen_notifications.
+-- ============================================================================
+create table if not exists public.notifications (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     text,                       -- null = semua ahli
+  title       text not null,
+  body        text,
+  link        text,
+  created_at  timestamptz not null default now()
+);
+alter table public.notifications enable row level security;
+
+drop policy if exists notifications_select on public.notifications;
+create policy notifications_select on public.notifications for select to authenticated
+  using (user_id is null or user_id = auth.jwt()->>'sub');
+
+drop policy if exists notifications_insert on public.notifications;
+create policy notifications_insert on public.notifications for insert to authenticated
+  with check (public.is_coach());
+
+alter table public.users add column if not exists last_seen_notifications timestamptz;
+
+grant select, insert on public.notifications to authenticated;

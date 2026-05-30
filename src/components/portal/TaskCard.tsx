@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Clock, Paperclip, X } from "lucide-react";
+import { CheckCircle2, Clock, Paperclip, X, Trash2, RotateCcw } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 
 type Task = {
@@ -41,7 +41,26 @@ export default function TaskCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [deleting, setDeleting] = useState(false);
   const submitted = !!submission;
+  const status = submission?.status;
+
+  const del = async () => {
+    if (!window.confirm("Padam hantaran ini? Anda boleh hantar semula selepas ini.")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/portal/submission?taskId=${task.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setDeleting(false);
+      window.alert("Gagal padam. Cuba lagi.");
+      return;
+    }
+    setDeleting(false);
+    router.refresh();
+  };
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -121,13 +140,21 @@ export default function TaskCard({
             </p>
           )}
         </div>
-        {submitted ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
-          </span>
-        ) : (
+        {!submitted ? (
           <span className="shrink-0 rounded-full border border-line px-3 py-1 font-sans text-xs text-muted">
             Belum
+          </span>
+        ) : status === "reviewed" ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber px-3 py-1 font-sans text-xs font-semibold text-ink">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Disemak Coach
+          </span>
+        ) : status === "revise" ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper/15 px-3 py-1 font-sans text-xs font-semibold text-paper">
+            <RotateCcw className="h-3.5 w-3.5" /> Perlu Ulang
+          </span>
+        ) : (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
+            <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
           </span>
         )}
       </div>
@@ -205,13 +232,26 @@ export default function TaskCard({
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="mt-4 font-sans text-sm font-semibold text-amber transition-colors hover:text-amber-deep"
-        >
-          {submitted ? "Edit hantaran →" : "Hantar kerja →"}
-        </button>
+        <div className="mt-4 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="font-sans text-sm font-semibold text-amber transition-colors hover:text-amber-deep"
+          >
+            {submitted ? "Edit hantaran →" : "Hantar kerja →"}
+          </button>
+          {submitted && (
+            <button
+              type="button"
+              onClick={del}
+              disabled={deleting}
+              className="inline-flex items-center gap-1 font-sans text-sm text-muted transition-colors hover:text-amber disabled:opacity-50"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {deleting ? "Memadam…" : "Padam"}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
