@@ -254,3 +254,16 @@ drop policy if exists news_public_select on public.news;
 create policy news_public_select on public.news for select to anon using (true);
 grant usage on schema public to anon;
 grant select on public.news to anon;
+
+-- ============================================================================
+-- STORAGE — bucket "task-proof" untuk bukti tugasan (gambar/video ahli)
+--   • Muat naik: mana-mana ahli yang login (authenticated).
+--   • Baca: public (pautan UUID rawak) — dipapar di dashboard ahli & coach.
+-- ============================================================================
+insert into storage.buckets (id, name, public)
+values ('task-proof', 'task-proof', true)
+on conflict (id) do nothing;
+
+drop policy if exists "members upload task proof" on storage.objects;
+create policy "members upload task proof" on storage.objects for insert to authenticated
+  with check (bucket_id = 'task-proof');

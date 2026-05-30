@@ -32,6 +32,7 @@ type SubmissionRow = {
   content: string | null;
   status: string;
   submitted_at: string;
+  media_url: string | null;
   user_id: string;
   tasks: { title: string } | null;
 };
@@ -55,7 +56,7 @@ export default async function CoachPage() {
       supabase.from("attendance").select("session_id, user_id, status"),
       supabase
         .from("submissions")
-        .select("id, content, status, submitted_at, user_id, tasks(title)")
+        .select("id, content, status, submitted_at, media_url, user_id, tasks(title)")
         .order("submitted_at", { ascending: false })
         .limit(50),
     ]);
@@ -73,6 +74,7 @@ export default async function CoachPage() {
     content: s.content,
     status: s.status,
     submitted_at: s.submitted_at,
+    media_url: s.media_url,
     task_title: s.tasks?.title ?? "Tugasan",
     member_name: nameById.get(s.user_id) || "Ahli",
   }));

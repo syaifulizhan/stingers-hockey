@@ -33,7 +33,12 @@ function filledCount(row: Record<string, unknown> | null) {
 
 type NewsRow = { id: string; title: string; body: string | null; image_url: string | null; published_at: string };
 type TaskRow = { id: string; title: string; description: string | null; due_date: string | null };
-type SubmissionRow = { task_id: string; content: string | null; status: string };
+type SubmissionRow = {
+  task_id: string;
+  content: string | null;
+  status: string;
+  media_url: string | null;
+};
 type AttendanceRow = {
   status: string;
   created_at: string;
@@ -48,7 +53,7 @@ export default async function DashboardPage() {
     supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
     supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
     supabase.from("tasks").select("*").order("created_at", { ascending: false }),
-    supabase.from("submissions").select("task_id, content, status"),
+    supabase.from("submissions").select("task_id, content, status, media_url"),
     supabase
       .from("attendance")
       .select("status, created_at, sessions(title, date)")
