@@ -7,7 +7,6 @@ import LogoStory from "@/components/LogoStory";
 import JerseyGallery from "@/components/JerseyGallery";
 import HustleGear from "@/components/HustleGear";
 import Berita from "@/components/Berita";
-import RegisterForm from "@/components/RegisterForm";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
 
@@ -28,7 +27,6 @@ export default function Home() {
         <LogoStory />
         <JerseyGallery />
         <HustleGear />
-        <RegisterForm />
         <Sponsors />
       </main>
       <Footer />

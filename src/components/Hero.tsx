@@ -96,7 +96,7 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.85 }}
           className="mt-10"
         >
-          <Button href="#daftar">Sertai Pencarian Bakat →</Button>
+          <Button href="/portal">Sertai Pencarian Bakat →</Button>
         </motion.div>
       </div>
 

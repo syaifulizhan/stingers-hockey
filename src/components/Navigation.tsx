@@ -77,12 +77,6 @@ export default function Navigation() {
             <LogIn className="h-4 w-4" />
             Log Masuk
           </Link>
-          <Link
-            href="/#daftar"
-            className="rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
-          >
-            Sertai Skuad
-          </Link>
         </div>
 
         {/* Hamburger mobile */}
@@ -139,13 +133,6 @@ export default function Navigation() {
               >
                 <LogIn className="h-4 w-4" />
                 Log Masuk
-              </Link>
-              <Link
-                href="/#daftar"
-                onClick={() => setOpen(false)}
-                className="rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
-              >
-                Sertai Skuad
               </Link>
             </motion.div>
           </>
