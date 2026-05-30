@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Reveal from "@/components/ui/Reveal";
+import SmartImage from "@/components/ui/SmartImage";
 
 const stats = [
   { value: "2017", label: "Ditubuhkan" },
@@ -13,7 +14,8 @@ const stats = [
 export default function About() {
   return (
     <section id="tentang" className="bg-bg-soft py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-[1.5fr_1fr] lg:gap-20">
+      <div className="mx-auto max-w-7xl px-6">
+       <div className="grid gap-14 lg:grid-cols-[1.5fr_1fr] lg:gap-20">
         {/* Kiri */}
         <div>
           <Reveal>
@@ -71,6 +73,18 @@ export default function About() {
             </motion.div>
           ))}
         </motion.div>
+       </div>
+
+        {/* Foto pasukan */}
+        <Reveal delay={0.15}>
+          <SmartImage
+            src="/images/about-team1.jpg"
+            alt="Skuad Stingers Hockey"
+            label="Skuad Stingers"
+            className="mt-14 aspect-[16/10] w-full rounded-2xl border border-line sm:aspect-[16/7]"
+            sizes="(max-width: 1024px) 100vw, 1200px"
+          />
+        </Reveal>
       </div>
     </section>
   );
