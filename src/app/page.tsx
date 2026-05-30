@@ -11,8 +11,9 @@ import RegisterForm from "@/components/RegisterForm";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
 
-// Jana semula halaman setiap 60 saat supaya berita terkini muncul (ISR).
-export const revalidate = 60;
+// Render segar setiap permintaan supaya berita terkini sentiasa muncul
+// (elak cache fetch yang degil semasa berita ditambah/dipadam).
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
