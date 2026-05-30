@@ -6,9 +6,13 @@ import Training from "@/components/Training";
 import LogoStory from "@/components/LogoStory";
 import JerseyGallery from "@/components/JerseyGallery";
 import HustleGear from "@/components/HustleGear";
+import Berita from "@/components/Berita";
 import RegisterForm from "@/components/RegisterForm";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
+
+// Jana semula halaman setiap 60 saat supaya berita terkini muncul (ISR).
+export const revalidate = 60;
 
 export default function Home() {
   return (
@@ -22,6 +26,7 @@ export default function Home() {
         <LogoStory />
         <JerseyGallery />
         <HustleGear />
+        <Berita />
         <RegisterForm />
         <Sponsors />
       </main>

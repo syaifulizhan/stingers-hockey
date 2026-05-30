@@ -245,3 +245,12 @@ create policy "coach upload news images" on storage.objects for insert to authen
 drop policy if exists "coach delete news images" on storage.objects;
 create policy "coach delete news images" on storage.objects for delete to authenticated
   using (bucket_id = 'news-images' and public.is_coach());
+
+-- ============================================================================
+-- BERITA AWAM — benarkan orang awam (belum login) BACA berita untuk
+-- dipaparkan di laman utama. Jadual lain kekal terlindung.
+-- ============================================================================
+drop policy if exists news_public_select on public.news;
+create policy news_public_select on public.news for select to anon using (true);
+grant usage on schema public to anon;
+grant select on public.news to anon;
