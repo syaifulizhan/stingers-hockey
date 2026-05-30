@@ -48,8 +48,9 @@ export default function Navigation() {
               (e.currentTarget as HTMLImageElement).style.display = "none";
             }}
           />
-          <span className="display text-xl text-paper">
-            Stingers<span className="text-amber">.</span>
+          <span className="display flex flex-col text-xl leading-none text-paper">
+            <span>Stingers<span className="text-amber">.</span></span>
+            <span className="text-amber">Hockey</span>
           </span>
         </a>
 
