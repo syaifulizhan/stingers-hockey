@@ -1,7 +1,7 @@
 // Service worker Stingers Hockey — membolehkan pemasangan (PWA) & sokongan luar talian asas.
 // Strategi: network-first untuk navigasi (sentiasa cuba versi terbaru), cache fallback.
 
-const CACHE = "stingers-v1";
+const CACHE = "stingers-v2";
 const OFFLINE_URLS = ["/", "/hustle-gear"];
 
 self.addEventListener("install", (event) => {
