@@ -28,14 +28,30 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("submissions")
     .update({ status: parsed.data.status })
-    .eq("id", parsed.data.submissionId);
+    .eq("id", parsed.data.submissionId)
+    .select("user_id")
+    .maybeSingle();
 
   if (error) {
     console.error("[coach/review] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini." }, { status: 403 });
   }
+
+  // Notifikasi kepada ahli yang menghantar.
+  if (data?.user_id && parsed.data.status !== "submitted") {
+    const title =
+      parsed.data.status === "reviewed"
+        ? "Tugasan anda telah disemak ✓"
+        : "Jurulatih minta anda ulang tugasan";
+    await supabase.from("notifications").insert({
+      user_id: data.user_id,
+      title,
+      link: "/portal/dashboard",
+    });
+  }
+
   return NextResponse.json({ ok: true });
 }

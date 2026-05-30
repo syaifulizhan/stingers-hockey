@@ -10,6 +10,7 @@ import MemberRow from "@/components/portal/coach/MemberRow";
 import DeleteButton from "@/components/portal/coach/DeleteButton";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
+import NotificationBell from "@/components/portal/NotificationBell";
 
 type Member = {
   clerk_user_id: string;
@@ -90,7 +91,10 @@ export default async function CoachPage() {
             Jurulatih
           </span>
         </div>
-        <UserButton />
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <UserButton />
+        </div>
       </header>
 
       <h1 className="display mt-8 text-4xl text-paper">Panel Jurulatih</h1>
