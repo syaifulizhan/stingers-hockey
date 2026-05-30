@@ -39,7 +39,7 @@ export default function Hero() {
       id="top"
       className="relative flex min-h-screen items-center overflow-hidden"
     >
-      {/* Latar foto pemain — crossfade antara dua foto (img biasa = kukuh prod) */}
+      {/* Latar foto pemain — crossfade (img biasa, tanpa z negatif = kukuh prod) */}
       {heroImages.map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element -- latar hero penuh, perlu render konsisten prod
         <img
@@ -47,18 +47,18 @@ export default function Hero() {
           src={src}
           alt=""
           aria-hidden="true"
-          className={`absolute inset-0 -z-20 h-full w-full object-cover transition-opacity duration-[1500ms] ${
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1500ms] ${
             i === idx ? "opacity-100" : "opacity-0"
           }`}
         />
       ))}
       {/* Gradient overlay gelap — di sisi & bawah supaya teks jelas */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/85 to-ink/45" />
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/85 to-ink/45" />
+      <div className="absolute inset-0 bg-gradient-to-r from-ink via-ink/70 to-transparent" />
       {/* Honeycomb halus */}
-      <Honeycomb opacity={0.07} className="-z-10" />
+      <Honeycomb opacity={0.07} />
 
-      <div className="mx-auto w-full max-w-7xl px-6 pt-28 pb-32">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-28 pb-32">
         {/* Eyebrow */}
         <motion.p
           initial={{ opacity: 0, y: 12 }}
@@ -124,7 +124,7 @@ export default function Hero() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.2 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 text-paper/60 hover:text-amber"
+        className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-paper/60 hover:text-amber"
       >
         <motion.span
           animate={{ y: [0, 8, 0] }}
