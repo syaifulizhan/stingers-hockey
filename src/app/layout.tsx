@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -112,22 +111,16 @@ export default function RootLayout({
       className={`${anton.variable} ${archivo.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ink text-paper">
+        {/* JSON-LD (data, bukan skrip boleh-laku) — corak rasmi Next App Router. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         {children}
         <SplashScreen />
         <ServiceWorker />
         <InstallPrompt />
       </body>
-      {/* Skrip beforeInteractive — Next angkat ke <head> & jalan sebelum paint,
-          di luar pokok React (jadi tiada amaran "script tag" / hydration). */}
-      <Script id="splash-gate" strategy="beforeInteractive">
-        {`try{if(sessionStorage.getItem('splashSeen')){document.documentElement.setAttribute('data-splash-seen','1')}else{sessionStorage.setItem('splashSeen','1')}}catch(e){}`}
-      </Script>
-      <Script
-        id="ld-json"
-        type="application/ld+json"
-        strategy="beforeInteractive"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
     </html>
   );
 }

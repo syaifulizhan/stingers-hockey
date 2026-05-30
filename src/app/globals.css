@@ -154,10 +154,6 @@ body::before {
 .splash {
   animation: splash-fade 2s ease forwards;
 }
-/* Splash sudah ditunjuk sesi ini — sembunyi tanpa kelip (gate di <head>) */
-html[data-splash-seen] .splash {
-  display: none;
-}
 .splash-logo {
   animation: splash-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }

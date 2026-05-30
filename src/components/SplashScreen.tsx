@@ -2,15 +2,28 @@
 
 import { useEffect, useState } from "react";
 
-// Skrin pembuka (flash-in) bila app dibuka — logo + "Stingers Hockey",
-// kemudian pudar masuk ke laman. Animasi dikendali CSS (mandiri), jadi
-// kandungan tetap boleh diakses walaupun JS lambat/gagal. JS cuma
-// mengeluarkan node dari DOM selepas animasi tamat.
+// Skrin pembuka (flash-in) bila app dibuka — logo + "Stingers Hockey".
+// Ditunjuk SEKALI setiap sesi pelayar: pada muat seterusnya dalam sesi yang
+// sama, ia disembunyikan serta-merta. Tiada skrip inline → tiada amaran React.
 export default function SplashScreen() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setShow(false), 2100);
+    const hide = () => setShow(false);
+
+    let seen = false;
+    try {
+      seen = !!sessionStorage.getItem("splashSeen");
+      sessionStorage.setItem("splashSeen", "1");
+    } catch {
+      // sessionStorage tak tersedia — abaikan, tunjuk splash sahaja.
+    }
+
+    if (seen) {
+      hide(); // sudah ditunjuk sesi ini → sembunyi segera
+      return;
+    }
+    const t = setTimeout(hide, 2100); // sesi baru → main penuh
     return () => clearTimeout(t);
   }, []);
 
