@@ -54,7 +54,7 @@ export default function HustleGearPage() {
 
             <Reveal delay={0.1}>
               <SmartImage
-                src="/images/hustle-gear-2026.png"
+                src="/images/hustle-gear-2026.jpg"
                 alt="Hustle Gear training kit Stingers Hockey 2026"
                 label="Hustle Gear"
                 className="aspect-square w-full rounded-2xl border border-line"
@@ -63,6 +63,29 @@ export default function HustleGearPage() {
               />
             </Reveal>
           </div>
+        </section>
+
+        {/* Carta saiz */}
+        <section className="mx-auto max-w-3xl px-6 pb-4">
+          <Reveal>
+            <h2 className="display mb-5 text-center text-3xl text-paper sm:text-4xl">
+              Carta <span className="text-amber">Saiz</span>
+            </h2>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <SmartImage
+              src="/images/hustle-gear-2026-size-chart.jpg"
+              alt="Carta saiz Hustle Gear 2026 — bahu, dada, lengan, panjang"
+              label="Carta Saiz"
+              className="aspect-square w-full rounded-2xl border border-line"
+              sizes="(max-width: 768px) 100vw, 768px"
+              fit="contain"
+            />
+            <p className="mt-3 text-center font-sans text-xs text-muted">
+              Rujuk carta sebelum pilih saiz. Nota: warna, GSM &amp; saiz mungkin
+              berbeza ±5%.
+            </p>
+          </Reveal>
         </section>
 
         <OrderForm />
