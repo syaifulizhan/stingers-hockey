@@ -38,7 +38,7 @@ export default function Navigation() {
         className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6"
       >
         {/* Logo */}
-        <a href="#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
+        <a href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
           {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks bila tiada */}
           <img
             src="/images/logo.png"
@@ -70,7 +70,7 @@ export default function Navigation() {
 
         {/* CTA desktop */}
         <a
-          href="#daftar"
+          href="/#daftar"
           className="hidden rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep md:inline-flex"
         >
           Sertai Skuad
@@ -124,7 +124,7 @@ export default function Navigation() {
                 </a>
               ))}
               <a
-                href="#daftar"
+                href="/#daftar"
                 onClick={() => setOpen(false)}
                 className="mt-4 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
               >
