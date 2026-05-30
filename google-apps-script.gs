@@ -1,10 +1,13 @@
 /**
  * Stingers Hockey — Google Apps Script untuk terima borang ke Google Sheet.
  *
- * Mengendalikan DUA borang melalui satu Web App URL:
- *   1. Pendaftaran Pencarian Bakat  → sheet pertama (default).
- *   2. Tempahan Hustle Gear         → sheet "Tempahan Hustle Gear"
- *      (dicipta automatik), dipilih bila data.formType === "hustle-gear".
+ * Mengendalikan DUA borang melalui satu Web App URL, diasingkan ikut tab:
+ *   1. Pendaftaran Pencarian Bakat  → tab "Pendaftaran".
+ *   2. Tempahan Hustle Gear         → tab "Hustle Gear"
+ *      (dipilih bila data.formType === "hustle-gear").
+ *
+ * Nama tab diset dalam REGISTER_SHEET_NAME / ORDER_SHEET_NAME di bawah —
+ * pastikan ia sama PERSIS dengan nama tab dalam Google Sheet anda.
  *
  * SETUP (lihat juga README.md §4):
  *  1. Cipta Google Sheet baharu (contoh nama: "Stingers 2026").
@@ -26,6 +29,10 @@
  *
  * Baris pertama (header) setiap sheet dicipta automatik pada hantaran pertama.
  */
+
+// ── Nama sheet (mesti sama dengan tab dalam Google Sheet) ───────────────
+var REGISTER_SHEET_NAME = "Pendaftaran";
+var ORDER_SHEET_NAME = "Hustle Gear";
 
 // ── Borang pendaftaran (Pencarian Bakat) ────────────────────────────────
 var FIELDS = [
@@ -67,8 +74,6 @@ var HEADERS = [
 ];
 
 // ── Borang tempahan (Hustle Gear) ───────────────────────────────────────
-var ORDER_SHEET_NAME = "Tempahan Hustle Gear";
-
 var ORDER_FIELDS = [
   "submittedAt",
   "fullName",
@@ -100,17 +105,19 @@ function doPost(e) {
     var data = JSON.parse(e.postData.contents);
     var ss = SpreadsheetApp.getActiveSpreadsheet();
 
-    var sheet, fields, headers;
+    var sheet, fields, headers, sheetName;
     if (data.formType === "hustle-gear") {
-      sheet =
-        ss.getSheetByName(ORDER_SHEET_NAME) || ss.insertSheet(ORDER_SHEET_NAME);
+      sheetName = ORDER_SHEET_NAME;
       fields = ORDER_FIELDS;
       headers = ORDER_HEADERS;
     } else {
-      sheet = ss.getSheets()[0];
+      sheetName = REGISTER_SHEET_NAME;
       fields = FIELDS;
       headers = HEADERS;
     }
+
+    // Guna tab mengikut nama; cipta jika belum ada (jaga-jaga).
+    sheet = ss.getSheetByName(sheetName) || ss.insertSheet(sheetName);
 
     // Cipta header jika sheet kosong
     if (sheet.getLastRow() === 0) {
