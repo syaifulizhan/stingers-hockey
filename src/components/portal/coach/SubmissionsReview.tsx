@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 
 type Submission = {
   id: string;
@@ -27,9 +29,24 @@ export default function SubmissionsReview({
 }: {
   submissions: Submission[];
 }) {
+  const router = useRouter();
   const [statusMap, setStatusMap] = useState<Record<string, string>>(
     Object.fromEntries(submissions.map((s) => [s.id, s.status]))
   );
+
+  const del = async (id: string, who: string) => {
+    if (!window.confirm(`Padam hantaran daripada ${who}?`)) return;
+    try {
+      const res = await fetch(`/api/portal/coach/review?id=${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal padam.");
+      return;
+    }
+    router.refresh();
+  };
 
   const setStatus = async (id: string, status: "reviewed" | "revise") => {
     const prev = statusMap[id];
@@ -122,6 +139,13 @@ export default function SubmissionsReview({
                 className="rounded-full border border-line px-4 py-1.5 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
               >
                 Minta Ulang
+              </button>
+              <button
+                type="button"
+                onClick={() => del(s.id, s.member_name)}
+                className="ml-auto inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-muted transition-colors hover:border-amber hover:text-amber"
+              >
+                <Trash2 className="h-3.5 w-3.5" /> Padam
               </button>
             </div>
           </div>
