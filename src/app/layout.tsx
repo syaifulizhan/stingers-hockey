@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
 import "./globals.css";
+import ServiceWorker from "@/components/ServiceWorker";
 
 // Display font — bold, condensed, sporty headlines
 const anton = Anton({
@@ -21,9 +22,20 @@ const SITE_URL = "https://stingers-hockey.vercel.app"; // TODO: tukar ke domain 
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  applicationName: "Stingers Hockey",
+  manifest: "/manifest.webmanifest",
   title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium",
   description:
     "Strike Hard. Strike Fast. Pasukan hoki rasmi Sekolah Kebangsaan Taman Desaminium sejak 2017. Sertai pencarian bakat Stingers Hockey 2026.",
+  icons: {
+    icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Stingers",
+  },
   keywords: [
     "Stingers Hockey",
     "field hockey Malaysia",
@@ -51,6 +63,9 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
   colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 // JSON-LD structured data — SportsTeam schema
@@ -98,6 +113,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <ServiceWorker />
       </body>
     </html>
   );
