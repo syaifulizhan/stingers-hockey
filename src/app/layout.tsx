@@ -3,6 +3,7 @@ import { Anton, Archivo } from "next/font/google";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
+import SplashScreen from "@/components/SplashScreen";
 
 // Display font — bold, condensed, sporty headlines
 const anton = Anton({
@@ -114,6 +115,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
         {children}
+        <SplashScreen />
         <ServiceWorker />
         <InstallPrompt />
       </body>
