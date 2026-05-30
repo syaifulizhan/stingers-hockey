@@ -77,55 +77,36 @@ npx eslint src   # lint
 
 ---
 
-## 4. Sambung borang ke servis email
+## 4. Borang → Google Sheet (aktif)
 
-Borang pendaftaran kini:
-- Validasi dengan **zod** (`src/lib/schema.ts`)
-- `console.log` data + POST ke `src/app/api/register/route.ts` (yang juga `console.log`)
-- Tunjuk banner kejayaan
+Setiap pendaftaran:
+1. Divalidasi dengan **zod** (`src/lib/schema.ts`)
+2. Dihantar dari `src/app/api/register/route.ts` ke **Google Apps Script webhook**
+3. Apps Script tambah satu baris ke Google Sheet anda
+4. Borang papar banner **berjaya** (atau banner **ralat** jika simpanan gagal)
 
-Untuk hantar email sebenar, edit `src/app/api/register/route.ts` di bahagian `// TODO`.
+> Tanpa env var `SHEETS_WEBHOOK_URL`, route pulangkan ralat 503 dan borang papar mesej gagal — data **tidak** akan hilang secara senyap.
 
-### Pilihan A — Resend (disyorkan)
+### Langkah setup (sekali sahaja)
 
-```bash
-npm install resend
-```
+1. Cipta **Google Sheet** baharu (cth: "Pendaftaran Stingers 2026").
+2. Dalam Sheet: **Extensions → Apps Script**.
+3. Padam kod sedia ada, paste kandungan **`google-apps-script.gs`** (di root repo), klik **Save**.
+4. **Deploy → New deployment → Web app**:
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+   - klik **Deploy**, kemudian **Authorize** keizinan.
+5. Salin **Web app URL** (berakhir dengan `/exec`).
+6. Letak URL sebagai env var `SHEETS_WEBHOOK_URL`:
+   - **Local:** salin `.env.local.example` → `.env.local`, isi nilai.
+   - **Vercel:** Project → Settings → Environment Variables → tambah `SHEETS_WEBHOOK_URL`.
+7. **Redeploy** di Vercel (atau `git push`) supaya env var dibaca.
 
-```ts
-// src/app/api/register/route.ts (selepas validation berjaya)
-import { Resend } from "resend";
-const resend = new Resend(process.env.RESEND_API_KEY);
+Baris header dalam Sheet dicipta automatik pada pendaftaran pertama.
 
-await resend.emails.send({
-  from: "Stingers Hockey <onboarding@resend.dev>", // atau domain disahkan
-  to: "hstingers@gmail.com",
-  subject: `Pendaftar baharu: ${parsed.data.fullName}`,
-  text: JSON.stringify(parsed.data, null, 2),
-});
-```
+### Mahu email juga? (pilihan)
 
-Tambah `RESEND_API_KEY` dalam **Vercel → Project → Settings → Environment Variables** (dan `.env.local` untuk local).
-
-### Pilihan B — SendGrid
-
-```bash
-npm install @sendgrid/mail
-```
-
-```ts
-import sgMail from "@sendgrid/mail";
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
-
-await sgMail.send({
-  to: "hstingers@gmail.com",
-  from: "noreply@domain-anda.com", // mesti verified sender
-  subject: `Pendaftar baharu: ${parsed.data.fullName}`,
-  text: JSON.stringify(parsed.data, null, 2),
-});
-```
-
-> Alternatif tanpa kod: pautkan borang ke **Google Sheet** (Apps Script webhook) atau **Formspree**.
+Boleh tambah notifikasi email (Resend/SendGrid) dalam `route.ts` selari dengan tulisan ke Sheet — beritahu jika perlu.
 
 ---
 
