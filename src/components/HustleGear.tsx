@@ -31,7 +31,7 @@ export default function HustleGear() {
                   sporty, lebih eksklusif. Simbol semangat satu pasukan.
                 </p>
                 <div className="mt-8">
-                  <Button href="#daftar">Buat Tempahan →</Button>
+                  <Button href="/hustle-gear">Buat Tempahan →</Button>
                 </div>
               </div>
 
