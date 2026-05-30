@@ -1,9 +1,23 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashScreen from "@/components/SplashScreen";
+
+// Tema Clerk (gelap + amber) — dikongsi laman utama & portal.
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#f5b400",
+    colorBackground: "#0a0a0a",
+    colorText: "#f4f1ea",
+    colorTextSecondary: "#a3a3a3",
+    colorInputBackground: "#141414",
+    colorInputText: "#f4f1ea",
+    borderRadius: "0.6rem",
+  },
+};
 
 // Display font — bold, condensed, sporty headlines
 const anton = Anton({
@@ -105,22 +119,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="ms"
-      suppressHydrationWarning
-      className={`${anton.variable} ${archivo.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-ink text-paper">
-        {/* JSON-LD (data, bukan skrip boleh-laku) — corak rasmi Next App Router. */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-        {children}
-        <SplashScreen />
-        <ServiceWorker />
-        <InstallPrompt />
-      </body>
-    </html>
+    // ClerkProvider di root → laman utama & portal sama-sama tahu status login.
+    <ClerkProvider appearance={clerkAppearance} afterSignOutUrl="/">
+      <html
+        lang="ms"
+        suppressHydrationWarning
+        className={`${anton.variable} ${archivo.variable} h-full antialiased`}
+      >
+        <body className="min-h-full flex flex-col bg-ink text-paper">
+          {/* JSON-LD (data, bukan skrip boleh-laku) — corak rasmi Next App Router. */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+          {children}
+          <SplashScreen />
+          <ServiceWorker />
+          <InstallPrompt />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

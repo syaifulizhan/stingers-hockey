@@ -85,7 +85,7 @@ export default async function CoachPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       <header className="flex items-center justify-between border-b border-line pb-5">
         <div className="flex items-center gap-3">
-          <Link href="/portal/dashboard" aria-label="Stingers Hockey">
+          <Link href="/" aria-label="Stingers Hockey — laman utama">
             <Wordmark className="text-xl" />
           </Link>
           <span className="rounded-full bg-amber/20 px-2.5 py-1 font-sans text-xs font-semibold uppercase text-amber">

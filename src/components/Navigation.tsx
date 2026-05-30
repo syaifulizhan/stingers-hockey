@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, LayoutDashboard, LogOut } from "lucide-react";
+import { useAuth, UserButton, SignOutButton } from "@clerk/nextjs";
 import { navLinks } from "@/lib/site";
 import Wordmark from "@/components/ui/Wordmark";
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { isLoaded, isSignedIn } = useAuth();
 
   // Background solid + blur bila scroll > 40px
   useEffect(() => {
@@ -68,15 +70,28 @@ export default function Navigation() {
           ))}
         </ul>
 
-        {/* Akaun + CTA desktop */}
-        <div className="hidden items-center gap-5 md:flex">
-          <Link
-            href="/portal"
-            className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
-          >
-            <LogIn className="h-4 w-4" />
-            Log Masuk
-          </Link>
+        {/* Akaun desktop — ikut status login */}
+        <div className="hidden items-center gap-4 md:flex">
+          {isLoaded && isSignedIn ? (
+            <>
+              <Link
+                href="/portal/dashboard"
+                className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Portal
+              </Link>
+              <UserButton />
+            </>
+          ) : (
+            <Link
+              href="/portal"
+              className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
+            >
+              <LogIn className="h-4 w-4" />
+              Log Masuk
+            </Link>
+          )}
         </div>
 
         {/* Hamburger mobile */}
@@ -126,14 +141,37 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
-              <Link
-                href="/portal"
-                onClick={() => setOpen(false)}
-                className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
-              >
-                <LogIn className="h-4 w-4" />
-                Log Masuk
-              </Link>
+              {isLoaded && isSignedIn ? (
+                <>
+                  <Link
+                    href="/portal/dashboard"
+                    onClick={() => setOpen(false)}
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    Portal Saya
+                  </Link>
+                  <SignOutButton redirectUrl="/">
+                    <button
+                      type="button"
+                      onClick={() => setOpen(false)}
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log Keluar
+                    </button>
+                  </SignOutButton>
+                </>
+              ) : (
+                <Link
+                  href="/portal"
+                  onClick={() => setOpen(false)}
+                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Log Masuk
+                </Link>
+              )}
             </motion.div>
           </>
         )}

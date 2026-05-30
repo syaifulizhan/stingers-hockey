@@ -83,7 +83,7 @@ export default async function DashboardPage() {
     <div className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
       <header className="flex items-center justify-between border-b border-line pb-5">
-        <Link href="/portal/dashboard" aria-label="Stingers Hockey">
+        <Link href="/" aria-label="Stingers Hockey — laman utama">
           <Wordmark className="text-xl" />
         </Link>
         <div className="flex items-center gap-2">
