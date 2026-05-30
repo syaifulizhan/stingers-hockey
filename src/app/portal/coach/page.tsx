@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { Users, Newspaper, ClipboardList } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MemberRow from "@/components/portal/coach/MemberRow";
 import DeleteButton from "@/components/portal/coach/DeleteButton";
+import AttendancePanel from "@/components/portal/coach/AttendancePanel";
+import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 type Member = {
   clerk_user_id: string;
@@ -23,6 +25,16 @@ type TaskRow = {
   assigned_to: string | null;
   due_date: string | null;
 };
+type SessionRow = { id: string; title: string; date: string | null };
+type AttendanceRow = { session_id: string; user_id: string; status: string };
+type SubmissionRow = {
+  id: string;
+  content: string | null;
+  status: string;
+  submitted_at: string;
+  user_id: string;
+  tasks: { title: string } | null;
+};
 
 export default async function CoachPage() {
   // Pengawal: hanya coach/admin boleh masuk.
@@ -31,19 +43,39 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes] = await Promise.all([
-    supabase
-      .from("users")
-      .select("clerk_user_id, full_name, year, class, role")
-      .order("full_name", { ascending: true }),
-    supabase.from("news").select("id, title, published_at").order("published_at", { ascending: false }).limit(10),
-    supabase.from("tasks").select("id, title, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
-  ]);
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes] =
+    await Promise.all([
+      supabase
+        .from("users")
+        .select("clerk_user_id, full_name, year, class, role")
+        .order("full_name", { ascending: true }),
+      supabase.from("news").select("id, title, published_at").order("published_at", { ascending: false }).limit(10),
+      supabase.from("tasks").select("id, title, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
+      supabase.from("sessions").select("id, title, date").order("created_at", { ascending: false }).limit(30),
+      supabase.from("attendance").select("session_id, user_id, status"),
+      supabase
+        .from("submissions")
+        .select("id, content, status, submitted_at, user_id, tasks(title)")
+        .order("submitted_at", { ascending: false })
+        .limit(50),
+    ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
   const news = (newsRes.data ?? []) as unknown as NewsRow[];
   const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+  const sessions = (sessionsRes.data ?? []) as unknown as SessionRow[];
+  const attendance = (attendanceRes.data ?? []) as unknown as AttendanceRow[];
+  const subs = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const nameById = new Map(members.map((m) => [m.clerk_user_id, m.full_name]));
+
+  const submissions = subs.map((s) => ({
+    id: s.id,
+    content: s.content,
+    status: s.status,
+    submitted_at: s.submitted_at,
+    task_title: s.tasks?.title ?? "Tugasan",
+    member_name: nameById.get(s.user_id) || "Ahli",
+  }));
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -140,6 +172,29 @@ export default async function CoachPage() {
             ))}
           </ul>
         )}
+      </section>
+
+      {/* Kehadiran */}
+      <section className="mt-10">
+        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+          <CalendarCheck className="h-4 w-4" /> Rekod Kehadiran
+        </h2>
+        <AttendancePanel
+          sessions={sessions}
+          members={members.map((m) => ({
+            clerk_user_id: m.clerk_user_id,
+            full_name: m.full_name,
+          }))}
+          attendance={attendance}
+        />
+      </section>
+
+      {/* Semak hantaran */}
+      <section className="mt-10">
+        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+          <Inbox className="h-4 w-4" /> Semak Hantaran Tugasan
+        </h2>
+        <SubmissionsReview submissions={submissions} />
       </section>
     </div>
   );
