@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
+import InstallPrompt from "@/components/InstallPrompt";
 
 // Display font — bold, condensed, sporty headlines
 const anton = Anton({
@@ -114,6 +115,7 @@ export default function RootLayout({
         />
         {children}
         <ServiceWorker />
+        <InstallPrompt />
       </body>
     </html>
   );
