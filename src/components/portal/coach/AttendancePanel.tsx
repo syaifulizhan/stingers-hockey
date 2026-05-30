@@ -39,6 +39,53 @@ export default function AttendancePanel({
   }, [attendance]);
   const [statusMap, setStatusMap] = useState<Record<string, string>>(initialMap);
 
+  // Edit sesi terpilih
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDate, setEditDate] = useState("");
+
+  const startEdit = () => {
+    const s = sessions.find((x) => x.id === selectedId);
+    if (!s) return;
+    setEditTitle(s.title);
+    setEditDate(s.date ?? "");
+    setEditing(true);
+  };
+
+  const saveEdit = async () => {
+    if (editTitle.trim() === "") return;
+    try {
+      const res = await fetch("/api/portal/coach/session", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedId, title: editTitle, date: editDate }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal kemas kini sesi.");
+      return;
+    }
+    setEditing(false);
+    router.refresh();
+  };
+
+  const deleteSession = async () => {
+    const s = sessions.find((x) => x.id === selectedId);
+    if (!s) return;
+    if (!window.confirm(`Padam sesi "${s.title}"? Rekod kehadiran untuk sesi ini juga akan terpadam.`))
+      return;
+    try {
+      const res = await fetch(`/api/portal/coach/session?id=${selectedId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal padam sesi.");
+      return;
+    }
+    router.refresh();
+  };
+
   const createSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTitle.trim() === "") return;
@@ -137,6 +184,57 @@ export default function AttendancePanel({
                 </option>
               ))}
             </select>
+
+            {/* Edit / padam sesi terpilih */}
+            {editing ? (
+              <div className="mt-3 flex flex-col gap-2 rounded-lg border border-line bg-ink/40 p-3 sm:flex-row sm:items-end">
+                <input
+                  className={inputCls}
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="Tajuk sesi"
+                />
+                <input
+                  type="date"
+                  className={inputCls}
+                  value={editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    className="rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink hover:bg-amber-deep"
+                  >
+                    Simpan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditing(false)}
+                    className="rounded-full border border-line px-4 py-2.5 font-sans text-sm text-paper hover:border-amber"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 flex gap-4">
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  className="font-sans text-xs font-semibold text-amber hover:text-amber-deep"
+                >
+                  ✏️ Edit sesi
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteSession}
+                  className="font-sans text-xs font-semibold text-muted hover:text-amber"
+                >
+                  🗑️ Padam sesi
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Senarai ahli + butang status */}

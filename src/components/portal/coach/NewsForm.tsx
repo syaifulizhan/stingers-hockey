@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, X } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none focus:border-amber";
@@ -55,11 +56,12 @@ export default function NewsForm() {
       // 1. Muat naik gambar ke Supabase Storage (jika ada).
       let imageUrl = "";
       if (file) {
-        const ext = file.name.split(".").pop() || "jpg";
+        const compressed = await compressImage(file);
+        const ext = compressed.name.split(".").pop() || "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("news-images")
-          .upload(path, file, { upsert: false, contentType: file.type });
+          .upload(path, compressed, { upsert: false, contentType: compressed.type });
         if (upErr) throw new Error("Gagal muat naik gambar.");
         imageUrl = supabase.storage.from("news-images").getPublicUrl(path)
           .data.publicUrl;

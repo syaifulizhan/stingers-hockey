@@ -19,6 +19,7 @@ type Member = {
   year: string | null;
   class: string | null;
   role: string;
+  banned: boolean;
 };
 type NewsRow = { id: string; title: string; published_at: string };
 type TaskRow = {
@@ -50,7 +51,7 @@ export default async function CoachPage() {
     await Promise.all([
       supabase
         .from("users")
-        .select("clerk_user_id, full_name, year, class, role")
+        .select("clerk_user_id, full_name, year, class, role, banned")
         .order("full_name", { ascending: true }),
       supabase.from("news").select("id, title, published_at").order("published_at", { ascending: false }).limit(10),
       supabase.from("tasks").select("id, title, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),

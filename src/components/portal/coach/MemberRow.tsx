@@ -9,6 +9,7 @@ type Member = {
   year: string | null;
   class: string | null;
   role: string;
+  banned?: boolean;
 };
 
 export default function MemberRow({
@@ -38,6 +39,26 @@ export default function MemberRow({
     router.refresh();
   };
 
+  const setBanned = async (banned: boolean) => {
+    const who = member.full_name || "ahli ini";
+    if (banned && !window.confirm(`Ban ${who}? Mereka akan dihalang log masuk dan hantaran/media mereka dipadam.`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/portal/coach/ban", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ targetClerkId: member.clerk_user_id, banned }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setBusy(false);
+      window.alert("Gagal kemas kini status ban.");
+      return;
+    }
+    setBusy(false);
+    router.refresh();
+  };
+
   const roleBadge =
     member.role === "admin"
       ? "bg-amber text-ink"
@@ -55,20 +76,41 @@ export default function MemberRow({
           Tahun {member.year || "-"} · {member.class || "-"}
         </p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        {member.banned && (
+          <span className="rounded-full bg-red-500/20 px-2.5 py-1 font-sans text-xs font-semibold uppercase text-red-400">
+            Diban
+          </span>
+        )}
         <span className={`rounded-full px-2.5 py-1 font-sans text-xs font-semibold uppercase ${roleBadge}`}>
           {member.role}
         </span>
         {/* Admin sahaja boleh ubah; tak boleh ubah admin lain */}
         {viewerIsAdmin && member.role !== "admin" && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setRole(member.role === "coach" ? "member" : "coach")}
-            className="rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber disabled:opacity-50"
-          >
-            {busy ? "…" : member.role === "coach" ? "Turunkan" : "Jadikan Coach"}
-          </button>
+          <>
+            {!member.banned && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setRole(member.role === "coach" ? "member" : "coach")}
+                className="rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber disabled:opacity-50"
+              >
+                {busy ? "…" : member.role === "coach" ? "Turunkan" : "Jadikan Coach"}
+              </button>
+            )}
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => setBanned(!member.banned)}
+              className={`rounded-full border px-3 py-1 font-sans text-xs font-semibold transition-colors disabled:opacity-50 ${
+                member.banned
+                  ? "border-amber text-amber hover:bg-amber hover:text-ink"
+                  : "border-red-500/40 text-red-400 hover:bg-red-500 hover:text-paper"
+              }`}
+            >
+              {busy ? "…" : member.banned ? "Authorize" : "Ban"}
+            </button>
+          </>
         )}
       </div>
     </div>

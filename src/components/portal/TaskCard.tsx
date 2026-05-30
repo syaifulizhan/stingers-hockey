@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Clock, Paperclip, X, Trash2, RotateCcw } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
+import { compressImage } from "@/lib/image-compress";
 
 type Task = {
   id: string;
@@ -96,11 +97,12 @@ export default function TaskCard({
       // Muat naik bukti baharu jika ada.
       let finalMediaUrl = mediaUrl;
       if (file) {
-        const ext = file.name.split(".").pop() || "dat";
+        const toUpload = await compressImage(file); // imej dikecilkan; video kekal
+        const ext = toUpload.name.split(".").pop() || "dat";
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("task-proof")
-          .upload(path, file, { upsert: false, contentType: file.type });
+          .upload(path, toUpload, { upsert: false, contentType: toUpload.type });
         if (upErr) throw new Error("Gagal muat naik bukti.");
         finalMediaUrl = supabase.storage.from("task-proof").getPublicUrl(path)
           .data.publicUrl;

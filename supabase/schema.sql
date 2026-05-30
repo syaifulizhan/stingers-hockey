@@ -301,3 +301,33 @@ create policy notifications_insert on public.notifications for insert to authent
 alter table public.users add column if not exists last_seen_notifications timestamptz;
 
 grant select, insert on public.notifications to authenticated;
+
+-- ============================================================================
+-- BAN AHLI + NOTIFIKASI ADMIN
+-- ============================================================================
+-- Lajur status ban
+alter table public.users add column if not exists banned boolean not null default false;
+
+-- Storage: coach/admin boleh padam fail bukti (cleanup semasa ban)
+drop policy if exists "coach delete task proof" on storage.objects;
+create policy "coach delete task proof" on storage.objects for delete to authenticated
+  using (bucket_id = 'task-proof' and public.is_coach());
+
+-- Notifikasi admin bila ada PENDAFTARAN BAHARU (trigger; bypass RLS via definer)
+create or replace function public.notify_admins_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.notifications (user_id, title, link)
+  select u.clerk_user_id,
+         'Pendaftaran baharu: ' || coalesce(new.full_name, 'Ahli'),
+         '/portal/coach'
+  from public.users u
+  where u.role = 'admin' and u.clerk_user_id <> new.clerk_user_id;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_notify_admins_new_user on public.users;
+create trigger trg_notify_admins_new_user
+  after insert on public.users
+  for each row execute function public.notify_admins_new_user();
