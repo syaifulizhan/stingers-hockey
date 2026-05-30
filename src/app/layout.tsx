@@ -20,7 +20,7 @@ const archivo = Archivo({
   display: "swap",
 });
 
-const SITE_URL = "https://stingers-hockey.vercel.app"; // TODO: tukar ke domain sebenar bila deploy
+const SITE_URL = "https://stingers-hockey-r99l.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
