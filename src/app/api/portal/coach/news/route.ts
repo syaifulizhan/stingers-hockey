@@ -7,6 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 const schema = z.object({
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   body: z.string().trim().max(2000).optional().or(z.literal("")),
+  imageUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("news").insert({
     title: parsed.data.title,
     body: parsed.data.body || null,
+    image_url: parsed.data.imageUrl || null,
     author: userId,
   });
 
