@@ -43,8 +43,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("users").upsert(
     {
       clerk_user_id: userId,
-      // Nama paparan = username Clerk (diuruskan oleh ensureUserRow/Segerak);
-      // nama penuh borang dihantar ke Google Sheet sahaja.
+      full_name: d.fullName, // nama pilihan ahli (kekal selepas profil lengkap)
       email,
       year: d.year,
       class: d.className,
@@ -104,10 +103,15 @@ export async function POST(request: Request) {
     }
   }
 
-  // 3. Tanda onboarding selesai di Clerk.
+  // 3. Tanda onboarding selesai + segerakkan nama ke Clerk.
   try {
     const client = await clerkClient();
+    const parts = d.fullName.trim().split(/\s+/);
+    const firstName = parts[0] || undefined;
+    const lastName = parts.slice(1).join(" ") || undefined;
     await client.users.updateUser(userId, {
+      firstName,
+      lastName,
       publicMetadata: { onboardingComplete: true },
     });
   } catch (err) {
