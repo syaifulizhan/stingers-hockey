@@ -52,6 +52,9 @@ create table if not exists public.sessions (
   created_by  text,                                     -- clerk_user_id coach
   created_at  timestamptz not null default now()
 );
+-- Jenis sesi: latihan atau perlawanan (untuk statistik berasingan).
+alter table public.sessions add column if not exists type text not null default 'training'
+  check (type in ('training','match'));
 
 -- ── Jadual: attendance (kehadiran) ──────────────────────────────────────────
 create table if not exists public.attendance (
