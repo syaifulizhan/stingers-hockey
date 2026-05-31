@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import Honeycomb from "@/components/ui/Honeycomb";
 import Button from "@/components/ui/Button";
+import { useLang } from "@/lib/i18n";
 
 // Dua foto pemain bersilih ganti (crossfade) sebagai latar.
 const heroImages = ["/images/hero-player.jpg", "/images/hero-player2.jpg"];
@@ -25,6 +26,7 @@ const word = {
 
 export default function Hero() {
   const [idx, setIdx] = useState(0);
+  const { t } = useLang();
 
   useEffect(() => {
     const t = setInterval(
@@ -66,7 +68,10 @@ export default function Hero() {
           transition={{ duration: 0.6 }}
           className="mb-6 font-sans text-xs font-semibold uppercase tracking-[0.35em] text-amber sm:text-sm"
         >
-          Pasukan Hoki Rasmi · SK Taman Desaminium
+          {t(
+            "Pasukan Hoki Rasmi · SK Taman Desaminium",
+            "Official Hockey Team · SK Taman Desaminium"
+          )}
         </motion.p>
 
         {/* Tajuk besar */}
@@ -102,8 +107,10 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.7 }}
           className="mt-8 max-w-xl font-sans text-base text-muted sm:text-lg"
         >
-          Sejak 2017, tempat pemain ditempa dengan disiplin, semangat, dan
-          kemahiran. Bersedia menyahut cabaran?
+          {t(
+            "Sejak 2017, tempat pemain ditempa dengan disiplin, semangat, dan kemahiran. Bersedia menyahut cabaran?",
+            "Since 2017, where players are forged with discipline, spirit, and skill. Ready to take on the challenge?"
+          )}
         </motion.p>
 
         {/* CTA */}
@@ -113,7 +120,9 @@ export default function Hero() {
           transition={{ duration: 0.6, delay: 0.85 }}
           className="mt-10"
         >
-          <Button href="/portal">Sertai Pencarian Bakat →</Button>
+          <Button href="/portal">
+            {t("Sertai Pencarian Bakat →", "Join the Talent Search →")}
+          </Button>
         </motion.div>
       </div>
 

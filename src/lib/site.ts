@@ -1,13 +1,13 @@
 // Data laman yang dikongsi antara Navigation, Footer, dll.
 
 export const navLinks = [
-  { label: "Tentang", href: "/#tentang" },
-  { label: "Latihan", href: "/#latihan" },
-  { label: "Logo", href: "/#logo" },
-  { label: "Jersi", href: "/#jersi" },
-  { label: "Berita", href: "/#berita" },
-  { label: "Tempahan", href: "/hustle-gear" },
-  { label: "Hubungi", href: "/#hubungi" },
+  { label: "Tentang", labelEn: "About", href: "/#tentang" },
+  { label: "Latihan", labelEn: "Training", href: "/#latihan" },
+  { label: "Logo", labelEn: "Logo", href: "/#logo" },
+  { label: "Jersi", labelEn: "Jersey", href: "/#jersi" },
+  { label: "Berita", labelEn: "News", href: "/#berita" },
+  { label: "Tempahan", labelEn: "Order", href: "/hustle-gear" },
+  { label: "Hubungi", labelEn: "Contact", href: "/#hubungi" },
 ] as const;
 
 export const contact = {

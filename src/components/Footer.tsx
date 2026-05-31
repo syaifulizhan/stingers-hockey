@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Mail, MapPin, Phone } from "lucide-react";
 import { contact, navLinks, social } from "@/lib/site";
 import Wordmark from "@/components/ui/Wordmark";
+import { useLang } from "@/lib/i18n";
 
 // Ikon brand — versi lucide ini tiada glyph brand, jadi guna SVG inline.
 function XIcon({ className }: { className?: string }) {
@@ -31,6 +32,7 @@ function InstagramIcon({ className }: { className?: string }) {
 }
 
 export default function Footer() {
+  const { lang, t } = useLang();
   return (
     <footer id="hubungi" className="border-t border-line bg-bg-soft">
       <div className="mx-auto max-w-7xl px-6 py-16">
@@ -50,15 +52,17 @@ export default function Footer() {
               <Wordmark className="text-2xl" />
             </div>
             <p className="mt-5 max-w-sm font-sans text-sm leading-relaxed text-muted">
-              Pasukan hoki rasmi Sekolah Kebangsaan Taman Desaminium, diuruskan
-              oleh organisasi bebas.{" "}
+              {t(
+                "Pasukan hoki rasmi Sekolah Kebangsaan Taman Desaminium, diuruskan oleh organisasi bebas.",
+                "The official hockey team of Sekolah Kebangsaan Taman Desaminium, managed by an independent organisation."
+              )}{" "}
               <em className="text-paper/80">Kicking goals. Breaking moulds.</em>
             </p>
           </div>
 
           {/* Kolum 2 — hubungi */}
           <div>
-            <h3 className="display text-xl text-paper">Hubungi</h3>
+            <h3 className="display text-xl text-paper">{t("Hubungi", "Contact")}</h3>
             <ul className="mt-5 flex flex-col gap-4 font-sans text-sm text-muted">
               <li>
                 <a
@@ -87,7 +91,9 @@ export default function Footer() {
 
           {/* Kolum 3 — navigasi */}
           <div>
-            <h3 className="display text-xl text-paper">Navigasi</h3>
+            <h3 className="display text-xl text-paper">
+              {t("Navigasi", "Navigation")}
+            </h3>
             <ul className="mt-5 flex flex-col gap-3 font-sans text-sm text-muted">
               {navLinks.map((link) => (
                 <li key={link.href}>
@@ -95,7 +101,7 @@ export default function Footer() {
                     href={link.href}
                     className="transition-colors hover:text-amber"
                   >
-                    {link.label}
+                    {lang === "en" ? link.labelEn : link.label}
                   </Link>
                 </li>
               ))}
@@ -106,7 +112,7 @@ export default function Footer() {
         {/* Bawah footer */}
         <div className="mt-14 flex flex-col items-center justify-between gap-6 border-t border-line pt-8 sm:flex-row">
           <p className="font-sans text-xs text-muted">
-            © 2026 Stingers Hockey. Hak cipta terpelihara.
+            © 2026 Stingers Hockey. {t("Hak cipta terpelihara.", "All rights reserved.")}
           </p>
           <div className="flex items-center gap-3">
             {[

@@ -3,48 +3,42 @@
 import Honeycomb from "@/components/ui/Honeycomb";
 import Reveal from "@/components/ui/Reveal";
 import SmartImage from "@/components/ui/SmartImage";
-
-const features = [
-  {
-    title: "Kelulut Terminata",
-    body: (
-      <>
-        Berasaskan kelulut spesies <em>Lepidotrigona Terminata</em> yang
-        bersedia menyengat — lambang ketangkasan, kelajuan dan semangat
-        berpasukan.
-      </>
-    ),
-  },
-  {
-    title: "Huruf Tersembunyi 'S' & 'H'",
-    body: (
-      <>
-        Toraks serangga dibentuk huruf &lsquo;S&rsquo; (Stingers), disambung
-        huruf &lsquo;H&rsquo; (Hockey) di tengah badan.
-      </>
-    ),
-  },
-  {
-    title: "Kayu & Bola Hoki",
-    body: (
-      <>
-        Abdomen serangga terbentuk daripada visual kayu dan bola hoki, diakhiri
-        sengat tajam di hujung.
-      </>
-    ),
-  },
-  {
-    title: "Sayap Geometri",
-    body: (
-      <>
-        Corak sarang lebah pada sayap melambangkan pergerakan dinamik dan
-        strategi tersusun untuk &lsquo;terbang tinggi&rsquo;.
-      </>
-    ),
-  },
-];
+import { useLang } from "@/lib/i18n";
 
 export default function LogoStory() {
+  const { t } = useLang();
+
+  const features = [
+    {
+      title: t("Kelulut Terminata", "The Terminata Stingless Bee"),
+      body: t(
+        "Berasaskan kelulut spesies Lepidotrigona Terminata yang bersedia menyengat — lambang ketangkasan, kelajuan dan semangat berpasukan.",
+        "Inspired by the Lepidotrigona Terminata stingless bee, ready to sting — a symbol of agility, speed and team spirit."
+      ),
+    },
+    {
+      title: t("Huruf Tersembunyi 'S' & 'H'", "Hidden Letters 'S' & 'H'"),
+      body: t(
+        "Toraks serangga dibentuk huruf 'S' (Stingers), disambung huruf 'H' (Hockey) di tengah badan.",
+        "The insect's thorax forms the letter 'S' (Stingers), joined by an 'H' (Hockey) in the middle of the body."
+      ),
+    },
+    {
+      title: t("Kayu & Bola Hoki", "Hockey Stick & Ball"),
+      body: t(
+        "Abdomen serangga terbentuk daripada visual kayu dan bola hoki, diakhiri sengat tajam di hujung.",
+        "The abdomen is formed from a hockey stick and ball, ending in a sharp stinger at the tip."
+      ),
+    },
+    {
+      title: t("Sayap Geometri", "Geometric Wings"),
+      body: t(
+        "Corak sarang lebah pada sayap melambangkan pergerakan dinamik dan strategi tersusun untuk 'terbang tinggi'.",
+        "The honeycomb pattern on the wings represents dynamic movement and organised strategy to 'fly high'."
+      ),
+    },
+  ];
+
   return (
     <section
       id="logo"
@@ -69,12 +63,13 @@ export default function LogoStory() {
         <div>
           <Reveal>
             <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-              Identiti
+              {t("Identiti", "Identity")}
             </span>
           </Reveal>
           <Reveal delay={0.1}>
             <h2 className="display mt-5 text-5xl text-paper sm:text-6xl lg:text-7xl">
-              Kisah Di Sebalik <span className="text-outline">Logo</span>
+              {t("Kisah Di Sebalik", "The Story Behind the")}{" "}
+              <span className="text-outline">Logo</span>
             </h2>
           </Reveal>
 
