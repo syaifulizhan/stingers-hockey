@@ -8,6 +8,7 @@ import { ALL_MATCH_KEYS } from "@/lib/match";
 const schema = z.object({
   matchId: z.string().uuid(),
   targetUserId: z.string().min(1),
+  position: z.string().max(40).optional().or(z.literal("")),
   stats: z.record(z.string(), z.number().int().min(0).max(999)),
 });
 
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
     {
       match_id: parsed.data.matchId,
       user_id: parsed.data.targetUserId,
+      position: parsed.data.position || null,
       stats,
     },
     { onConflict: "match_id,user_id" }

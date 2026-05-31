@@ -85,7 +85,7 @@ export default async function CoachPage() {
         .from("matches")
         .select("id, season_id, opponent, match_date, venue, competition, category, our_score, opp_score")
         .order("match_date", { ascending: false }),
-      supabase.from("match_stats").select("id, match_id, user_id, stats"),
+      supabase.from("match_stats").select("id, match_id, user_id, position, stats"),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -137,6 +137,7 @@ export default async function CoachPage() {
     id: string;
     match_id: string;
     user_id: string;
+    position: string | null;
     stats: Record<string, number>;
   }[];
 

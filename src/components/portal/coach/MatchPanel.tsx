@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
-import { matchMetrics, matchResult } from "@/lib/match";
+import { matchMetrics, matchResult, HOCKEY_POSITIONS } from "@/lib/match";
 import { memberName } from "@/lib/names";
 
 const inputCls =
@@ -29,7 +29,13 @@ type Player = {
   display_name?: string | null;
   is_goalkeeper?: boolean;
 };
-type StatRow = { id: string; match_id: string; user_id: string; stats: Record<string, number> };
+type StatRow = {
+  id: string;
+  match_id: string;
+  user_id: string;
+  position: string | null;
+  stats: Record<string, number>;
+};
 
 export default function MatchPanel({
   seasons,
@@ -61,6 +67,7 @@ export default function MatchPanel({
   // Rekod prestasi
   const [matchId, setMatchId] = useState("");
   const [playerId, setPlayerId] = useState(players[0]?.clerk_user_id ?? "");
+  const [position, setPosition] = useState("");
   const [vals, setVals] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -76,6 +83,11 @@ export default function MatchPanel({
   const statsByMatchUser = useMemo(() => {
     const m: Record<string, Record<string, number>> = {};
     for (const s of statsRows) m[`${s.match_id}:${s.user_id}`] = s.stats ?? {};
+    return m;
+  }, [statsRows]);
+  const posByMatchUser = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const s of statsRows) m[`${s.match_id}:${s.user_id}`] = s.position ?? "";
     return m;
   }, [statsRows]);
 
@@ -98,8 +110,9 @@ export default function MatchPanel({
   }, [matchId, playerId, statsByMatchUser, metrics]);
   useEffect(() => {
     setVals(prefill);
+    setPosition(posByMatchUser[`${matchId}:${playerId}`] ?? "");
     setMsg(null);
-  }, [prefill]);
+  }, [prefill, posByMatchUser, matchId, playerId]);
 
   const createSeason = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,7 +229,7 @@ export default function MatchPanel({
       const res = await fetch("/api/portal/coach/match-stat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId, targetUserId: playerId, stats }),
+        body: JSON.stringify({ matchId, targetUserId: playerId, position, stats }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal");
@@ -271,6 +284,7 @@ export default function MatchPanel({
     .map((s) => ({
       name: nameById.get(s.user_id) || "Ahli",
       isGK: !!gkById.get(s.user_id),
+      position: s.position ?? "",
       stats: s.stats ?? {},
     }));
 
@@ -478,6 +492,17 @@ export default function MatchPanel({
                       ))}
                     </select>
                   </div>
+                  <div>
+                    <label className="mb-1.5 block font-sans text-xs text-muted">Posisi</label>
+                    <select className={inputCls} value={position} onChange={(e) => setPosition(e.target.value)}>
+                      <option value="">— Pilih posisi —</option>
+                      {HOCKEY_POSITIONS.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -522,7 +547,8 @@ export default function MatchPanel({
                         .map((mtr) => `${mtr.label}: ${row.stats[mtr.key]}`);
                       return (
                         <div key={i} className="rounded-lg px-3 py-1.5 font-sans text-sm text-paper/90">
-                          <span className="font-medium">{row.name}</span>{" "}
+                          <span className="font-medium">{row.name}</span>
+                          {row.position && <span className="text-amber"> · {row.position}</span>}{" "}
                           <span className="text-muted">
                             {parts.length ? `— ${parts.join(", ")}` : "— (tiada statistik)"}
                           </span>

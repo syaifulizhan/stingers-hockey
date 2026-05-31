@@ -464,10 +464,12 @@ create table if not exists public.match_stats (
   id          uuid primary key default gen_random_uuid(),
   match_id    uuid not null references public.matches(id) on delete cascade,
   user_id     text not null,
+  position    text,                                  -- posisi pemain dalam match
   stats       jsonb not null default '{}'::jsonb,
   created_at  timestamptz not null default now(),
   unique (match_id, user_id)
 );
+alter table public.match_stats add column if not exists position text;
 alter table public.match_stats enable row level security;
 
 drop policy if exists match_stats_select on public.match_stats;
