@@ -10,6 +10,8 @@ import FitnessSummary from "@/components/portal/FitnessSummary";
 import MatchPerformance from "@/components/portal/MatchPerformance";
 import { ASSESSMENT_TYPES, assessmentAverage, type AssessmentType } from "@/lib/assessments";
 import { memberName } from "@/lib/names";
+import { generateReport } from "@/lib/report";
+import ReportToggle from "@/components/portal/ReportToggle";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -188,6 +190,18 @@ export default async function DashboardPage() {
     { label: "Pencapaian", value: String(myAchievements.length) },
   ];
 
+  // Laporan kemenjadian auto (ahli sendiri).
+  const myReport = generateReport({
+    isGoalkeeper,
+    skill: latestByType.get(isGoalkeeper ? "skill_gk" : "skill_field")?.scores ?? null,
+    coachEval: latestByType.get("coach_eval")?.scores ?? null,
+    attendancePct: totalSessions > 0 ? attendancePct : null,
+    matchTotals: myMatchRows.reduce((acc, r) => {
+      for (const [k, v] of Object.entries(r.stats)) acc[k] = (acc[k] ?? 0) + v;
+      return acc;
+    }, {} as Record<string, number>),
+  });
+
   const subByTask = new Map(submissions.map((s) => [s.task_id, s]));
 
   return (
@@ -247,6 +261,13 @@ export default async function DashboardPage() {
               </div>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Laporan kemenjadian (ahli sahaja) */}
+      {!isCoachOrAdmin && (
+        <section className="mt-6">
+          <ReportToggle report={myReport} />
         </section>
       )}
 
