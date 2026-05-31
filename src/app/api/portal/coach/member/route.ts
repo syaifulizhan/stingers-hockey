@@ -67,12 +67,16 @@ export async function DELETE(request: Request) {
   }
 
   // 1. Padam akaun Clerk (supaya tak boleh log masuk / cipta semula baris).
+  let clerkDeleted = false;
   try {
     const client = await clerkClient();
     await client.users.deleteUser(id);
+    clerkDeleted = true;
   } catch (e) {
-    // Abaikan jika akaun sudah tiada; gagal lain dilog tetapi teruskan.
-    console.error("[coach/member] padam Clerk:", e instanceof Error ? e.message : e);
+    // 404 = akaun sudah tiada (anggap berjaya). Ralat lain dilog.
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/not found|404/i.test(msg)) clerkDeleted = true;
+    else console.error("[coach/member] padam Clerk:", msg);
   }
 
   // 2. Padam data berkaitan + baris pengguna di Supabase.
@@ -80,11 +84,28 @@ export async function DELETE(request: Request) {
   await supabase.from("attendance").delete().eq("user_id", id);
   await supabase.from("submissions").delete().eq("user_id", id);
   await supabase.from("assessments").delete().eq("user_id", id);
-  const { error } = await supabase.from("users").delete().eq("clerk_user_id", id);
+  await supabase.from("fitness_tests").delete().eq("user_id", id);
+  await supabase.from("match_stats").delete().eq("user_id", id);
+  const { data: deleted, error } = await supabase
+    .from("users")
+    .delete()
+    .eq("clerk_user_id", id)
+    .select("clerk_user_id");
 
   if (error) {
     console.error("[coach/member] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam ahli." }, { status: 500 });
   }
-  return NextResponse.json({ ok: true });
+  // 0 baris dipadam = disekat RLS (policy users_delete belum dijalankan).
+  if (!deleted || deleted.length === 0) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "Baris pengguna tidak dipadam (disekat RLS). Jalankan policy 'users_delete' di Supabase.",
+      },
+      { status: 403 }
+    );
+  }
+  return NextResponse.json({ ok: true, clerkDeleted });
 }

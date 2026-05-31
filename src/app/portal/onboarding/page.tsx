@@ -20,8 +20,8 @@ export default async function OnboardingPage() {
     .maybeSingle();
 
   const defaultName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.username ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "";
 
   const initial: Partial<ProfileInput> = {
