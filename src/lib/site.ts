@@ -7,6 +7,7 @@ export const navLinks = [
   { label: "Jersi", labelEn: "Jersey", href: "/#jersi" },
   { label: "Berita", labelEn: "News", href: "/#berita" },
   { label: "Live", labelEn: "Live", href: "/live" },
+  { label: "Keputusan", labelEn: "Results", href: "/keputusan" },
   { label: "Tempahan", labelEn: "Order", href: "/hustle-gear" },
   { label: "Hubungi", labelEn: "Contact", href: "/#hubungi" },
 ] as const;

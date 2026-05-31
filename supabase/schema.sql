@@ -421,6 +421,7 @@ create table if not exists public.seasons (
   created_by  text,
   created_at  timestamptz not null default now()
 );
+alter table public.seasons add column if not exists closed boolean not null default false;
 alter table public.seasons enable row level security;
 drop policy if exists seasons_select on public.seasons;
 create policy seasons_select on public.seasons for select to authenticated using (true);

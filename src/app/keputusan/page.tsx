@@ -1,23 +1,22 @@
 import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-import LiveBoard from "@/components/live/LiveBoard";
+import ResultsBoard from "@/components/live/ResultsBoard";
 import { createPublicSupabase } from "@/lib/supabase/public";
 
 export const metadata: Metadata = {
-  title: "Live — Perlawanan Stingers Hockey",
+  title: "Keputusan — Stingers Hockey",
   description:
-    "Keputusan perlawanan terkini, rumusan season, penjaring & assist terbanyak pasukan Stingers Hockey.",
+    "Arkib keputusan season pasukan Stingers Hockey — rekod perlawanan, penjaring & assist terbanyak.",
 };
 
-// Sentiasa segar (live).
 export const dynamic = "force-dynamic";
 
-export default async function LivePage() {
+export default async function KeputusanPage() {
   const supabase = createPublicSupabase();
   const [seasonsRes, matchesRes, statsRes, playersRes] = await Promise.all([
-    // Hanya season TERBUKA muncul di Live.
-    supabase.from("seasons").select("id, name").eq("closed", false).order("created_at", { ascending: false }),
+    // Hanya season DITUTUP muncul di Keputusan.
+    supabase.from("seasons").select("id, name").eq("closed", true).order("created_at", { ascending: false }),
     supabase
       .from("matches")
       .select("id, season_id, opponent, match_date, competition, venue, our_score, opp_score")
@@ -30,7 +29,7 @@ export default async function LivePage() {
     <>
       <Navigation />
       <main className="flex-1">
-        <LiveBoard
+        <ResultsBoard
           seasons={(seasonsRes.data ?? []) as { id: string; name: string }[]}
           matches={(matchesRes.data ?? []) as never[]}
           stats={(statsRes.data ?? []) as never[]}
