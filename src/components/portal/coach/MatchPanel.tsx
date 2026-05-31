@@ -9,7 +9,7 @@ import { memberName } from "@/lib/names";
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
 
-type Season = { id: string; name: string };
+type Season = { id: string; name: string; closed: boolean };
 type Match = {
   id: string;
   season_id: string | null;
@@ -111,6 +111,25 @@ export default function MatchPanel({
       return;
     }
     setNewSeason("");
+    router.refresh();
+  };
+
+  const toggleClosed = async () => {
+    const s = seasons.find((x) => x.id === seasonId);
+    if (!s) return;
+    const closing = !s.closed;
+    if (closing && !window.confirm(`Tutup season "${s.name}"? Ia akan keluar dari Live dan masuk ke halaman Keputusan.`)) return;
+    try {
+      const res = await fetch("/api/portal/coach/season", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: seasonId, closed: closing }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal kemas kini season.");
+      return;
+    }
     router.refresh();
   };
 
@@ -280,9 +299,17 @@ export default function MatchPanel({
               {seasons.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
+                  {s.closed ? " (Ditutup)" : ""}
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={toggleClosed}
+              className="shrink-0 whitespace-nowrap rounded-full border border-line px-4 py-2 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
+            >
+              {seasons.find((s) => s.id === seasonId)?.closed ? "Buka Semula" : "Tutup Season"}
+            </button>
             <button
               type="button"
               onClick={deleteSeason}

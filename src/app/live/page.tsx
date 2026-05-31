@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 export default async function LivePage() {
   const supabase = createPublicSupabase();
   const [seasonsRes, matchesRes, statsRes, playersRes] = await Promise.all([
-    supabase.from("seasons").select("id, name").order("created_at", { ascending: false }),
+    // Hanya season TERBUKA muncul di Live.
+    supabase.from("seasons").select("id, name").eq("closed", false).order("created_at", { ascending: false }),
     supabase
       .from("matches")
       .select("id, season_id, opponent, match_date, competition, venue, our_score, opp_score")

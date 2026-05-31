@@ -80,7 +80,7 @@ export default async function CoachPage() {
         .from("fitness_tests")
         .select("user_id, tested_on, results")
         .order("tested_on", { ascending: true }),
-      supabase.from("seasons").select("id, name").order("created_at", { ascending: false }),
+      supabase.from("seasons").select("id, name, closed").order("created_at", { ascending: false }),
       supabase
         .from("matches")
         .select("id, season_id, opponent, match_date, venue, competition, our_score, opp_score")
@@ -121,7 +121,7 @@ export default async function CoachPage() {
     (fitnessByUser[f.user_id] ??= []).push({ tested_on: f.tested_on, results: f.results ?? {} });
   }
 
-  const seasons = (seasonsRes.data ?? []) as unknown as { id: string; name: string }[];
+  const seasons = (seasonsRes.data ?? []) as unknown as { id: string; name: string; closed: boolean }[];
   const matches = (matchesRes.data ?? []) as unknown as {
     id: string;
     season_id: string | null;
