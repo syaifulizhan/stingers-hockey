@@ -56,7 +56,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, matchesRes, matchStatsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, seasonsRes, matchesRes, matchStatsRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -80,9 +80,10 @@ export default async function CoachPage() {
         .from("fitness_tests")
         .select("user_id, tested_on, results")
         .order("tested_on", { ascending: true }),
+      supabase.from("seasons").select("id, name").order("created_at", { ascending: false }),
       supabase
         .from("matches")
-        .select("id, opponent, match_date, venue, competition, our_score, opp_score")
+        .select("id, season_id, opponent, match_date, venue, competition, our_score, opp_score")
         .order("match_date", { ascending: false }),
       supabase.from("match_stats").select("id, match_id, user_id, stats"),
     ]);
@@ -120,8 +121,10 @@ export default async function CoachPage() {
     (fitnessByUser[f.user_id] ??= []).push({ tested_on: f.tested_on, results: f.results ?? {} });
   }
 
+  const seasons = (seasonsRes.data ?? []) as unknown as { id: string; name: string }[];
   const matches = (matchesRes.data ?? []) as unknown as {
     id: string;
+    season_id: string | null;
     opponent: string;
     match_date: string | null;
     venue: string | null;
@@ -324,7 +327,7 @@ export default async function CoachPage() {
                   <Swords className="h-4 w-4" /> Perlawanan
                 </h2>
                 {playerMembers.length > 0 ? (
-                  <MatchPanel matches={matches} players={playerMembers} statsRows={matchStats} />
+                  <MatchPanel seasons={seasons} matches={matches} players={playerMembers} statsRows={matchStats} />
                 ) : (
                   <p className="font-sans text-sm text-muted">Belum ada pemain.</p>
                 )}
