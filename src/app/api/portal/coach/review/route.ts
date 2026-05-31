@@ -68,10 +68,29 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+
+  // Ambil URL bukti dulu untuk buang fail dari storan.
+  const { data: existing } = await supabase
+    .from("submissions")
+    .select("media_url")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("submissions").delete().eq("id", id);
   if (error) {
     console.error("[coach/review] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+
+  const mediaUrl = (existing as { media_url: string | null } | null)?.media_url ?? null;
+  if (mediaUrl) {
+    const marker = "/task-proof/";
+    const i = mediaUrl.indexOf(marker);
+    if (i !== -1) {
+      const path = decodeURIComponent(mediaUrl.slice(i + marker.length));
+      await supabase.storage.from("task-proof").remove([path]);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }

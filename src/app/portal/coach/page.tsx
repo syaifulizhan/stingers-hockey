@@ -14,6 +14,7 @@ import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import AttendanceStats from "@/components/portal/coach/AttendanceStats";
 import AssessmentForm from "@/components/portal/coach/AssessmentForm";
+import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 type Member = {
@@ -153,6 +154,9 @@ export default async function CoachPage() {
       )
     : 0;
 
+  const sectionTitle =
+    "mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted";
+
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       <PortalNav badge="Jurulatih" />
@@ -164,107 +168,132 @@ export default async function CoachPage() {
         </Link>
       </p>
 
-      {/* Ahli */}
-      <section className="mt-8">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <Users className="h-4 w-4" /> Ahli
-        </h2>
-        {admin && <SyncClerkButton />}
-        <MembersPanel members={members} admin={admin} />
-      </section>
+      <CoachTabs
+        tabs={[
+          {
+            id: "ahli",
+            label: "Ahli",
+            icon: "👥",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Users className="h-4 w-4" /> Ahli
+                </h2>
+                {admin && <SyncClerkButton />}
+                <MembersPanel members={members} admin={admin} />
+              </section>
+            ),
+          },
+          {
+            id: "kehadiran",
+            label: "Kehadiran",
+            icon: "🗓️",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <CalendarCheck className="h-4 w-4" /> Rekod Kehadiran
+                </h2>
+                <AttendancePanel
+                  sessions={sessions}
+                  members={activeMembers.map((m) => ({
+                    clerk_user_id: m.clerk_user_id,
+                    full_name: memberName(m.full_name, m.display_name),
+                  }))}
+                  attendance={attendance}
+                />
+                <h3 className="mb-3 mt-8 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+                  📊 Statistik Kehadiran
+                </h3>
+                <AttendanceStats members={members} sessions={sessions} attendance={attendance} />
+              </section>
+            ),
+          },
+          {
+            id: "tugasan",
+            label: "Tugasan",
+            icon: "📋",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <ClipboardList className="h-4 w-4" /> Beri Tugasan
+                </h2>
+                {admin && (
+                  <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber/40 bg-amber/10 px-5 py-3">
+                    <span className="display text-2xl text-amber">{avgSubmissionPct}%</span>
+                    <span className="font-sans text-sm text-paper/90">
+                      Purata penghantaran ahli ({memberCount}{" "}
+                      {memberCount === 1 ? "ahli" : "ahli"})
+                    </span>
+                  </div>
+                )}
+                <TaskForm members={activeMembers.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
+                {tasks.length > 0 && (
+                  <div className="mt-4 flex flex-col gap-1">
+                    {tasks.map((t) => (
+                      <TaskAdminItem
+                        key={t.id}
+                        task={t}
+                        members={activeMembers.map((m) => ({
+                          clerk_user_id: m.clerk_user_id,
+                          full_name: memberName(m.full_name, m.display_name),
+                        }))}
+                        assigneeName={
+                          t.assigned_to
+                            ? nameById.get(t.assigned_to) || "ahli"
+                            : "Semua ahli"
+                        }
+                        stat={admin ? taskStat(t) : null}
+                      />
+                    ))}
+                  </div>
+                )}
 
-      {/* Berita */}
-      <section className="mt-10">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <Newspaper className="h-4 w-4" /> Post Berita
-        </h2>
-        <NewsForm />
-        {news.length > 0 && (
-          <div className="mt-4 flex flex-col gap-1">
-            {news.map((n) => (
-              <NewsAdminItem key={n.id} news={n} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Tugasan */}
-      <section className="mt-10">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <ClipboardList className="h-4 w-4" /> Beri Tugasan
-        </h2>
-        {admin && (
-          <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber/40 bg-amber/10 px-5 py-3">
-            <span className="display text-2xl text-amber">{avgSubmissionPct}%</span>
-            <span className="font-sans text-sm text-paper/90">
-              Purata penghantaran ahli ({memberCount}{" "}
-              {memberCount === 1 ? "ahli" : "ahli"})
-            </span>
-          </div>
-        )}
-        <TaskForm members={activeMembers.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
-        {tasks.length > 0 && (
-          <div className="mt-4 flex flex-col gap-1">
-            {tasks.map((t) => (
-              <TaskAdminItem
-                key={t.id}
-                task={t}
-                members={activeMembers.map((m) => ({
-                  clerk_user_id: m.clerk_user_id,
-                  full_name: memberName(m.full_name, m.display_name),
-                }))}
-                assigneeName={
-                  t.assigned_to
-                    ? nameById.get(t.assigned_to) || "ahli"
-                    : "Semua ahli"
-                }
-                stat={admin ? taskStat(t) : null}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Kehadiran */}
-      <section className="mt-10">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <CalendarCheck className="h-4 w-4" /> Rekod Kehadiran
-        </h2>
-        <AttendancePanel
-          sessions={sessions}
-          members={activeMembers.map((m) => ({
-            clerk_user_id: m.clerk_user_id,
-            full_name: memberName(m.full_name, m.display_name),
-          }))}
-          attendance={attendance}
-        />
-
-        {/* Statistik kehadiran automatik */}
-        <h3 className="mb-3 mt-8 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
-          📊 Statistik Kehadiran
-        </h3>
-        <AttendanceStats members={members} sessions={sessions} attendance={attendance} />
-      </section>
-
-      {/* Penilaian kemahiran & jurulatih */}
-      <section className="mt-10">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <Star className="h-4 w-4" /> Penilaian Pemain
-        </h2>
-        {playerMembers.length > 0 ? (
-          <AssessmentForm members={playerMembers} latest={latestAssessment} />
-        ) : (
-          <p className="font-sans text-sm text-muted">Belum ada ahli untuk dinilai.</p>
-        )}
-      </section>
-
-      {/* Semak hantaran */}
-      <section className="mt-10">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <Inbox className="h-4 w-4" /> Semak Hantaran Tugasan
-        </h2>
-        <SubmissionsReview submissions={submissions} />
-      </section>
+                <h3 className="mb-4 mt-10 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+                  <Inbox className="h-4 w-4" /> Semak Hantaran Tugasan
+                </h3>
+                <SubmissionsReview submissions={submissions} />
+              </section>
+            ),
+          },
+          {
+            id: "penilaian",
+            label: "Penilaian",
+            icon: "⭐",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Star className="h-4 w-4" /> Penilaian Pemain
+                </h2>
+                {playerMembers.length > 0 ? (
+                  <AssessmentForm members={playerMembers} latest={latestAssessment} />
+                ) : (
+                  <p className="font-sans text-sm text-muted">Belum ada ahli untuk dinilai.</p>
+                )}
+              </section>
+            ),
+          },
+          {
+            id: "berita",
+            label: "Berita",
+            icon: "📰",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Newspaper className="h-4 w-4" /> Post Berita
+                </h2>
+                <NewsForm />
+                {news.length > 0 && (
+                  <div className="mt-4 flex flex-col gap-1">
+                    {news.map((n) => (
+                      <NewsAdminItem key={n.id} news={n} />
+                    ))}
+                  </div>
+                )}
+              </section>
+            ),
+          },
+        ]}
+      />
     </div>
   );
 }

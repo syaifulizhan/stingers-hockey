@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { CheckCircle2, Clock, Paperclip, X, Trash2, RotateCcw } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
@@ -36,6 +37,7 @@ export default function TaskCard({
 }) {
   const router = useRouter();
   const supabase = useSupabase();
+  const { userId } = useAuth();
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState(submission?.content ?? "");
   const [mediaUrl, setMediaUrl] = useState(submission?.media_url ?? "");
@@ -101,7 +103,8 @@ export default function TaskCard({
       if (file) {
         const toUpload = await compressImage(file); // imej dikecilkan; video kekal
         const ext = toUpload.name.split(".").pop() || "dat";
-        const path = `${crypto.randomUUID()}.${ext}`;
+        // Prefix ID pemain supaya mereka boleh padam fail sendiri (RLS storan).
+        const path = `${userId ?? "anon"}/${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage
           .from("task-proof")
           .upload(path, toUpload, { upsert: false, contentType: toUpload.type });

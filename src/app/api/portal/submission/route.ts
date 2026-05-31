@@ -77,6 +77,15 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+
+  // Ambil URL bukti dulu supaya boleh buang fail dari storan (jimat kuota).
+  const { data: existing } = await supabase
+    .from("submissions")
+    .select("media_url")
+    .eq("task_id", taskId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("submissions")
     .delete()
@@ -87,5 +96,17 @@ export async function DELETE(request: Request) {
     console.error("[portal/submission] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+
+  const path = taskProofPath(existing?.media_url ?? null);
+  if (path) await supabase.storage.from("task-proof").remove([path]);
+
   return NextResponse.json({ ok: true });
+}
+
+// Ekstrak laluan fail dalam bucket "task-proof" daripada URL awam.
+function taskProofPath(mediaUrl: string | null): string | null {
+  if (!mediaUrl) return null;
+  const marker = "/task-proof/";
+  const i = mediaUrl.indexOf(marker);
+  return i === -1 ? null : decodeURIComponent(mediaUrl.slice(i + marker.length));
 }
