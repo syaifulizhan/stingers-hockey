@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { matchMetrics, matchResult, HOCKEY_POSITIONS } from "@/lib/match";
 import { memberName } from "@/lib/names";
 
@@ -63,6 +63,18 @@ export default function MatchPanel({
   const [ourScore, setOurScore] = useState("");
   const [oppScore, setOppScore] = useState("");
   const [creating, setCreating] = useState(false);
+
+  // Edit perlawanan sedia ada
+  const [editId, setEditId] = useState<string | null>(null);
+  const [edit, setEdit] = useState({
+    opponent: "",
+    competition: "",
+    category: "",
+    matchDate: "",
+    venue: "",
+    ourScore: "",
+    oppScore: "",
+  });
 
   // Rekod prestasi
   const [matchId, setMatchId] = useState("");
@@ -210,6 +222,46 @@ export default function MatchPanel({
       window.alert("Gagal padam.");
       return;
     }
+    router.refresh();
+  };
+
+  const startEdit = (m: Match) => {
+    setEditId(m.id);
+    setEdit({
+      opponent: m.opponent,
+      competition: m.competition ?? "",
+      category: m.category ?? "",
+      matchDate: m.match_date ?? "",
+      venue: m.venue ?? "",
+      ourScore: m.our_score == null ? "" : String(m.our_score),
+      oppScore: m.opp_score == null ? "" : String(m.opp_score),
+    });
+  };
+
+  const saveEdit = async (m: Match) => {
+    if (edit.opponent.trim() === "") return;
+    try {
+      const res = await fetch("/api/portal/coach/match", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: m.id,
+          opponent: edit.opponent,
+          seasonId: m.season_id,
+          competition: edit.competition,
+          category: edit.category,
+          matchDate: edit.matchDate,
+          venue: edit.venue,
+          ourScore: edit.ourScore === "" ? null : Number(edit.ourScore),
+          oppScore: edit.oppScore === "" ? null : Number(edit.oppScore),
+        }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal kemas kini perlawanan.");
+      return;
+    }
+    setEditId(null);
     router.refresh();
   };
 
@@ -423,6 +475,31 @@ export default function MatchPanel({
               <div className="mt-3 flex flex-col gap-1">
                 {seasonMatches.map((m) => {
                   const r = matchResult(m.our_score, m.opp_score);
+                  if (editId === m.id) {
+                    return (
+                      <div key={m.id} className="flex flex-col gap-2 rounded-lg border border-line bg-ink/40 p-3">
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <input className={inputCls} placeholder="Lawan" value={edit.opponent} onChange={(e) => setEdit((s) => ({ ...s, opponent: e.target.value }))} />
+                          <input className={inputCls} placeholder="Pertandingan" value={edit.competition} onChange={(e) => setEdit((s) => ({ ...s, competition: e.target.value }))} />
+                          <input className={inputCls} placeholder="Kategori (cth: Cup)" value={edit.category} onChange={(e) => setEdit((s) => ({ ...s, category: e.target.value }))} />
+                          <input type="date" className={inputCls} value={edit.matchDate} onChange={(e) => setEdit((s) => ({ ...s, matchDate: e.target.value }))} />
+                          <input className={inputCls} placeholder="Tempat" value={edit.venue} onChange={(e) => setEdit((s) => ({ ...s, venue: e.target.value }))} />
+                          <div className="flex items-center gap-2">
+                            <input type="number" min={0} className={inputCls} placeholder="Skor kita" value={edit.ourScore} onChange={(e) => setEdit((s) => ({ ...s, ourScore: e.target.value }))} />
+                            <input type="number" min={0} className={inputCls} placeholder="Skor lawan" value={edit.oppScore} onChange={(e) => setEdit((s) => ({ ...s, oppScore: e.target.value }))} />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={() => saveEdit(m)} className="rounded-full bg-amber px-5 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-ink hover:bg-amber-deep">
+                            Simpan
+                          </button>
+                          <button type="button" onClick={() => setEditId(null)} className="rounded-full border border-line px-4 py-1.5 font-sans text-xs text-paper hover:border-amber">
+                            Batal
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
                   return (
                     <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 font-sans text-sm text-paper/90 hover:bg-bg-soft/50">
                       <span className="min-w-0">
@@ -443,14 +520,24 @@ export default function MatchPanel({
                           </span>
                         )}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => deleteMatch(m)}
-                        aria-label="Padam perlawanan"
-                        className="shrink-0 rounded-md p-1.5 text-muted transition-colors hover:bg-amber/10 hover:text-amber"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      <span className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(m)}
+                          aria-label="Edit perlawanan"
+                          className="rounded-md p-1.5 text-muted transition-colors hover:bg-amber/10 hover:text-amber"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteMatch(m)}
+                          aria-label="Padam perlawanan"
+                          className="rounded-md p-1.5 text-muted transition-colors hover:bg-amber/10 hover:text-amber"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </span>
                     </div>
                   );
                 })}
