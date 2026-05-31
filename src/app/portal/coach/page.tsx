@@ -4,6 +4,7 @@ import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, 
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
+import { assessmentAverage } from "@/lib/assessments";
 import PortalNav from "@/components/portal/PortalNav";
 import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
@@ -17,6 +18,7 @@ import AssessmentForm from "@/components/portal/coach/AssessmentForm";
 import FitnessPanel from "@/components/portal/coach/FitnessPanel";
 import MatchPanel from "@/components/portal/coach/MatchPanel";
 import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
+import CoachSummary from "@/components/portal/coach/CoachSummary";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
@@ -155,6 +157,92 @@ export default async function CoachPage() {
     event: string | null;
   }[];
 
+  // ── Fasa 7: Ringkasan jurulatih ──
+  const playerList = members.filter((m) => m.role === "member" && !m.banned);
+  const nameOf = (id: string) => nameById.get(id) || "Ahli";
+
+  const totalSessionsCount = sessions.length;
+  const presentCount = new Map<string, number>();
+  for (const a of attendance) {
+    if (a.status === "present") presentCount.set(a.user_id, (presentCount.get(a.user_id) ?? 0) + 1);
+  }
+
+  const goalsByUser = new Map<string, number>();
+  const savesByUser = new Map<string, number>();
+  for (const s of matchStats) {
+    const g = s.stats?.goals ?? 0;
+    if (g) goalsByUser.set(s.user_id, (goalsByUser.get(s.user_id) ?? 0) + g);
+    const sv = s.stats?.save ?? 0;
+    if (sv) savesByUser.set(s.user_id, (savesByUser.get(s.user_id) ?? 0) + sv);
+  }
+
+  // Siri penilaian kemahiran (untuk "paling meningkat"); assessmentRows tersusun desc.
+  const skillSeries = new Map<string, number[]>();
+  for (const r of assessmentRows) {
+    if (r.type !== "skill_field") continue;
+    const arr = skillSeries.get(r.user_id) ?? [];
+    arr.push(assessmentAverage("skill_field", r.scores)); // desc: [0]=terkini
+    skillSeries.set(r.user_id, arr);
+  }
+
+  type Leader = { name: string; value: string } | null;
+  let mostImproved: Leader = null;
+  let bestAttendance: Leader = null;
+  let topScorer: Leader = null;
+  let bestGK: Leader = null;
+  let topImpDelta = 0;
+  let topAttPct = -1;
+  let topGoals = 0;
+  let topSaves = 0;
+
+  for (const m of playerList) {
+    const id = m.clerk_user_id;
+    const arr = skillSeries.get(id);
+    if (arr && arr.length >= 2) {
+      const delta = arr[0] - arr[arr.length - 1];
+      if (delta > 0 && delta > topImpDelta) {
+        topImpDelta = delta;
+        mostImproved = { name: nameOf(id), value: `+${Math.round(delta * 10) / 10}` };
+      }
+    }
+    if (totalSessionsCount > 0) {
+      const pct = Math.round(((presentCount.get(id) ?? 0) / totalSessionsCount) * 100);
+      if (pct > topAttPct) {
+        topAttPct = pct;
+        bestAttendance = { name: nameOf(id), value: `${pct}%` };
+      }
+    }
+    const g = goalsByUser.get(id) ?? 0;
+    if (g > topGoals) {
+      topGoals = g;
+      topScorer = { name: nameOf(id), value: `${g} gol` };
+    }
+    if (m.is_goalkeeper) {
+      const sv = savesByUser.get(id) ?? 0;
+      if (sv > topSaves) {
+        topSaves = sv;
+        bestGK = { name: nameOf(id), value: `${sv} save` };
+      }
+    }
+  }
+
+  // Top 10 — purata gabungan kemahiran + penilaian jurulatih + kehadiran (skala 10).
+  const top10 = playerList
+    .map((m) => {
+      const id = m.clerk_user_id;
+      const parts: number[] = [];
+      const sk = latestAssessment[`${id}:skill_field`];
+      if (sk) parts.push(assessmentAverage("skill_field", sk));
+      const ce = latestAssessment[`${id}:coach_eval`];
+      if (ce) parts.push(assessmentAverage("coach_eval", ce));
+      if (totalSessionsCount > 0) parts.push(((presentCount.get(id) ?? 0) / totalSessionsCount) * 10);
+      const score = parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 0;
+      return { name: nameOf(id), score: Math.round(score * 10) / 10 };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10);
+
   // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
   const activeMembers = members.filter((m) => !m.banned);
   const playerMembers = members
@@ -227,6 +315,25 @@ export default async function CoachPage() {
 
       <CoachTabs
         tabs={[
+          {
+            id: "ringkasan",
+            label: "Ringkasan",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Trophy className="h-4 w-4" /> Ringkasan Pasukan
+                </h2>
+                <CoachSummary
+                  totalPlayers={playerList.length}
+                  mostImproved={mostImproved}
+                  bestAttendance={bestAttendance}
+                  topScorer={topScorer}
+                  bestGK={bestGK}
+                  top10={top10}
+                />
+              </section>
+            ),
+          },
           {
             id: "ahli",
             label: "Ahli",
