@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-react";
+import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
 import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
+import FitnessSummary from "@/components/portal/FitnessSummary";
 import { ASSESSMENT_TYPES, type AssessmentType } from "@/lib/assessments";
 import { memberName } from "@/lib/names";
 
@@ -56,7 +57,7 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const supabase = await createServerSupabase();
 
-  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes] =
+  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes, myFitnessRes] =
     await Promise.all([
       supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
       supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
@@ -73,6 +74,10 @@ export default async function DashboardPage() {
         .from("assessments")
         .select("type, scores, assessed_on")
         .order("assessed_on", { ascending: false }),
+      supabase
+        .from("fitness_tests")
+        .select("tested_on, results")
+        .order("tested_on", { ascending: true }),
     ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
@@ -113,6 +118,11 @@ export default async function DashboardPage() {
     if (!latestByType.has(a.type))
       latestByType.set(a.type, { scores: a.scores ?? {}, assessed_on: a.assessed_on });
   }
+
+  const myFitness = (myFitnessRes.data ?? []) as {
+    tested_on: string;
+    results: Record<string, number>;
+  }[];
 
   const baseName =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
@@ -332,6 +342,16 @@ export default async function DashboardPage() {
               );
             })}
           </div>
+        </section>
+      )}
+
+      {/* Ujian kecergasan (PB + graf) */}
+      {!isCoachOrAdmin && myFitness.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <Activity className="h-4 w-4" /> Ujian Kecergasan
+          </h2>
+          <FitnessSummary history={myFitness} />
         </section>
       )}
     </div>

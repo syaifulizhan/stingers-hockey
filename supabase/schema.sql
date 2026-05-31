@@ -381,3 +381,29 @@ alter table public.users add column if not exists is_goalkeeper boolean not null
 drop policy if exists users_delete on public.users;
 create policy users_delete on public.users for delete to authenticated
   using (public.is_admin());
+
+-- ============================================================================
+-- UJIAN KECERGASAN — keputusan disimpan setiap kali ujian (untuk PB & graf).
+--   occasion: 'Bulanan' / 'Pemilihan Tournament'. results jsonb {metrik: nilai}.
+--   Jurulatih/admin rekod; ahli nampak keputusan sendiri sahaja.
+-- ============================================================================
+create table if not exists public.fitness_tests (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     text not null,                          -- pemain (clerk_user_id)
+  assessor    text,                                   -- jurulatih (clerk_user_id)
+  occasion    text,
+  tested_on   date not null default current_date,
+  results     jsonb not null default '{}'::jsonb,
+  created_at  timestamptz not null default now()
+);
+alter table public.fitness_tests enable row level security;
+
+drop policy if exists fitness_select on public.fitness_tests;
+create policy fitness_select on public.fitness_tests for select to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+
+drop policy if exists fitness_write on public.fitness_tests;
+create policy fitness_write on public.fitness_tests for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+
+grant select, insert, update, delete on public.fitness_tests to authenticated;
