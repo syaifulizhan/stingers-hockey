@@ -28,9 +28,11 @@ function isVideo(url: string) {
 export default function TaskCard({
   task,
   submission,
+  readOnly = false,
 }: {
   task: Task;
   submission: Submission;
+  readOnly?: boolean;
 }) {
   const router = useRouter();
   const supabase = useSupabase();
@@ -126,6 +128,24 @@ export default function TaskCard({
   };
 
   const shownMedia = localPreview || mediaUrl;
+
+  // Mod baca-sahaja (untuk jurulatih/admin) — lihat tugasan tanpa borang hantar.
+  if (readOnly) {
+    return (
+      <div className="rounded-xl border border-line bg-bg-soft/50 p-5">
+        <h3 className="font-sans text-base font-semibold text-paper">{task.title}</h3>
+        {task.description && (
+          <p className="mt-1 font-sans text-sm text-muted">{task.description}</p>
+        )}
+        {task.due_date && (
+          <p className="mt-2 inline-flex items-center gap-1.5 font-sans text-xs text-muted">
+            <Clock className="h-3.5 w-3.5" />
+            Tarikh akhir: {task.due_date}
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-xl border border-line bg-bg-soft/50 p-5">
