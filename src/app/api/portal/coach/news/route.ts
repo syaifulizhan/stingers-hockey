@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { makeSlug } from "@/lib/slug";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+// Pastikan slug unik (tambah -2, -3, … jika bertindih).
+async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<string> {
+  let slug = base;
+  for (let i = 2; i <= 50; i++) {
+    const { data } = await supabase.from("news").select("id").eq("slug", slug).maybeSingle();
+    if (!data) return slug;
+    slug = `${base}-${i}`;
+  }
+  return `${base}-${Date.now()}`;
+}
 
 // Coach post berita. RLS (news_write = is_coach) menguatkuasakan kebenaran.
 const schema = z.object({
@@ -32,6 +45,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+  const slug = await uniqueSlug(supabase, makeSlug(parsed.data.title));
   const { data, error } = await supabase
     .from("news")
     .insert({
@@ -39,6 +53,7 @@ export async function POST(request: Request) {
       body: parsed.data.body || null,
       image_url: parsed.data.imageUrl || null,
       author: userId,
+      slug,
     })
     .select("id")
     .maybeSingle();

@@ -13,14 +13,20 @@ type NewsRow = {
   published_at: string;
 };
 
-async function getNews(id: string): Promise<NewsRow | null> {
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+async function getNews(idOrSlug: string): Promise<NewsRow | null> {
   const supabase = createPublicSupabase();
-  const { data } = await supabase
-    .from("news")
-    .select("id, title, body, image_url, published_at")
-    .eq("id", id)
-    .maybeSingle();
-  return (data as NewsRow | null) ?? null;
+  const cols = "id, title, body, image_url, published_at";
+  // Utama: cari ikut slug tajuk.
+  const bySlug = await supabase.from("news").select(cols).eq("slug", idOrSlug).maybeSingle();
+  if (bySlug.data) return bySlug.data as NewsRow;
+  // Fallback: pautan lama yang guna UUID.
+  if (UUID_RE.test(idOrSlug)) {
+    const byId = await supabase.from("news").select(cols).eq("id", idOrSlug).maybeSingle();
+    if (byId.data) return byId.data as NewsRow;
+  }
+  return null;
 }
 
 export async function generateMetadata({
