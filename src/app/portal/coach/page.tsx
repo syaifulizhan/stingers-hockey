@@ -118,13 +118,16 @@ export default async function CoachPage() {
     member_name: nameById.get(s.user_id) || "Ahli",
   }));
 
-  // Peratusan penghantaran (admin sahaja) — berdasarkan AHLI sahaja (bukan admin/coach).
+  // Peratusan penghantaran (admin sahaja) — berdasarkan AHLI aktif sahaja
+  // (bukan admin/coach, dan bukan yang diban).
   const allSubs = (allSubsRes.data ?? []) as unknown as {
     task_id: string;
     user_id: string;
   }[];
   const memberIds = new Set(
-    members.filter((m) => m.role === "member").map((m) => m.clerk_user_id)
+    members
+      .filter((m) => m.role === "member" && !m.banned)
+      .map((m) => m.clerk_user_id)
   );
   const memberCount = memberIds.size;
   const submittedByTask = new Map<string, number>();
