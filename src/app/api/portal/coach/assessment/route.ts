@@ -3,7 +3,13 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach } from "@/lib/portal-auth";
-import { ASSESSMENT_METRICS, type AssessmentType } from "@/lib/assessments";
+import {
+  ASSESSMENT_METRICS,
+  ASSESSMENT_LABELS,
+  assessmentAverage,
+  type AssessmentType,
+} from "@/lib/assessments";
+import { memberName } from "@/lib/names";
 
 // Jurulatih/admin simpan penilaian (kemahiran / jurulatih). Skala 1–10.
 const schema = z.object({
@@ -62,6 +68,40 @@ export async function POST(request: Request) {
     console.error("[coach/assessment] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal simpan penilaian." }, { status: 500 });
   }
+
+  // Cermin ke Google Sheet (best-effort — jangan gagalkan jika Sheet tiada).
+  const webhook = process.env.SHEETS_WEBHOOK_URL;
+  if (webhook) {
+    try {
+      const { data: p } = await supabase
+        .from("users")
+        .select("full_name, display_name")
+        .eq("clerk_user_id", d.targetUserId)
+        .maybeSingle();
+      const metrics = ASSESSMENT_METRICS[d.type as AssessmentType];
+      const details = metrics
+        .filter((m) => typeof scores[m.key] === "number")
+        .map((m) => `${m.label}: ${scores[m.key]}`)
+        .join(", ");
+      await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "penilaian",
+          submittedAt: new Date().toISOString(),
+          assessedOn: d.assessedOn || new Date().toISOString().slice(0, 10),
+          playerName: memberName(p?.full_name ?? null, p?.display_name ?? null),
+          typeLabel: ASSESSMENT_LABELS[d.type as AssessmentType],
+          average: assessmentAverage(d.type as AssessmentType, scores),
+          details,
+          note: d.note || "",
+        }),
+      });
+    } catch (err) {
+      console.error("[coach/assessment] cermin Sheet gagal:", err);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 
