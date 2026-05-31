@@ -10,6 +10,7 @@ const base = {
   matchDate: z.string().optional().or(z.literal("")),
   venue: z.string().max(120).optional().or(z.literal("")),
   competition: z.string().max(120).optional().or(z.literal("")),
+  category: z.string().max(80).optional().or(z.literal("")),
   ourScore: z.number().int().min(0).max(99).nullable().optional(),
   oppScore: z.number().int().min(0).max(99).nullable().optional(),
 };
@@ -20,6 +21,7 @@ function row(d: {
   matchDate?: string;
   venue?: string;
   competition?: string;
+  category?: string;
   ourScore?: number | null;
   oppScore?: number | null;
 }) {
@@ -29,6 +31,7 @@ function row(d: {
     match_date: d.matchDate || null,
     venue: d.venue || null,
     competition: d.competition || null,
+    category: d.category || null,
     our_score: d.ourScore ?? null,
     opp_score: d.oppScore ?? null,
   };

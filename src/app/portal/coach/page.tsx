@@ -80,10 +80,10 @@ export default async function CoachPage() {
         .from("fitness_tests")
         .select("user_id, tested_on, results")
         .order("tested_on", { ascending: true }),
-      supabase.from("seasons").select("id, name, closed").order("created_at", { ascending: false }),
+      supabase.from("seasons").select("id, name, closed, team").order("created_at", { ascending: false }),
       supabase
         .from("matches")
-        .select("id, season_id, opponent, match_date, venue, competition, our_score, opp_score")
+        .select("id, season_id, opponent, match_date, venue, competition, category, our_score, opp_score")
         .order("match_date", { ascending: false }),
       supabase.from("match_stats").select("id, match_id, user_id, stats"),
     ]);
@@ -121,7 +121,7 @@ export default async function CoachPage() {
     (fitnessByUser[f.user_id] ??= []).push({ tested_on: f.tested_on, results: f.results ?? {} });
   }
 
-  const seasons = (seasonsRes.data ?? []) as unknown as { id: string; name: string; closed: boolean }[];
+  const seasons = (seasonsRes.data ?? []) as unknown as { id: string; name: string; closed: boolean; team: string }[];
   const matches = (matchesRes.data ?? []) as unknown as {
     id: string;
     season_id: string | null;
@@ -129,6 +129,7 @@ export default async function CoachPage() {
     match_date: string | null;
     venue: string | null;
     competition: string | null;
+    category: string | null;
     our_score: number | null;
     opp_score: number | null;
   }[];

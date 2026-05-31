@@ -17,7 +17,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Permintaan tidak sah." }, { status: 400 });
   }
   const parsed = z
-    .object({ name: z.string().trim().min(1, { message: "Nama season diperlukan." }).max(80) })
+    .object({
+      name: z.string().trim().min(1, { message: "Nama season diperlukan." }).max(80),
+      team: z.enum(["lelaki", "perempuan"]).default("lelaki"),
+    })
     .safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Data tidak sah." }, { status: 422 });
@@ -25,7 +28,7 @@ export async function POST(request: Request) {
   const supabase = await createServerSupabase();
   const { error } = await supabase
     .from("seasons")
-    .insert({ name: parsed.data.name, created_by: userId });
+    .insert({ name: parsed.data.name, team: parsed.data.team, created_by: userId });
   if (error) {
     console.error("[coach/season] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal cipta season." }, { status: 500 });
