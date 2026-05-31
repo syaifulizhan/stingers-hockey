@@ -34,9 +34,8 @@ export async function ensureUserRow() {
     return;
   }
 
-  // Selagi profil belum lengkap, segarkan nama auto kepada username Clerk
-  // (tidak menyentuh ahli yang sudah isi profil sebenar mereka).
-  if (!existing.profile_complete && fullName && existing.full_name !== fullName) {
+  // Nama paparan = username Clerk (nama sebenar diuruskan via display_name).
+  if (fullName && existing.full_name !== fullName) {
     await supabase.from("users").update({ full_name: fullName, email }).eq("clerk_user_id", userId);
   }
 }
