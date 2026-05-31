@@ -7,6 +7,7 @@ import TaskCard from "@/components/portal/TaskCard";
 import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
 import { ASSESSMENT_TYPES, type AssessmentType } from "@/lib/assessments";
+import { memberName } from "@/lib/names";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -113,8 +114,9 @@ export default async function DashboardPage() {
       latestByType.set(a.type, { scores: a.scores ?? {}, assessed_on: a.assessed_on });
   }
 
-  const name =
+  const baseName =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
+  const name = memberName(baseName, (profile?.display_name as string) ?? null);
   const role = (profile?.role as string) ?? "member";
   const isCoachOrAdmin = role === "coach" || role === "admin";
   const percent = profile

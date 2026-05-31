@@ -8,11 +8,17 @@ import {
   ASSESSMENT_TYPES,
   type AssessmentType,
 } from "@/lib/assessments";
+import { memberName } from "@/lib/names";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
 
-type Member = { clerk_user_id: string; full_name: string | null };
+type Member = {
+  clerk_user_id: string;
+  full_name: string | null;
+  display_name?: string | null;
+  is_goalkeeper?: boolean;
+};
 
 export default function AssessmentForm({
   members,
@@ -32,6 +38,15 @@ export default function AssessmentForm({
   const [msg, setMsg] = useState<string | null>(null);
 
   const metrics = ASSESSMENT_METRICS[type];
+
+  // Kemahiran GK hanya untuk pemain ditanda penjaga gol.
+  const selectedPlayer = members.find((m) => m.clerk_user_id === playerId);
+  const isGK = !!selectedPlayer?.is_goalkeeper;
+  const availableTypes = ASSESSMENT_TYPES.filter((t) => t !== "skill_gk" || isGK);
+
+  useEffect(() => {
+    if (type === "skill_gk" && !isGK) setType("skill_field");
+  }, [type, isGK]);
 
   // Pra-isi slider dengan skor terkini pemain (atau 5 jika belum ada).
   const prefill = useMemo(() => {
@@ -82,7 +97,8 @@ export default function AssessmentForm({
           <select className={inputCls} value={playerId} onChange={(e) => setPlayerId(e.target.value)}>
             {members.map((m) => (
               <option key={m.clerk_user_id} value={m.clerk_user_id}>
-                {m.full_name || "(tanpa nama)"}
+                {memberName(m.full_name, m.display_name)}
+                {m.is_goalkeeper ? " 🧤" : ""}
               </option>
             ))}
           </select>
@@ -90,7 +106,7 @@ export default function AssessmentForm({
         <div>
           <label className="mb-1.5 block font-sans text-xs text-muted">Jenis penilaian</label>
           <select className={inputCls} value={type} onChange={(e) => setType(e.target.value as AssessmentType)}>
-            {ASSESSMENT_TYPES.map((t) => (
+            {availableTypes.map((t) => (
               <option key={t} value={t}>
                 {ASSESSMENT_LABELS[t]}
               </option>

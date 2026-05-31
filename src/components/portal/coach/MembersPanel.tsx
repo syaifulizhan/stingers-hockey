@@ -6,10 +6,12 @@ import MemberRow from "./MemberRow";
 type Member = {
   clerk_user_id: string;
   full_name: string | null;
+  display_name: string | null;
   year: string | null;
   class: string | null;
   role: string;
   banned: boolean;
+  is_goalkeeper: boolean;
 };
 
 type Filter = "ahli" | "admin" | "ban" | "semua";

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
+import { memberName } from "@/lib/names";
 import PortalNav from "@/components/portal/PortalNav";
 import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
@@ -18,10 +19,12 @@ import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 type Member = {
   clerk_user_id: string;
   full_name: string | null;
+  display_name: string | null;
   year: string | null;
   class: string | null;
   role: string;
   banned: boolean;
+  is_goalkeeper: boolean;
 };
 type NewsRow = { id: string; title: string; body: string | null; published_at: string };
 type TaskRow = {
@@ -54,7 +57,7 @@ export default async function CoachPage() {
     await Promise.all([
       supabase
         .from("users")
-        .select("clerk_user_id, full_name, year, class, role, banned")
+        .select("clerk_user_id, full_name, display_name, year, class, role, banned, is_goalkeeper")
         .order("full_name", { ascending: true }),
       supabase.from("news").select("id, title, body, published_at").order("published_at", { ascending: false }).limit(10),
       supabase.from("tasks").select("id, title, description, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
@@ -78,7 +81,9 @@ export default async function CoachPage() {
   const sessions = (sessionsRes.data ?? []) as unknown as SessionRow[];
   const attendance = (attendanceRes.data ?? []) as unknown as AttendanceRow[];
   const subs = (subsRes.data ?? []) as unknown as SubmissionRow[];
-  const nameById = new Map(members.map((m) => [m.clerk_user_id, m.full_name]));
+  const nameById = new Map(
+    members.map((m) => [m.clerk_user_id, memberName(m.full_name, m.display_name)])
+  );
 
   // Skor penilaian TERKINI ikut `${userId}:${type}` (untuk pra-isi borang).
   const assessmentRows = (assessmentsRes.data ?? []) as unknown as {
@@ -94,7 +99,12 @@ export default async function CoachPage() {
   }
   const playerMembers = members
     .filter((m) => m.role === "member" && !m.banned)
-    .map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }));
+    .map((m) => ({
+      clerk_user_id: m.clerk_user_id,
+      full_name: m.full_name,
+      display_name: m.display_name,
+      is_goalkeeper: m.is_goalkeeper,
+    }));
 
   const submissions = subs.map((s) => ({
     id: s.id,
@@ -187,7 +197,7 @@ export default async function CoachPage() {
             </span>
           </div>
         )}
-        <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }))} />
+        <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
         {tasks.length > 0 && (
           <div className="mt-4 flex flex-col gap-1">
             {tasks.map((t) => (
@@ -196,7 +206,7 @@ export default async function CoachPage() {
                 task={t}
                 members={members.map((m) => ({
                   clerk_user_id: m.clerk_user_id,
-                  full_name: m.full_name,
+                  full_name: memberName(m.full_name, m.display_name),
                 }))}
                 assigneeName={
                   t.assigned_to
@@ -219,7 +229,7 @@ export default async function CoachPage() {
           sessions={sessions}
           members={members.map((m) => ({
             clerk_user_id: m.clerk_user_id,
-            full_name: m.full_name,
+            full_name: memberName(m.full_name, m.display_name),
           }))}
           attendance={attendance}
         />
