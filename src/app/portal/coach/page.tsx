@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -15,6 +15,7 @@ import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import AttendanceStats from "@/components/portal/coach/AttendanceStats";
 import AssessmentForm from "@/components/portal/coach/AssessmentForm";
 import FitnessPanel from "@/components/portal/coach/FitnessPanel";
+import MatchPanel from "@/components/portal/coach/MatchPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
@@ -55,7 +56,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, matchesRes, matchStatsRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -79,6 +80,11 @@ export default async function CoachPage() {
         .from("fitness_tests")
         .select("user_id, tested_on, results")
         .order("tested_on", { ascending: true }),
+      supabase
+        .from("matches")
+        .select("id, opponent, match_date, venue, competition, our_score, opp_score")
+        .order("match_date", { ascending: false }),
+      supabase.from("match_stats").select("id, match_id, user_id, stats"),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -113,6 +119,22 @@ export default async function CoachPage() {
   for (const f of fitnessRows) {
     (fitnessByUser[f.user_id] ??= []).push({ tested_on: f.tested_on, results: f.results ?? {} });
   }
+
+  const matches = (matchesRes.data ?? []) as unknown as {
+    id: string;
+    opponent: string;
+    match_date: string | null;
+    venue: string | null;
+    competition: string | null;
+    our_score: number | null;
+    opp_score: number | null;
+  }[];
+  const matchStats = (matchStatsRes.data ?? []) as unknown as {
+    id: string;
+    match_id: string;
+    user_id: string;
+    stats: Record<string, number>;
+  }[];
 
   // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
   const activeMembers = members.filter((m) => !m.banned);
@@ -289,6 +311,22 @@ export default async function CoachPage() {
                   <FitnessPanel members={playerMembers} history={fitnessByUser} />
                 ) : (
                   <p className="font-sans text-sm text-muted">Belum ada ahli untuk diuji.</p>
+                )}
+              </section>
+            ),
+          },
+          {
+            id: "perlawanan",
+            label: "Perlawanan",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Swords className="h-4 w-4" /> Perlawanan
+                </h2>
+                {playerMembers.length > 0 ? (
+                  <MatchPanel matches={matches} players={playerMembers} statsRows={matchStats} />
+                ) : (
+                  <p className="font-sans text-sm text-muted">Belum ada pemain.</p>
                 )}
               </section>
             ),

@@ -407,3 +407,49 @@ create policy fitness_write on public.fitness_tests for all to authenticated
   using (public.is_coach()) with check (public.is_coach());
 
 grant select, insert, update, delete on public.fitness_tests to authenticated;
+
+-- ============================================================================
+-- PERLAWANAN — maklumat match + prestasi setiap pemain (selepas perlawanan).
+--   matches: maklumat perlawanan. match_stats: statistik pemain (jsonb).
+--   Semua ahli boleh lihat senarai perlawanan; ahli nampak statistik sendiri.
+--   Jurulatih/admin urus semua.
+-- ============================================================================
+create table if not exists public.matches (
+  id          uuid primary key default gen_random_uuid(),
+  opponent    text not null,
+  match_date  date,
+  venue       text,
+  competition text,
+  our_score   int,
+  opp_score   int,
+  created_by  text,
+  created_at  timestamptz not null default now()
+);
+alter table public.matches enable row level security;
+
+drop policy if exists matches_select on public.matches;
+create policy matches_select on public.matches for select to authenticated
+  using (true);
+drop policy if exists matches_write on public.matches;
+create policy matches_write on public.matches for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+
+create table if not exists public.match_stats (
+  id          uuid primary key default gen_random_uuid(),
+  match_id    uuid not null references public.matches(id) on delete cascade,
+  user_id     text not null,
+  stats       jsonb not null default '{}'::jsonb,
+  created_at  timestamptz not null default now(),
+  unique (match_id, user_id)
+);
+alter table public.match_stats enable row level security;
+
+drop policy if exists match_stats_select on public.match_stats;
+create policy match_stats_select on public.match_stats for select to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+drop policy if exists match_stats_write on public.match_stats;
+create policy match_stats_write on public.match_stats for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+
+grant select, insert, update, delete on public.matches to authenticated;
+grant select, insert, update, delete on public.match_stats to authenticated;

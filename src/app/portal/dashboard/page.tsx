@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity } from "lucide-react";
+import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity, Swords } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
 import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
 import FitnessSummary from "@/components/portal/FitnessSummary";
+import MatchPerformance from "@/components/portal/MatchPerformance";
 import { ASSESSMENT_TYPES, type AssessmentType } from "@/lib/assessments";
 import { memberName } from "@/lib/names";
 
@@ -57,7 +58,7 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const supabase = await createServerSupabase();
 
-  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes, myFitnessRes] =
+  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes, myFitnessRes, matchesRes, myMatchStatsRes] =
     await Promise.all([
       supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
       supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
@@ -78,6 +79,8 @@ export default async function DashboardPage() {
         .from("fitness_tests")
         .select("tested_on, results")
         .order("tested_on", { ascending: true }),
+      supabase.from("matches").select("id, opponent, match_date"),
+      supabase.from("match_stats").select("match_id, stats"),
     ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
@@ -123,6 +126,24 @@ export default async function DashboardPage() {
     tested_on: string;
     results: Record<string, number>;
   }[];
+
+  // Prestasi perlawanan ahli ini (gabung stats dengan maklumat match).
+  const allMatches = (matchesRes.data ?? []) as {
+    id: string;
+    opponent: string;
+    match_date: string | null;
+  }[];
+  const matchById = new Map(allMatches.map((m) => [m.id, m]));
+  const myMatchStats = (myMatchStatsRes.data ?? []) as {
+    match_id: string;
+    stats: Record<string, number>;
+  }[];
+  const myMatchRows = myMatchStats.map((s) => ({
+    opponent: matchById.get(s.match_id)?.opponent ?? "Lawan",
+    match_date: matchById.get(s.match_id)?.match_date ?? null,
+    stats: s.stats ?? {},
+  }));
+  const isGoalkeeper = Boolean(profile?.is_goalkeeper);
 
   const baseName =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
@@ -352,6 +373,16 @@ export default async function DashboardPage() {
             <Activity className="h-4 w-4" /> Ujian Kecergasan
           </h2>
           <FitnessSummary history={myFitness} />
+        </section>
+      )}
+
+      {/* Prestasi perlawanan */}
+      {!isCoachOrAdmin && myMatchRows.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <Swords className="h-4 w-4" /> Prestasi Perlawanan
+          </h2>
+          <MatchPerformance isGK={isGoalkeeper} rows={myMatchRows} />
         </section>
       )}
     </div>
