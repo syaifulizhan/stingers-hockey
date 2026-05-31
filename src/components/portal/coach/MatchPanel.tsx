@@ -320,6 +320,12 @@ export default function MatchPanel({
             </button>
           </div>
         )}
+
+        {seasons.find((s) => s.id === seasonId)?.closed && (
+          <p className="mt-2 font-sans text-xs text-muted">
+            🔒 Season ditutup — dipaparkan di halaman <span className="text-paper/90">Keputusan</span>. Awak masih boleh semak, edit, rekod & padam di sini.
+          </p>
+        )}
       </div>
 
       {seasonId && (
