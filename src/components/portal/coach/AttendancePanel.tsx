@@ -6,9 +6,11 @@ import { useRouter } from "next/navigation";
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none focus:border-amber";
 
-type Session = { id: string; title: string; date: string | null };
+type Session = { id: string; title: string; date: string | null; type?: string };
 type Member = { clerk_user_id: string; full_name: string | null };
 type Attendance = { session_id: string; user_id: string; status: string };
+
+const typeLabel = (t?: string) => (t === "match" ? "🏑 Perlawanan" : "🏃 Latihan");
 
 const STATUSES: { value: "present" | "absent" | "excused"; label: string }[] = [
   { value: "present", label: "Hadir" },
@@ -28,6 +30,7 @@ export default function AttendancePanel({
   const router = useRouter();
   const [newTitle, setNewTitle] = useState("");
   const [newDate, setNewDate] = useState("");
+  const [newType, setNewType] = useState<"training" | "match">("training");
   const [creating, setCreating] = useState(false);
   const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? "");
 
@@ -43,12 +46,14 @@ export default function AttendancePanel({
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDate, setEditDate] = useState("");
+  const [editType, setEditType] = useState<"training" | "match">("training");
 
   const startEdit = () => {
     const s = sessions.find((x) => x.id === selectedId);
     if (!s) return;
     setEditTitle(s.title);
     setEditDate(s.date ?? "");
+    setEditType(s.type === "match" ? "match" : "training");
     setEditing(true);
   };
 
@@ -58,7 +63,7 @@ export default function AttendancePanel({
       const res = await fetch("/api/portal/coach/session", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selectedId, title: editTitle, date: editDate }),
+        body: JSON.stringify({ id: selectedId, title: editTitle, date: editDate, type: editType }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -94,7 +99,7 @@ export default function AttendancePanel({
       const res = await fetch("/api/portal/coach/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle, date: newDate }),
+        body: JSON.stringify({ title: newTitle, date: newDate, type: newType }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -104,6 +109,7 @@ export default function AttendancePanel({
     }
     setNewTitle("");
     setNewDate("");
+    setNewType("training");
     setCreating(false);
     router.refresh();
   };
@@ -146,6 +152,17 @@ export default function AttendancePanel({
           />
         </div>
         <div>
+          <label className="mb-1.5 block font-sans text-xs text-muted">Jenis</label>
+          <select
+            className={inputCls}
+            value={newType}
+            onChange={(e) => setNewType(e.target.value as "training" | "match")}
+          >
+            <option value="training">🏃 Latihan</option>
+            <option value="match">🏑 Perlawanan</option>
+          </select>
+        </div>
+        <div>
           <label className="mb-1.5 block font-sans text-xs text-muted">Tarikh</label>
           <input
             type="date"
@@ -179,7 +196,7 @@ export default function AttendancePanel({
             >
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.title}
+                  {typeLabel(s.type)} · {s.title}
                   {s.date ? ` — ${s.date}` : ""}
                 </option>
               ))}
@@ -200,6 +217,14 @@ export default function AttendancePanel({
                   value={editDate}
                   onChange={(e) => setEditDate(e.target.value)}
                 />
+                <select
+                  className={inputCls}
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value as "training" | "match")}
+                >
+                  <option value="training">🏃 Latihan</option>
+                  <option value="match">🏑 Perlawanan</option>
+                </select>
                 <div className="flex gap-2">
                   <button
                     type="button"

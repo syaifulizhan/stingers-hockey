@@ -11,6 +11,7 @@ import MembersPanel from "@/components/portal/coach/MembersPanel";
 import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
 import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
+import AttendanceStats from "@/components/portal/coach/AttendanceStats";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 type Member = {
@@ -29,7 +30,7 @@ type TaskRow = {
   assigned_to: string | null;
   due_date: string | null;
 };
-type SessionRow = { id: string; title: string; date: string | null };
+type SessionRow = { id: string; title: string; date: string | null; type: string };
 type AttendanceRow = { session_id: string; user_id: string; status: string };
 type SubmissionRow = {
   id: string;
@@ -56,7 +57,7 @@ export default async function CoachPage() {
         .order("full_name", { ascending: true }),
       supabase.from("news").select("id, title, body, published_at").order("published_at", { ascending: false }).limit(10),
       supabase.from("tasks").select("id, title, description, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
-      supabase.from("sessions").select("id, title, date").order("created_at", { ascending: false }).limit(30),
+      supabase.from("sessions").select("id, title, date, type").order("created_at", { ascending: false }).limit(30),
       supabase.from("attendance").select("session_id, user_id, status"),
       supabase
         .from("submissions")
@@ -201,6 +202,12 @@ export default async function CoachPage() {
           }))}
           attendance={attendance}
         />
+
+        {/* Statistik kehadiran automatik */}
+        <h3 className="mb-3 mt-8 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+          📊 Statistik Kehadiran
+        </h3>
+        <AttendanceStats members={members} sessions={sessions} attendance={attendance} />
       </section>
 
       {/* Semak hantaran */}

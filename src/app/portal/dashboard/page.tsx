@@ -53,23 +53,44 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const supabase = await createServerSupabase();
 
-  const [profileRes, newsRes, tasksRes, subsRes, attRes] = await Promise.all([
-    supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
-    supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
-    supabase.from("tasks").select("*").order("created_at", { ascending: false }),
-    supabase.from("submissions").select("task_id, content, status, media_url"),
-    supabase
-      .from("attendance")
-      .select("status, created_at, sessions(title, date)")
-      .order("created_at", { ascending: false })
-      .limit(8),
-  ]);
+  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes] =
+    await Promise.all([
+      supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
+      supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
+      supabase.from("tasks").select("*").order("created_at", { ascending: false }),
+      supabase.from("submissions").select("task_id, content, status, media_url"),
+      supabase
+        .from("attendance")
+        .select("status, created_at, sessions(title, date)")
+        .order("created_at", { ascending: false })
+        .limit(8),
+      supabase.from("sessions").select("id, type"),
+      supabase.from("attendance").select("session_id, status"),
+    ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
   const news = (newsRes.data ?? []) as unknown as NewsRow[];
   const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
   const submissions = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const attendance = (attRes.data ?? []) as unknown as AttendanceRow[];
+
+  // Statistik kehadiran ahli ini (auto) — hadir = status 'present'.
+  const allSessions = (sessionsRes.data ?? []) as { id: string; type: string }[];
+  const myAtt = (myAttRes.data ?? []) as { session_id: string; status: string }[];
+  const matchIds = new Set(allSessions.filter((s) => s.type === "match").map((s) => s.id));
+  const totalTraining = allSessions.length - matchIds.size;
+  const totalMatch = matchIds.size;
+  const totalSessions = allSessions.length;
+  let presentTraining = 0;
+  let presentMatch = 0;
+  for (const a of myAtt) {
+    if (a.status !== "present") continue;
+    if (matchIds.has(a.session_id)) presentMatch += 1;
+    else presentTraining += 1;
+  }
+  const attendedTotal = presentTraining + presentMatch;
+  const attendancePct =
+    totalSessions > 0 ? Math.round((attendedTotal / totalSessions) * 100) : 0;
 
   const name =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
@@ -188,6 +209,41 @@ export default async function DashboardPage() {
           Anda melihat tugasan sebagai jurulatih (baca sahaja — hantaran anda
           tidak direkod).
         </p>
+      )}
+
+      {/* Statistik kehadiran (auto) */}
+      {!isCoachOrAdmin && totalSessions > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <CalendarCheck className="h-4 w-4" /> Statistik Kehadiran
+          </h2>
+          <div className="rounded-2xl border border-line bg-bg-soft/50 p-6">
+            <div className="mb-2 flex items-center justify-between font-sans text-sm">
+              <span className="text-paper/90">Peratus hadir keseluruhan</span>
+              <span className="display text-2xl text-amber">{attendancePct}%</span>
+            </div>
+            <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink">
+              <div
+                className="h-full rounded-full bg-amber transition-all"
+                style={{ width: `${attendancePct}%` }}
+              />
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3 font-sans text-sm">
+              <div className="rounded-xl border border-line bg-ink/40 px-4 py-3">
+                <div className="text-xs text-muted">🏃 Latihan</div>
+                <div className="font-semibold text-paper">
+                  {presentTraining}/{totalTraining} hadir
+                </div>
+              </div>
+              <div className="rounded-xl border border-line bg-ink/40 px-4 py-3">
+                <div className="text-xs text-muted">🏑 Perlawanan</div>
+                <div className="font-semibold text-paper">
+                  {presentMatch}/{totalMatch} hadir
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
       {/* Kehadiran */}

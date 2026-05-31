@@ -7,6 +7,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 const schema = z.object({
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   date: z.string().optional().or(z.literal("")),
+  type: z.enum(["training", "match"]).default("training"),
 });
 
 export async function POST(request: Request) {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("sessions").insert({
     title: parsed.data.title,
     date: parsed.data.date || null,
+    type: parsed.data.type,
     created_by: userId,
   });
 
@@ -52,6 +54,7 @@ const editSchema = z.object({
   id: z.string().uuid(),
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   date: z.string().optional().or(z.literal("")),
+  type: z.enum(["training", "match"]).default("training"),
 });
 
 export async function PATCH(request: Request) {
@@ -72,7 +75,11 @@ export async function PATCH(request: Request) {
   const supabase = await createServerSupabase();
   const { error } = await supabase
     .from("sessions")
-    .update({ title: parsed.data.title, date: parsed.data.date || null })
+    .update({
+      title: parsed.data.title,
+      date: parsed.data.date || null,
+      type: parsed.data.type,
+    })
     .eq("id", parsed.data.id);
   if (error) {
     console.error("[coach/session] edit gagal:", error.message);
