@@ -19,7 +19,12 @@ function recency(m: LiveMatch): number {
   const ms = new Date(t).getTime();
   return Number.isNaN(ms) ? 0 : ms;
 }
-export type LiveStat = { match_id: string; user_id: string; stats: Record<string, number> };
+export type LiveStat = {
+  match_id: string;
+  user_id: string;
+  position?: string | null;
+  stats: Record<string, number>;
+};
 export type LivePlayer = { clerk_user_id: string; name: string | null };
 
 function record(matches: LiveMatch[]) {
@@ -186,6 +191,9 @@ export default function SeasonResultView({
         )}
         {sorted.map((m) => {
           const scorers = contributors(m.id, "goals");
+          const lineup = stats
+            .filter((s) => s.match_id === m.id && s.position)
+            .map((s) => `${nameById.get(s.user_id) || "Ahli"} (${s.position})`);
           return (
             <div key={m.id} className="rounded-xl border border-line bg-bg-soft/50 p-4">
               <div className="flex items-center justify-between gap-3">
@@ -204,6 +212,9 @@ export default function SeasonResultView({
               </p>
               {scorers.length > 0 && (
                 <p className="mt-1.5 font-sans text-xs text-paper/80">⚽ {scorers.join(", ")}</p>
+              )}
+              {lineup.length > 0 && (
+                <p className="mt-1 font-sans text-xs text-muted">👥 {lineup.join(" · ")}</p>
               )}
             </div>
           );

@@ -21,7 +21,7 @@ export default async function KeputusanPage() {
       .from("matches")
       .select("id, season_id, opponent, match_date, competition, category, venue, our_score, opp_score, created_at")
       .order("created_at", { ascending: false }),
-    supabase.from("match_stats").select("match_id, user_id, stats"),
+    supabase.from("match_stats").select("match_id, user_id, position, stats"),
     supabase.from("public_players").select("clerk_user_id, name"),
   ]);
 
