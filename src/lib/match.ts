@@ -23,18 +23,20 @@ export function matchMetrics(isGK: boolean): MatchMetric[] {
   return isGK ? MATCH_GK_METRICS : MATCH_FIELD_METRICS;
 }
 
-// Posisi hoki padang.
+// Posisi hoki padang (istilah English yang lazim digunakan).
 export const HOCKEY_POSITIONS = [
-  "Penjaga Gol",
-  "Penahan Kanan",
-  "Penahan Kiri",
+  "Goalkeeper",
+  "Right Back",
+  "Left Back",
   "Sweeper",
-  "Half Kanan",
-  "Half Tengah",
-  "Half Kiri",
-  "Sayap Kanan",
-  "Penyerang Tengah",
-  "Sayap Kiri",
+  "Right Half",
+  "Centre Half",
+  "Left Half",
+  "Right Wing",
+  "Right Inner",
+  "Centre Forward",
+  "Left Inner",
+  "Left Wing",
 ] as const;
 
 export const ALL_MATCH_KEYS = [
