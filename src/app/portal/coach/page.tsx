@@ -49,7 +49,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -64,6 +64,7 @@ export default async function CoachPage() {
         .select("id, content, status, submitted_at, media_url, user_id, tasks(title)")
         .order("submitted_at", { ascending: false })
         .limit(50),
+      supabase.from("submissions").select("task_id, user_id"),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -83,6 +84,38 @@ export default async function CoachPage() {
     task_title: s.tasks?.title ?? "Tugasan",
     member_name: nameById.get(s.user_id) || "Ahli",
   }));
+
+  // Peratusan penghantaran (admin sahaja) — berdasarkan AHLI sahaja (bukan admin/coach).
+  const allSubs = (allSubsRes.data ?? []) as unknown as {
+    task_id: string;
+    user_id: string;
+  }[];
+  const memberIds = new Set(
+    members.filter((m) => m.role === "member").map((m) => m.clerk_user_id)
+  );
+  const memberCount = memberIds.size;
+  const submittedByTask = new Map<string, number>();
+  for (const s of allSubs) {
+    if (memberIds.has(s.user_id)) {
+      submittedByTask.set(s.task_id, (submittedByTask.get(s.task_id) ?? 0) + 1);
+    }
+  }
+  const taskStat = (t: TaskRow) => {
+    // Sasaran: 1 ahli jika ditugaskan khusus kepada ahli; jika tidak, semua ahli.
+    const total = t.assigned_to
+      ? memberIds.has(t.assigned_to)
+        ? 1
+        : 0
+      : memberCount;
+    const submitted = submittedByTask.get(t.id) ?? 0;
+    const pct = total > 0 ? Math.round((submitted / total) * 100) : 0;
+    return { submitted, total, pct };
+  };
+  const avgSubmissionPct = tasks.length
+    ? Math.round(
+        tasks.reduce((sum, t) => sum + taskStat(t).pct, 0) / tasks.length
+      )
+    : 0;
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
@@ -143,6 +176,15 @@ export default async function CoachPage() {
         <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
           <ClipboardList className="h-4 w-4" /> Beri Tugasan
         </h2>
+        {admin && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-amber/40 bg-amber/10 px-5 py-3">
+            <span className="display text-2xl text-amber">{avgSubmissionPct}%</span>
+            <span className="font-sans text-sm text-paper/90">
+              Purata penghantaran ahli ({memberCount}{" "}
+              {memberCount === 1 ? "ahli" : "ahli"})
+            </span>
+          </div>
+        )}
         <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }))} />
         {tasks.length > 0 && (
           <div className="mt-4 flex flex-col gap-1">
@@ -159,6 +201,7 @@ export default async function CoachPage() {
                     ? nameById.get(t.assigned_to) || "ahli"
                     : "Semua ahli"
                 }
+                stat={admin ? taskStat(t) : null}
               />
             ))}
           </div>

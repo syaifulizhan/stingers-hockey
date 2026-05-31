@@ -16,14 +16,18 @@ type Task = {
   assigned_to: string | null;
 };
 
+type Stat = { submitted: number; total: number; pct: number };
+
 export default function TaskAdminItem({
   task,
   members,
   assigneeName,
+  stat = null,
 }: {
   task: Task;
   members: Member[];
   assigneeName: string;
+  stat?: Stat | null;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -118,6 +122,20 @@ export default function TaskAdminItem({
           → {assigneeName}
           {task.due_date ? ` · akhir ${task.due_date}` : ""}
         </span>
+        {stat && (
+          <span
+            className={`ml-2 rounded-full px-2 py-0.5 font-sans text-[0.65rem] font-semibold ${
+              stat.pct >= 100
+                ? "bg-amber text-ink"
+                : stat.pct > 0
+                  ? "bg-amber/20 text-amber"
+                  : "bg-paper/10 text-paper/60"
+            }`}
+            title="Penghantaran ahli"
+          >
+            {stat.submitted}/{stat.total} hantar ({stat.pct}%)
+          </span>
+        )}
       </span>
       <span className="flex shrink-0 items-center gap-1">
         <button
