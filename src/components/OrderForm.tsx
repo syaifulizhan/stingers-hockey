@@ -14,6 +14,7 @@ import {
 } from "@/lib/order-schema";
 import Button from "@/components/ui/Button";
 import Reveal from "@/components/ui/Reveal";
+import { useLang } from "@/lib/i18n";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none transition-colors focus:border-amber focus-visible:border-amber";
@@ -32,6 +33,7 @@ function FieldError({ msg }: { msg?: string }) {
 }
 
 export default function OrderForm() {
+  const { t } = useLang();
   const [submitted, setSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState(false);
 
@@ -93,13 +95,16 @@ export default function OrderForm() {
         </Reveal>
         <Reveal delay={0.1}>
           <h2 className="display mt-5 text-5xl text-paper sm:text-7xl">
-            Tempah <span className="text-outline">Hustle Gear</span>
+            {t("Tempah", "Order")} <span className="text-outline">Hustle Gear</span>
           </h2>
         </Reveal>
         <Reveal delay={0.15}>
           <p className="mx-auto mt-5 max-w-xl font-sans text-base text-muted">
-            Pakaian rasmi sesi latihan Stingers Hockey. Isi borang di bawah
-            untuk tempah. Harga {ringgit(UNIT_PRICE)} seunit.
+            {t(
+              "Pakaian rasmi sesi latihan Stingers Hockey. Isi borang di bawah untuk tempah.",
+              "The official Stingers Hockey training kit. Fill in the form below to order."
+            )}{" "}
+            {t(`Harga ${ringgit(UNIT_PRICE)} seunit.`, `Price ${ringgit(UNIT_PRICE)} per unit.`)}
           </p>
         </Reveal>
       </div>
@@ -115,18 +120,20 @@ export default function OrderForm() {
             >
               <CheckCircle2 className="h-14 w-14 text-amber" />
               <h3 className="display text-3xl text-paper">
-                Tempahan Berjaya Dihantar!
+                {t("Tempahan Berjaya Dihantar!", "Order Submitted Successfully!")}
               </h3>
               <p className="font-sans text-muted">
-                Terima kasih. Kami akan hubungi anda untuk pengesahan saiz dan
-                pembayaran.
+                {t(
+                  "Terima kasih. Kami akan hubungi anda untuk pengesahan saiz dan pembayaran.",
+                  "Thank you. We'll contact you to confirm sizing and payment."
+                )}
               </p>
               <button
                 type="button"
                 onClick={() => setSubmitted(false)}
                 className="mt-2 font-sans text-sm font-semibold uppercase tracking-wider text-amber hover:text-amber-deep"
               >
-                Buat tempahan lain
+                {t("Buat tempahan lain", "Place another order")}
               </button>
             </motion.div>
           ) : (
@@ -140,11 +147,13 @@ export default function OrderForm() {
             >
               {/* Maklumat Penempah */}
               <fieldset>
-                <legend className={groupTitleCls}>Maklumat Penempah</legend>
+                <legend className={groupTitleCls}>
+                  {t("Maklumat Penempah", "Orderer Details")}
+                </legend>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <label htmlFor="fullName" className={labelCls}>
-                      Nama Penuh (huruf besar) *
+                      {t("Nama Penuh (huruf besar) *", "Full Name (uppercase) *")}
                     </label>
                     <input
                       id="fullName"
@@ -157,14 +166,14 @@ export default function OrderForm() {
                   </div>
                   <div>
                     <label htmlFor="phone" className={labelCls}>
-                      No. Telefon *
+                      {t("No. Telefon *", "Phone No. *")}
                     </label>
                     <input
                       id="phone"
                       type="tel"
                       inputMode="numeric"
                       className={inputCls}
-                      placeholder="0123456789 (tanpa -)"
+                      placeholder={t("0123456789 (tanpa -)", "0123456789 (no -)")}
                       aria-invalid={!!errors.phone}
                       {...register("phone")}
                     />
@@ -178,7 +187,7 @@ export default function OrderForm() {
                       id="email"
                       type="email"
                       className={inputCls}
-                      placeholder="anda@contoh.com (pilihan)"
+                      placeholder={t("anda@contoh.com (pilihan)", "you@example.com (optional)")}
                       aria-invalid={!!errors.email}
                       {...register("email")}
                     />
@@ -189,11 +198,13 @@ export default function OrderForm() {
 
               {/* Butiran Tempahan */}
               <fieldset>
-                <legend className={groupTitleCls}>Butiran Tempahan</legend>
+                <legend className={groupTitleCls}>
+                  {t("Butiran Tempahan", "Order Details")}
+                </legend>
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div>
                     <label htmlFor="size" className={labelCls}>
-                      Saiz Baju *
+                      {t("Saiz Baju *", "Shirt Size *")}
                     </label>
                     <select
                       id="size"
@@ -203,16 +214,16 @@ export default function OrderForm() {
                       {...register("size")}
                     >
                       <option value="" disabled>
-                        Pilih saiz…
+                        {t("Pilih saiz…", "Choose size…")}
                       </option>
-                      <optgroup label="Saiz Nombor (24–32)">
+                      <optgroup label={t("Saiz Nombor (24–32)", "Number Sizes (24–32)")}>
                         {childSizes.map((s) => (
                           <option key={s} value={s}>
                             {s}
                           </option>
                         ))}
                       </optgroup>
-                      <optgroup label="Saiz Huruf (2XS–7XL)">
+                      <optgroup label={t("Saiz Huruf (2XS–7XL)", "Letter Sizes (2XS–7XL)")}>
                         {adultSizes.map((s) => (
                           <option key={s} value={s}>
                             {s}
@@ -224,7 +235,7 @@ export default function OrderForm() {
                   </div>
                   <div>
                     <label htmlFor="quantity" className={labelCls}>
-                      Kuantiti *
+                      {t("Kuantiti *", "Quantity *")}
                     </label>
                     <input
                       id="quantity"
@@ -244,10 +255,10 @@ export default function OrderForm() {
                   <div className="font-sans text-sm text-paper/90">
                     {qty > 0 ? (
                       <>
-                        {qty} unit × {ringgit(UNIT_PRICE)}
+                        {qty} {t("unit", "units")} × {ringgit(UNIT_PRICE)}
                       </>
                     ) : (
-                      <>Harga {ringgit(UNIT_PRICE)} seunit</>
+                      <>{t(`Harga ${ringgit(UNIT_PRICE)} seunit`, `Price ${ringgit(UNIT_PRICE)} per unit`)}</>
                     )}
                   </div>
                   <div className="display text-2xl text-amber">
@@ -257,13 +268,16 @@ export default function OrderForm() {
 
                 <div className="mt-5">
                   <label htmlFor="notes" className={labelCls}>
-                    Catatan Tambahan
+                    {t("Catatan Tambahan", "Additional Notes")}
                   </label>
                   <textarea
                     id="notes"
                     rows={3}
                     className={`${inputCls} resize-y uppercase`}
-                    placeholder="Cth: campur saiz, kutipan, dll. (pilihan)"
+                    placeholder={t(
+                      "Cth: campur saiz, kutipan, dll. (pilihan)",
+                      "E.g. mixed sizes, collection, etc. (optional)"
+                    )}
                     {...upper("notes")}
                   />
                   <FieldError msg={errors.notes?.message} />
@@ -279,8 +293,10 @@ export default function OrderForm() {
                     {...register("consent")}
                   />
                   <span>
-                    Saya mengesahkan butiran tempahan ini betul dan bersetuju
-                    untuk membuat pembayaran.
+                    {t(
+                      "Saya mengesahkan butiran tempahan ini betul dan bersetuju untuk membuat pembayaran.",
+                      "I confirm these order details are correct and agree to make payment."
+                    )}
                   </span>
                 </label>
                 <FieldError msg={errors.consent?.message} />
@@ -290,8 +306,10 @@ export default function OrderForm() {
                 <div className="flex items-start gap-3 rounded-lg border border-amber/50 bg-amber/10 p-4">
                   <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber" />
                   <p className="font-sans text-sm text-paper/90">
-                    Maaf, tempahan gagal dihantar. Sila cuba sekali lagi, atau
-                    hubungi kami terus di{" "}
+                    {t(
+                      "Maaf, tempahan gagal dihantar. Sila cuba sekali lagi, atau hubungi kami terus di",
+                      "Sorry, the order failed to send. Please try again, or contact us directly at"
+                    )}{" "}
                     <a href="tel:+60389413905" className="text-amber underline">
                       03-8941 3905
                     </a>
@@ -301,7 +319,9 @@ export default function OrderForm() {
               )}
 
               <Button type="submit" fullWidth disabled={isSubmitting}>
-                {isSubmitting ? "Menghantar…" : "Hantar Tempahan →"}
+                {isSubmitting
+                  ? t("Menghantar…", "Submitting…")
+                  : t("Hantar Tempahan →", "Submit Order →")}
               </Button>
             </motion.form>
           )}
