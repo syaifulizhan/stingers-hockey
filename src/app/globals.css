@@ -185,3 +185,10 @@ html,
 body {
   overscroll-behavior-y: contain;
 }
+
+/* Elak skrol mendatar tak sengaja (cth teks/dropdown panjang di mobile) */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
