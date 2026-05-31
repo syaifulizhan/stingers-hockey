@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, Sparkles } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
 import { assessmentAverage } from "@/lib/assessments";
+import { generateReport } from "@/lib/report";
 import PortalNav from "@/components/portal/PortalNav";
 import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
@@ -19,6 +20,7 @@ import FitnessPanel from "@/components/portal/coach/FitnessPanel";
 import MatchPanel from "@/components/portal/coach/MatchPanel";
 import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachSummary from "@/components/portal/coach/CoachSummary";
+import ReportPanel from "@/components/portal/coach/ReportPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
@@ -225,6 +227,31 @@ export default async function CoachPage() {
       }
     }
   }
+
+  // Jumlah statistik perlawanan setiap pemain (untuk laporan).
+  const matchTotalsByUser = new Map<string, Record<string, number>>();
+  for (const s of matchStats) {
+    const acc = matchTotalsByUser.get(s.user_id) ?? {};
+    for (const [k, v] of Object.entries(s.stats ?? {})) acc[k] = (acc[k] ?? 0) + v;
+    matchTotalsByUser.set(s.user_id, acc);
+  }
+
+  // Laporan kemenjadian auto setiap pemain.
+  const reportPlayers = playerList.map((m) => {
+    const id = m.clerk_user_id;
+    const att =
+      totalSessionsCount > 0
+        ? Math.round(((presentCount.get(id) ?? 0) / totalSessionsCount) * 100)
+        : null;
+    const report = generateReport({
+      isGoalkeeper: !!m.is_goalkeeper,
+      skill: latestAssessment[`${id}:${m.is_goalkeeper ? "skill_gk" : "skill_field"}`] ?? null,
+      coachEval: latestAssessment[`${id}:coach_eval`] ?? null,
+      attendancePct: att,
+      matchTotals: matchTotalsByUser.get(id) ?? {},
+    });
+    return { id, name: nameOf(id), report };
+  });
 
   // Top 10 — purata gabungan kemahiran + penilaian jurulatih + kehadiran (skala 10).
   const top10 = playerList
@@ -454,6 +481,18 @@ export default async function CoachPage() {
                 ) : (
                   <p className="font-sans text-sm text-muted">Belum ada pemain.</p>
                 )}
+              </section>
+            ),
+          },
+          {
+            id: "laporan",
+            label: "Laporan",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Sparkles className="h-4 w-4" /> Laporan Kemenjadian
+                </h2>
+                <ReportPanel players={reportPlayers} />
               </section>
             ),
           },
