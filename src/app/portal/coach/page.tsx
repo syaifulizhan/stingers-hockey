@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
 import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
+import PortalNav from "@/components/portal/PortalNav";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MemberRow from "@/components/portal/coach/MemberRow";
@@ -11,8 +11,6 @@ import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
 import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
-import NotificationBell from "@/components/portal/NotificationBell";
-import Wordmark from "@/components/ui/Wordmark";
 
 type Member = {
   clerk_user_id: string;
@@ -119,20 +117,7 @@ export default async function CoachPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <header className="flex items-center justify-between border-b border-line pb-5">
-        <div className="flex items-center gap-3">
-          <Link href="/" aria-label="Stingers Hockey — laman utama">
-            <Wordmark className="text-xl" />
-          </Link>
-          <span className="rounded-full bg-amber/20 px-2.5 py-1 font-sans text-xs font-semibold uppercase text-amber">
-            Jurulatih
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <NotificationBell />
-          <UserButton />
-        </div>
-      </header>
+      <PortalNav badge="Jurulatih" />
 
       <h1 className="display mt-8 text-4xl text-paper">Panel Jurulatih</h1>
       <p className="mt-2 font-sans text-sm text-muted">

@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { UserButton } from "@clerk/nextjs";
 import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
-import NotificationBell from "@/components/portal/NotificationBell";
-import Wordmark from "@/components/ui/Wordmark";
+import PortalNav from "@/components/portal/PortalNav";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -86,15 +84,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-line pb-5">
-        <Link href="/" aria-label="Stingers Hockey — laman utama">
-          <Wordmark className="text-xl" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <NotificationBell />
-          <UserButton />
-        </div>
-      </header>
+      <PortalNav />
 
       <h1 className="display mt-8 text-4xl text-paper">
         Hai, <span className="text-amber">{name}</span> 👋
