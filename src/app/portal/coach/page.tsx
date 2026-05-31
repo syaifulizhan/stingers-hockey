@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -14,6 +14,7 @@ import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import AttendanceStats from "@/components/portal/coach/AttendanceStats";
 import AssessmentForm from "@/components/portal/coach/AssessmentForm";
+import FitnessPanel from "@/components/portal/coach/FitnessPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
@@ -54,7 +55,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -74,6 +75,10 @@ export default async function CoachPage() {
         .from("assessments")
         .select("user_id, type, scores, assessed_on")
         .order("assessed_on", { ascending: false }),
+      supabase
+        .from("fitness_tests")
+        .select("user_id, tested_on, results")
+        .order("tested_on", { ascending: true }),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -98,6 +103,17 @@ export default async function CoachPage() {
     const key = `${a.user_id}:${a.type}`;
     if (!latestAssessment[key]) latestAssessment[key] = a.scores ?? {}; // tersusun desc → pertama = terkini
   }
+  // Sejarah ujian kecergasan ikut pemain (untuk PB/graf).
+  const fitnessRows = (fitnessRes.data ?? []) as unknown as {
+    user_id: string;
+    tested_on: string;
+    results: Record<string, number>;
+  }[];
+  const fitnessByUser: Record<string, { tested_on: string; results: Record<string, number> }[]> = {};
+  for (const f of fitnessRows) {
+    (fitnessByUser[f.user_id] ??= []).push({ tested_on: f.tested_on, results: f.results ?? {} });
+  }
+
   // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
   const activeMembers = members.filter((m) => !m.banned);
   const playerMembers = members
@@ -264,6 +280,15 @@ export default async function CoachPage() {
                   <AssessmentForm members={playerMembers} latest={latestAssessment} />
                 ) : (
                   <p className="font-sans text-sm text-muted">Belum ada ahli untuk dinilai.</p>
+                )}
+
+                <h3 className="mb-4 mt-10 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+                  <Activity className="h-4 w-4" /> Ujian Kecergasan
+                </h3>
+                {playerMembers.length > 0 ? (
+                  <FitnessPanel members={playerMembers} history={fitnessByUser} />
+                ) : (
+                  <p className="font-sans text-sm text-muted">Belum ada ahli untuk diuji.</p>
                 )}
               </section>
             ),
