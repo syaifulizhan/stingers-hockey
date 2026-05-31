@@ -171,7 +171,7 @@ create policy users_select on public.users for select to authenticated
 
 drop policy if exists users_insert on public.users;
 create policy users_insert on public.users for insert to authenticated
-  with check (clerk_user_id = auth.jwt()->>'sub');
+  with check (clerk_user_id = auth.jwt()->>'sub' or public.is_admin());
 
 drop policy if exists users_update on public.users;
 create policy users_update on public.users for update to authenticated

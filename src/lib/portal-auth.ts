@@ -18,10 +18,11 @@ export async function ensureUserRow() {
     null;
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
   const supabase = await createServerSupabase();
-  await supabase.from("users").upsert(
+  const { error } = await supabase.from("users").upsert(
     { clerk_user_id: userId, full_name: fullName, email, profile_complete: false },
     { onConflict: "clerk_user_id", ignoreDuplicates: true }
   );
+  if (error) console.error("[ensureUserRow] gagal:", error.message);
 }
 
 // Dapatkan peranan pengguna semasa dari Supabase (sumber kebenaran sebenar).
