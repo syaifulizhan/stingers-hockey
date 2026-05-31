@@ -7,6 +7,7 @@ import SeasonResultView, {
   type LivePlayer,
 } from "@/components/live/SeasonResultView";
 import { matchResult } from "@/lib/match";
+import ShareButton from "@/components/ShareButton";
 
 type Season = { id: string; name: string; team: string };
 type Achievement = {
@@ -65,19 +66,22 @@ export default function ResultsBoard({
           </span>
           <h1 className="display mt-3 text-5xl leading-none text-paper sm:text-6xl">Keputusan</h1>
         </div>
-        {seasons.length > 0 && (
-          <select
-            value={seasonId}
-            onChange={(e) => setSeasonId(e.target.value)}
-            className="w-full max-w-full truncate rounded-lg border border-line bg-ink px-4 py-2.5 font-sans text-sm text-paper outline-none focus:border-amber sm:w-auto sm:max-w-xs"
-          >
-            {seasons.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name} — {teamLabel(s.team)}
-              </option>
-            ))}
-          </select>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {seasons.length > 0 && (
+            <select
+              value={seasonId}
+              onChange={(e) => setSeasonId(e.target.value)}
+              className="w-full max-w-full truncate rounded-lg border border-line bg-ink px-4 py-2.5 font-sans text-sm text-paper outline-none focus:border-amber sm:w-auto sm:max-w-xs"
+            >
+              {seasons.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name} — {teamLabel(s.team)}
+                </option>
+              ))}
+            </select>
+          )}
+          <ShareButton title="Keputusan — Stingers Hockey" />
+        </div>
       </div>
 
       {seasons.length === 0 ? (
