@@ -69,7 +69,7 @@ export default function ResultsBoard({
           <select
             value={seasonId}
             onChange={(e) => setSeasonId(e.target.value)}
-            className="rounded-lg border border-line bg-ink px-4 py-2.5 font-sans text-sm text-paper outline-none focus:border-amber"
+            className="w-full max-w-full truncate rounded-lg border border-line bg-ink px-4 py-2.5 font-sans text-sm text-paper outline-none focus:border-amber sm:w-auto sm:max-w-xs"
           >
             {seasons.map((s) => (
               <option key={s.id} value={s.id}>
