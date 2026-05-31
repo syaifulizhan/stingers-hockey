@@ -7,7 +7,7 @@ import PortalNav from "@/components/portal/PortalNav";
 import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
-import MemberRow from "@/components/portal/coach/MemberRow";
+import MembersPanel from "@/components/portal/coach/MembersPanel";
 import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
 import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
@@ -74,16 +74,6 @@ export default async function CoachPage() {
   const subs = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const nameById = new Map(members.map((m) => [m.clerk_user_id, m.full_name]));
 
-  // Senarai & kiraan — ahli diban diasingkan (tak masuk senarai ahli aktif).
-  const activeMembers = members.filter((m) => !m.banned);
-  const bannedMembers = members.filter((m) => m.banned);
-  const memberStat = {
-    ahli: members.filter((m) => m.role === "member" && !m.banned).length,
-    admin: members.filter((m) => m.role === "admin" || m.role === "coach").length,
-    ban: bannedMembers.length,
-    keseluruhan: members.length,
-  };
-
   const submissions = subs.map((s) => ({
     id: s.id,
     content: s.content,
@@ -142,50 +132,8 @@ export default async function CoachPage() {
         <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
           <Users className="h-4 w-4" /> Ahli
         </h2>
-
-        {/* Ringkasan bilangan */}
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {[
-            { label: "Ahli", value: memberStat.ahli },
-            { label: "Admin", value: memberStat.admin },
-            { label: "Ban", value: memberStat.ban },
-            { label: "Keseluruhan", value: memberStat.keseluruhan },
-          ].map((s) => (
-            <div
-              key={s.label}
-              className="rounded-xl border border-line bg-bg-soft/50 px-4 py-3 text-center"
-            >
-              <div className="display text-2xl text-amber">{s.value}</div>
-              <div className="font-sans text-xs uppercase tracking-wider text-muted">
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
         {admin && <SyncClerkButton />}
-        <div className="flex flex-col gap-2">
-          {activeMembers.map((m) => (
-            <MemberRow key={m.clerk_user_id} member={m} viewerIsAdmin={admin} />
-          ))}
-          {activeMembers.length === 0 && (
-            <p className="font-sans text-sm text-muted">Belum ada ahli berdaftar.</p>
-          )}
-        </div>
-
-        {/* Ahli diban — diasingkan; admin boleh nyahban (Authorize) */}
-        {bannedMembers.length > 0 && (
-          <div className="mt-6">
-            <h3 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-red-400">
-              Diban ({bannedMembers.length})
-            </h3>
-            <div className="flex flex-col gap-2">
-              {bannedMembers.map((m) => (
-                <MemberRow key={m.clerk_user_id} member={m} viewerIsAdmin={admin} />
-              ))}
-            </div>
-          </div>
-        )}
+        <MembersPanel members={members} admin={admin} />
       </section>
 
       {/* Berita */}
