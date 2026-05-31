@@ -192,3 +192,25 @@ body {
   max-width: 100%;
   overflow-x: hidden;
 }
+
+/* Cetak laporan: tunjuk hanya dokumen, sembunyikan selebihnya. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .report-area,
+  .report-area * {
+    visibility: visible;
+  }
+  .report-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    box-shadow: none !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
