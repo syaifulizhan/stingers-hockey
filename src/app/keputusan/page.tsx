@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function KeputusanPage() {
   const supabase = createPublicSupabase();
-  const [seasonsRes, matchesRes, statsRes, playersRes] = await Promise.all([
+  const [seasonsRes, matchesRes, statsRes, playersRes, achievementsRes] = await Promise.all([
     // Hanya season DITUTUP muncul di Keputusan.
     supabase.from("seasons").select("id, name, team").eq("closed", true).order("created_at", { ascending: false }),
     supabase
@@ -23,6 +23,7 @@ export default async function KeputusanPage() {
       .order("created_at", { ascending: false }),
     supabase.from("match_stats").select("match_id, user_id, position, stats"),
     supabase.from("public_players").select("clerk_user_id, name"),
+    supabase.from("achievements").select("season_id, category, award, player_id, event"),
   ]);
 
   return (
@@ -34,6 +35,7 @@ export default async function KeputusanPage() {
           matches={(matchesRes.data ?? []) as never[]}
           stats={(statsRes.data ?? []) as never[]}
           players={(playersRes.data ?? []) as { clerk_user_id: string; name: string | null }[]}
+          achievements={(achievementsRes.data ?? []) as never[]}
         />
       </main>
       <Footer />

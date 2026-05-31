@@ -9,6 +9,13 @@ import SeasonResultView, {
 import { matchResult } from "@/lib/match";
 
 type Season = { id: string; name: string; team: string };
+type Achievement = {
+  season_id: string | null;
+  category: string;
+  award: string;
+  player_id: string | null;
+  event: string | null;
+};
 const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
 
 export default function ResultsBoard({
@@ -16,17 +23,23 @@ export default function ResultsBoard({
   matches,
   stats,
   players,
+  achievements,
 }: {
   seasons: Season[];
   matches: LiveMatch[];
   stats: LiveStat[];
   players: LivePlayer[];
+  achievements: Achievement[];
 }) {
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
 
   const seasonMatches = useMemo(
     () => matches.filter((m) => m.season_id === seasonId),
     [matches, seasonId]
+  );
+  const seasonAchievements = useMemo(
+    () => achievements.filter((a) => a.season_id === seasonId),
+    [achievements, seasonId]
   );
 
   // Rekod keseluruhan (semua season ditutup).
@@ -85,7 +98,12 @@ export default function ResultsBoard({
             <span className="text-amber">{overall.win} menang</span> · {overall.draw} seri ·{" "}
             {overall.loss} kalah
           </p>
-          <SeasonResultView matches={seasonMatches} stats={stats} players={players} />
+          <SeasonResultView
+            matches={seasonMatches}
+            stats={stats}
+            players={players}
+            achievements={seasonAchievements}
+          />
         </>
       )}
     </section>
