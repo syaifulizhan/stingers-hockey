@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles } from "lucide-react";
 import PlayerReport from "@/components/portal/PlayerReport";
 import type { Report } from "@/lib/report";
 
@@ -37,9 +36,9 @@ export default function ReportPanel({ players }: { players: Entry[] }) {
         <button
           type="button"
           onClick={() => setShown(playerId)}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-amber px-6 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
+          className="rounded-full bg-amber px-6 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
         >
-          <Sparkles className="h-4 w-4" /> Generate Report
+          Generate Report
         </button>
       </div>
 
