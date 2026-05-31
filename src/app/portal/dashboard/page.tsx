@@ -3,6 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { UserButton } from "@clerk/nextjs";
 import { Newspaper, ClipboardList, CalendarCheck, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
 import NotificationBell from "@/components/portal/NotificationBell";
 import Wordmark from "@/components/ui/Wordmark";
@@ -48,6 +49,9 @@ type AttendanceRow = {
 };
 
 export default async function DashboardPage() {
+  // Cipta baris ahli kalau belum ada (nampak di panel jurulatih serta-merta).
+  await ensureUserRow();
+
   const user = await currentUser();
   const supabase = await createServerSupabase();
 

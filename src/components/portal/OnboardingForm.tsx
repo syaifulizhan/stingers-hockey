@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -105,6 +106,12 @@ export default function OnboardingForm({
         <h1 className="display mt-3 text-4xl text-paper sm:text-5xl">
           {step === 1 ? "Maklumat Ringkas" : "Maklumat Penuh"}
         </h1>
+        <Link
+          href="/portal/dashboard"
+          className="mt-4 inline-block font-sans text-sm text-muted underline-offset-4 hover:text-amber hover:underline"
+        >
+          Langkau dulu → ke Dashboard
+        </Link>
       </div>
 
       {/* Progress bar */}
