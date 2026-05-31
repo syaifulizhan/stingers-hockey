@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Tab = { id: string; label: string; icon: string; content: React.ReactNode };
+type Tab = { id: string; label: string; content: React.ReactNode };
 
 // Tab navigasi panel jurulatih — elak skrol panjang.
 // Kandungan dirender pelayan (server) & dihantar sebagai prop; tab tidak aktif
@@ -18,13 +18,12 @@ export default function CoachTabs({ tabs }: { tabs: Tab[] }) {
             key={t.id}
             type="button"
             onClick={() => setActive(t.id)}
-            className={`flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 font-sans text-sm font-semibold transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 font-sans text-sm font-semibold transition-colors ${
               active === t.id
                 ? "bg-amber text-ink"
                 : "text-paper/80 hover:bg-amber/10 hover:text-amber"
             }`}
           >
-            <span aria-hidden>{t.icon}</span>
             {t.label}
           </button>
         ))}
