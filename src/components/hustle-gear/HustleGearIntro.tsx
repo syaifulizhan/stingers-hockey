@@ -3,6 +3,7 @@
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
 import Button from "@/components/ui/Button";
+import ShareButton from "@/components/ShareButton";
 import { useLang } from "@/lib/i18n";
 
 export default function HustleGearIntro() {
@@ -38,11 +39,12 @@ export default function HustleGearIntro() {
               </p>
             </Reveal>
             <Reveal delay={0.2}>
-              <div className="mt-8 flex flex-wrap gap-4">
+              <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Button href="#tempah">{t("Borang Tempahan →", "Order Form →")}</Button>
                 <Button href="/" variant="outline">
                   {t("Kembali ke Laman Utama", "Back to Home")}
                 </Button>
+                <ShareButton title={t("Tempah Hustle Gear — Stingers Hockey", "Order Hustle Gear — Stingers Hockey")} />
               </div>
             </Reveal>
           </div>
