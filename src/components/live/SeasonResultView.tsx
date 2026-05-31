@@ -122,10 +122,10 @@ export default function SeasonResultView({
           <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
             Perlawanan Terkini
           </p>
-          <div className="mt-3 flex items-center justify-between gap-4">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
             <span className="display text-2xl text-paper sm:text-3xl">Stingers</span>
-            <span className="display text-4xl text-amber sm:text-5xl">
-              {latest.our_score ?? "-"} : {latest.opp_score ?? "-"}
+            <span className="display whitespace-nowrap text-3xl tabular-nums text-amber sm:text-4xl">
+              {latest.our_score ?? "-"}:{latest.opp_score ?? "-"}
             </span>
             <span className="display text-2xl text-paper sm:text-3xl">{latest.opponent}</span>
           </div>
@@ -178,11 +178,11 @@ export default function SeasonResultView({
           return (
             <div key={m.id} className="rounded-xl border border-line bg-bg-soft/50 p-4">
               <div className="flex items-center justify-between gap-3">
-                <span className="font-sans text-sm font-semibold text-paper">
+                <span className="min-w-0 font-sans text-sm font-semibold text-paper">
                   Stingers vs {m.opponent}
                 </span>
-                <span className="flex items-center gap-2">
-                  <span className="display text-xl text-amber">
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="display whitespace-nowrap text-xl tabular-nums text-amber">
                     {m.our_score ?? "-"}:{m.opp_score ?? "-"}
                   </span>
                   <ResultBadge our={m.our_score} opp={m.opp_score} />
