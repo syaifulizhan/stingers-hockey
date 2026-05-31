@@ -1,7 +1,28 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export type Role = "member" | "coach" | "admin";
+
+// Pastikan ahli WUJUD dalam Supabase sebaik mereka masuk portal — walaupun
+// belum lengkapkan profil. Ini buat mereka:
+//   • nampak terus di Panel Jurulatih (boleh diberi task / direkod kehadiran),
+//   • ada peranan 'member' (bukan null), jadi portal berfungsi penuh.
+// ignoreDuplicates: kalau baris dah ada, ia TIDAK menimpa data profil sedia ada.
+export async function ensureUserRow() {
+  const { userId } = await auth();
+  if (!userId) return;
+  const user = await currentUser();
+  const fullName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.username ||
+    null;
+  const email = user?.primaryEmailAddress?.emailAddress ?? null;
+  const supabase = await createServerSupabase();
+  await supabase.from("users").upsert(
+    { clerk_user_id: userId, full_name: fullName, email, profile_complete: false },
+    { onConflict: "clerk_user_id", ignoreDuplicates: true }
+  );
+}
 
 // Dapatkan peranan pengguna semasa dari Supabase (sumber kebenaran sebenar).
 export async function getMyRole(): Promise<Role | null> {
