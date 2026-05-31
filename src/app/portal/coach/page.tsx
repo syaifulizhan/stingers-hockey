@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -16,6 +16,7 @@ import AttendanceStats from "@/components/portal/coach/AttendanceStats";
 import AssessmentForm from "@/components/portal/coach/AssessmentForm";
 import FitnessPanel from "@/components/portal/coach/FitnessPanel";
 import MatchPanel from "@/components/portal/coach/MatchPanel";
+import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
@@ -56,7 +57,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, seasonsRes, matchesRes, matchStatsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, seasonsRes, matchesRes, matchStatsRes, achievementsRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -86,6 +87,10 @@ export default async function CoachPage() {
         .select("id, season_id, opponent, match_date, venue, competition, category, our_score, opp_score")
         .order("match_date", { ascending: false }),
       supabase.from("match_stats").select("id, match_id, user_id, position, stats"),
+      supabase
+        .from("achievements")
+        .select("id, season_id, category, award, player_id, event")
+        .order("created_at", { ascending: false }),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -139,6 +144,15 @@ export default async function CoachPage() {
     user_id: string;
     position: string | null;
     stats: Record<string, number>;
+  }[];
+
+  const achievements = (achievementsRes.data ?? []) as unknown as {
+    id: string;
+    season_id: string | null;
+    category: string;
+    award: string;
+    player_id: string | null;
+    event: string | null;
   }[];
 
   // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
@@ -333,6 +347,22 @@ export default async function CoachPage() {
                 ) : (
                   <p className="font-sans text-sm text-muted">Belum ada pemain.</p>
                 )}
+              </section>
+            ),
+          },
+          {
+            id: "pencapaian",
+            label: "Pencapaian",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Trophy className="h-4 w-4" /> Pencapaian
+                </h2>
+                <AchievementsPanel
+                  players={playerMembers}
+                  seasons={seasons}
+                  achievements={achievements}
+                />
               </section>
             ),
           },

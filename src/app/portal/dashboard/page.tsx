@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
-import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity, Swords } from "lucide-react";
+import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
@@ -58,7 +58,7 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const supabase = await createServerSupabase();
 
-  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes, myFitnessRes, matchesRes, myMatchStatsRes] =
+  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes, myFitnessRes, matchesRes, myMatchStatsRes, myAchievementsRes] =
     await Promise.all([
       supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
       supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
@@ -81,6 +81,11 @@ export default async function DashboardPage() {
         .order("tested_on", { ascending: true }),
       supabase.from("matches").select("id, opponent, match_date"),
       supabase.from("match_stats").select("match_id, stats"),
+      supabase
+        .from("achievements")
+        .select("award, event")
+        .eq("player_id", user!.id)
+        .order("created_at", { ascending: false }),
     ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
@@ -144,6 +149,11 @@ export default async function DashboardPage() {
     stats: s.stats ?? {},
   }));
   const isGoalkeeper = Boolean(profile?.is_goalkeeper);
+
+  const myAchievements = (myAchievementsRes.data ?? []) as {
+    award: string;
+    event: string | null;
+  }[];
 
   const baseName =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
@@ -373,6 +383,29 @@ export default async function DashboardPage() {
             <Activity className="h-4 w-4" /> Ujian Kecergasan
           </h2>
           <FitnessSummary history={myFitness} />
+        </section>
+      )}
+
+      {/* Pencapaian */}
+      {!isCoachOrAdmin && myAchievements.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <Trophy className="h-4 w-4" /> Pencapaian
+          </h2>
+          <div className="flex flex-col gap-2">
+            {myAchievements.map((a, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 rounded-xl border border-amber/40 bg-amber/5 px-4 py-3"
+              >
+                <Trophy className="h-5 w-5 shrink-0 text-amber" />
+                <span className="font-sans text-sm text-paper">
+                  <span className="font-semibold">{a.award}</span>
+                  {a.event ? <span className="text-muted"> · {a.event}</span> : null}
+                </span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

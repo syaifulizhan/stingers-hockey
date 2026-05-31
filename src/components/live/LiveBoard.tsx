@@ -9,6 +9,13 @@ import SeasonResultView, {
 } from "@/components/live/SeasonResultView";
 
 type Season = { id: string; name: string; team: string };
+type Achievement = {
+  season_id: string | null;
+  category: string;
+  award: string;
+  player_id: string | null;
+  event: string | null;
+};
 const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
 
 export default function LiveBoard({
@@ -16,11 +23,13 @@ export default function LiveBoard({
   matches,
   stats,
   players,
+  achievements,
 }: {
   seasons: Season[];
   matches: LiveMatch[];
   stats: LiveStat[];
   players: LivePlayer[];
+  achievements: Achievement[];
 }) {
   const router = useRouter();
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
@@ -34,6 +43,10 @@ export default function LiveBoard({
   const seasonMatches = useMemo(
     () => matches.filter((m) => m.season_id === seasonId),
     [matches, seasonId]
+  );
+  const seasonAchievements = useMemo(
+    () => achievements.filter((a) => a.season_id === seasonId),
+    [achievements, seasonId]
   );
 
   return (
@@ -76,7 +89,13 @@ export default function LiveBoard({
           </p>
         </div>
       ) : (
-        <SeasonResultView matches={seasonMatches} stats={stats} players={players} showLatest />
+        <SeasonResultView
+          matches={seasonMatches}
+          stats={stats}
+          players={players}
+          achievements={seasonAchievements}
+          showLatest
+        />
       )}
     </section>
   );

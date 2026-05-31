@@ -26,6 +26,12 @@ export type LiveStat = {
   stats: Record<string, number>;
 };
 export type LivePlayer = { clerk_user_id: string; name: string | null };
+export type LiveAchievement = {
+  category: string;
+  award: string;
+  player_id: string | null;
+  event: string | null;
+};
 
 function record(matches: LiveMatch[]) {
   let played = 0, win = 0, draw = 0, loss = 0, gf = 0, ga = 0;
@@ -97,11 +103,13 @@ export default function SeasonResultView({
   matches,
   stats,
   players,
+  achievements = [],
   showLatest = false,
 }: {
   matches: LiveMatch[];
   stats: LiveStat[];
   players: LivePlayer[];
+  achievements?: LiveAchievement[];
   showLatest?: boolean;
 }) {
   const nameById = new Map(players.map((p) => [p.clerk_user_id, p.name || "Ahli"]));
@@ -157,6 +165,24 @@ export default function SeasonResultView({
               ⚽ {contributors(latest.id, "goals").join(", ")}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Pencapaian */}
+      {achievements.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-amber/40 bg-amber/5 p-5">
+          <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
+            🏆 Pencapaian
+          </p>
+          <div className="mt-2 flex flex-col gap-1">
+            {achievements.map((a, i) => (
+              <p key={i} className="font-sans text-sm text-paper">
+                <span className="font-semibold">{a.award}</span>
+                {a.player_id ? ` — ${nameById.get(a.player_id) || "Ahli"}` : ""}
+                {a.event ? <span className="text-muted"> · {a.event}</span> : null}
+              </p>
+            ))}
+          </div>
         </div>
       )}
 

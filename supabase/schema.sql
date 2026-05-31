@@ -483,6 +483,33 @@ grant select, insert, update, delete on public.matches to authenticated;
 grant select, insert, update, delete on public.match_stats to authenticated;
 
 -- ============================================================================
+-- PENCAPAIAN — anugerah individu & pasukan (boleh diikat pada season).
+--   category: 'individual' (ada player_id) / 'team'. award: nama anugerah.
+--   Jurulatih urus; semua ahli & orang awam boleh baca.
+-- ============================================================================
+create table if not exists public.achievements (
+  id          uuid primary key default gen_random_uuid(),
+  season_id   uuid references public.seasons(id) on delete set null,
+  category    text not null check (category in ('individual','team')),
+  award       text not null,
+  player_id   text,
+  event       text,
+  created_by  text,
+  created_at  timestamptz not null default now()
+);
+alter table public.achievements enable row level security;
+
+drop policy if exists achievements_select on public.achievements;
+create policy achievements_select on public.achievements for select to authenticated using (true);
+drop policy if exists achievements_public on public.achievements;
+create policy achievements_public on public.achievements for select to anon using (true);
+drop policy if exists achievements_write on public.achievements;
+create policy achievements_write on public.achievements for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+grant select, insert, update, delete on public.achievements to authenticated;
+grant select on public.achievements to anon;
+
+-- ============================================================================
 -- PAPAN LIVE AWAM — benarkan orang awam (anon) baca keputusan perlawanan.
 --   Nama pemain didedah melalui VIEW selamat (NAMA sahaja — bukan IC/telefon).
 -- ============================================================================
