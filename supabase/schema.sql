@@ -362,3 +362,12 @@ create policy assessments_write on public.assessments for all to authenticated
   using (public.is_coach()) with check (public.is_coach());
 
 grant select, insert, update, delete on public.assessments to authenticated;
+
+-- ============================================================================
+-- NAMA SEBENAR PEMAIN + PENANDA PENJAGA GOL
+--   • display_name: nama sebenar pemain (admin tetapkan jika daftar guna akaun
+--     ibu/bapa). Dipapar sebagai "Daftar (Sebenar)".
+--   • is_goalkeeper: hanya pemain ditanda GK boleh dinilai kemahiran GK.
+-- ============================================================================
+alter table public.users add column if not exists display_name text;
+alter table public.users add column if not exists is_goalkeeper boolean not null default false;

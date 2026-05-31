@@ -1,9 +1,11 @@
 import { Trophy } from "lucide-react";
+import { memberName } from "@/lib/names";
 
 type Session = { id: string; type?: string };
 type Member = {
   clerk_user_id: string;
   full_name: string | null;
+  display_name?: string | null;
   role: string;
   banned: boolean;
 };
@@ -80,7 +82,7 @@ export default function AttendanceStats({
               <div className="flex items-center justify-between gap-3 font-sans text-sm">
                 <span className="flex items-center gap-1.5 text-paper">
                   {champ && <Trophy className="h-3.5 w-3.5 text-amber" />}
-                  {r.full_name || "(tanpa nama)"}
+                  {memberName(r.full_name, r.display_name)}
                 </span>
                 <span className="flex items-center gap-2">
                   <span className="text-xs text-muted">
