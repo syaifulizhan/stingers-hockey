@@ -5,6 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
 import { assessmentAverage } from "@/lib/assessments";
+import { generateReport } from "@/lib/report";
 import PortalNav from "@/components/portal/PortalNav";
 import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
@@ -227,11 +228,30 @@ export default async function CoachPage() {
     }
   }
 
-  // Senarai pemain untuk laporan (laporan penuh dijana di /portal/report/[id]).
-  const reportPlayers = playerList.map((m) => ({
-    id: m.clerk_user_id,
-    name: nameOf(m.clerk_user_id),
-  }));
+  // Jumlah statistik perlawanan setiap pemain (untuk laporan ringkas).
+  const matchTotalsByUser = new Map<string, Record<string, number>>();
+  for (const s of matchStats) {
+    const acc = matchTotalsByUser.get(s.user_id) ?? {};
+    for (const [k, v] of Object.entries(s.stats ?? {})) acc[k] = (acc[k] ?? 0) + v;
+    matchTotalsByUser.set(s.user_id, acc);
+  }
+
+  // Laporan ringkas (paparan portal) setiap pemain; versi cetak A4 di /portal/report/[id].
+  const reportPlayers = playerList.map((m) => {
+    const id = m.clerk_user_id;
+    const att =
+      totalSessionsCount > 0
+        ? Math.round(((presentCount.get(id) ?? 0) / totalSessionsCount) * 100)
+        : null;
+    const report = generateReport({
+      isGoalkeeper: !!m.is_goalkeeper,
+      skill: latestAssessment[`${id}:${m.is_goalkeeper ? "skill_gk" : "skill_field"}`] ?? null,
+      coachEval: latestAssessment[`${id}:coach_eval`] ?? null,
+      attendancePct: att,
+      matchTotals: matchTotalsByUser.get(id) ?? {},
+    });
+    return { id, name: nameOf(id), report };
+  });
 
   // Top 10 — purata gabungan kemahiran + penilaian jurulatih + kehadiran (skala 10).
   const top10 = playerList
