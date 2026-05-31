@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach } from "@/lib/portal-auth";
 import { FITNESS_METRICS } from "@/lib/fitness";
+import { memberName } from "@/lib/names";
 
 // Jurulatih/admin rekod keputusan ujian kecergasan.
 const schema = z.object({
@@ -58,6 +59,33 @@ export async function POST(request: Request) {
     console.error("[coach/fitness] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal simpan ujian." }, { status: 500 });
   }
+
+  // Cermin ke Google Sheet (best-effort).
+  const webhook = process.env.SHEETS_WEBHOOK_URL;
+  if (webhook) {
+    try {
+      const { data: p } = await supabase
+        .from("users")
+        .select("full_name, display_name")
+        .eq("clerk_user_id", d.targetUserId)
+        .maybeSingle();
+      await fetch(webhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formType: "kecergasan",
+          submittedAt: new Date().toISOString(),
+          testedOn: d.testedOn || new Date().toISOString().slice(0, 10),
+          playerName: memberName(p?.full_name ?? null, p?.display_name ?? null),
+          occasion: d.occasion || "",
+          ...results,
+        }),
+      });
+    } catch (err) {
+      console.error("[coach/fitness] cermin Sheet gagal:", err);
+    }
+  }
+
   return NextResponse.json({ ok: true });
 }
 
