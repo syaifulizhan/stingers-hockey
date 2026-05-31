@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Share2, Link2, Check, X as XIcon } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 
@@ -39,8 +39,9 @@ export default function ShareButton({ title }: { title: string }) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const url =
-    typeof window !== "undefined" ? window.location.href : "https://hoki.my";
+  // Ambil URL sebenar selepas mount (elak nilai SSR "hoki.my").
+  const [url, setUrl] = useState("");
+  useEffect(() => setUrl(window.location.href), []);
   const e = encodeURIComponent;
 
   const targets = [
@@ -51,18 +52,20 @@ export default function ShareButton({ title }: { title: string }) {
   ];
 
   const copy = async () => {
+    const link = (typeof window !== "undefined" && window.location.href) || url;
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(link);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      window.prompt(t("Salin pautan ini:", "Copy this link:"), url);
+      window.prompt(t("Salin pautan ini:", "Copy this link:"), link);
     }
   };
 
   const nativeShare = async () => {
+    const link = (typeof window !== "undefined" && window.location.href) || url;
     try {
-      await navigator.share?.({ title, url });
+      await navigator.share?.({ title, url: link });
       setOpen(false);
     } catch {
       /* dibatalkan */

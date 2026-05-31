@@ -12,17 +12,33 @@ export async function ensureUserRow() {
   const { userId } = await auth();
   if (!userId) return;
   const user = await currentUser();
+  // Utamakan username Clerk (bukan nama dari akaun Google/email).
   const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     user?.username ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     null;
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
   const supabase = await createServerSupabase();
-  const { error } = await supabase.from("users").upsert(
-    { clerk_user_id: userId, full_name: fullName, email, profile_complete: false },
-    { onConflict: "clerk_user_id", ignoreDuplicates: true }
-  );
-  if (error) console.error("[ensureUserRow] gagal:", error.message);
+
+  const { data: existing } = await supabase
+    .from("users")
+    .select("profile_complete, full_name")
+    .eq("clerk_user_id", userId)
+    .maybeSingle();
+
+  if (!existing) {
+    const { error } = await supabase
+      .from("users")
+      .insert({ clerk_user_id: userId, full_name: fullName, email, profile_complete: false });
+    if (error) console.error("[ensureUserRow] insert gagal:", error.message);
+    return;
+  }
+
+  // Selagi profil belum lengkap, segarkan nama auto kepada username Clerk
+  // (tidak menyentuh ahli yang sudah isi profil sebenar mereka).
+  if (!existing.profile_complete && fullName && existing.full_name !== fullName) {
+    await supabase.from("users").update({ full_name: fullName, email }).eq("clerk_user_id", userId);
+  }
 }
 
 // Dapatkan peranan pengguna semasa dari Supabase (sumber kebenaran sebenar).
