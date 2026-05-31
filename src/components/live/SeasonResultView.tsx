@@ -13,9 +13,9 @@ export type LiveMatch = {
   created_at?: string | null;
 };
 
-// Masa untuk susun: guna tarikh perlawanan; jika kosong, guna masa dicipta.
+// "Terkini" = paling baru direkod (created_at); fallback ke tarikh perlawanan.
 function recency(m: LiveMatch): number {
-  const t = m.match_date ?? m.created_at ?? "";
+  const t = m.created_at ?? m.match_date ?? "";
   const ms = new Date(t).getTime();
   return Number.isNaN(ms) ? 0 : ms;
 }
