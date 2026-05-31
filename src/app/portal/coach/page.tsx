@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import PortalNav from "@/components/portal/PortalNav";
@@ -12,6 +12,7 @@ import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
 import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import AttendanceStats from "@/components/portal/coach/AttendanceStats";
+import AssessmentForm from "@/components/portal/coach/AssessmentForm";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 type Member = {
@@ -49,7 +50,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -65,6 +66,10 @@ export default async function CoachPage() {
         .order("submitted_at", { ascending: false })
         .limit(50),
       supabase.from("submissions").select("task_id, user_id"),
+      supabase
+        .from("assessments")
+        .select("user_id, type, scores, assessed_on")
+        .order("assessed_on", { ascending: false }),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
@@ -74,6 +79,22 @@ export default async function CoachPage() {
   const attendance = (attendanceRes.data ?? []) as unknown as AttendanceRow[];
   const subs = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const nameById = new Map(members.map((m) => [m.clerk_user_id, m.full_name]));
+
+  // Skor penilaian TERKINI ikut `${userId}:${type}` (untuk pra-isi borang).
+  const assessmentRows = (assessmentsRes.data ?? []) as unknown as {
+    user_id: string;
+    type: string;
+    scores: Record<string, number>;
+    assessed_on: string;
+  }[];
+  const latestAssessment: Record<string, Record<string, number>> = {};
+  for (const a of assessmentRows) {
+    const key = `${a.user_id}:${a.type}`;
+    if (!latestAssessment[key]) latestAssessment[key] = a.scores ?? {}; // tersusun desc → pertama = terkini
+  }
+  const playerMembers = members
+    .filter((m) => m.role === "member" && !m.banned)
+    .map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }));
 
   const submissions = subs.map((s) => ({
     id: s.id,
@@ -208,6 +229,18 @@ export default async function CoachPage() {
           📊 Statistik Kehadiran
         </h3>
         <AttendanceStats members={members} sessions={sessions} attendance={attendance} />
+      </section>
+
+      {/* Penilaian kemahiran & jurulatih */}
+      <section className="mt-10">
+        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+          <Star className="h-4 w-4" /> Penilaian Pemain
+        </h2>
+        {playerMembers.length > 0 ? (
+          <AssessmentForm members={playerMembers} latest={latestAssessment} />
+        ) : (
+          <p className="font-sans text-sm text-muted">Belum ada ahli untuk dinilai.</p>
+        )}
       </section>
 
       {/* Semak hantaran */}
