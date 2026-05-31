@@ -418,10 +418,12 @@ grant select, insert, update, delete on public.fitness_tests to authenticated;
 create table if not exists public.seasons (
   id          uuid primary key default gen_random_uuid(),
   name        text not null,
+  team        text not null default 'lelaki' check (team in ('lelaki','perempuan')),
   created_by  text,
   created_at  timestamptz not null default now()
 );
 alter table public.seasons add column if not exists closed boolean not null default false;
+alter table public.seasons add column if not exists team text not null default 'lelaki' check (team in ('lelaki','perempuan'));
 alter table public.seasons enable row level security;
 drop policy if exists seasons_select on public.seasons;
 create policy seasons_select on public.seasons for select to authenticated using (true);
@@ -444,6 +446,8 @@ create table if not exists public.matches (
 );
 -- Untuk pemasangan sedia ada: tambah season_id jika belum ada.
 alter table public.matches add column if not exists season_id uuid references public.seasons(id) on delete cascade;
+-- Kategori perlawanan (pilihan): cth Cup, Plate.
+alter table public.matches add column if not exists category text;
 alter table public.matches enable row level security;
 
 drop policy if exists matches_select on public.matches;

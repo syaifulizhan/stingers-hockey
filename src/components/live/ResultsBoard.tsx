@@ -8,7 +8,8 @@ import SeasonResultView, {
 } from "@/components/live/SeasonResultView";
 import { matchResult } from "@/lib/match";
 
-type Season = { id: string; name: string };
+type Season = { id: string; name: string; team: string };
+const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
 
 export default function ResultsBoard({
   seasons,
@@ -59,7 +60,7 @@ export default function ResultsBoard({
           >
             {seasons.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name}
+                {s.name} — {teamLabel(s.team)}
               </option>
             ))}
           </select>

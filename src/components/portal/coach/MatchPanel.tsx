@@ -9,7 +9,7 @@ import { memberName } from "@/lib/names";
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
 
-type Season = { id: string; name: string; closed: boolean };
+type Season = { id: string; name: string; closed: boolean; team: string };
 type Match = {
   id: string;
   season_id: string | null;
@@ -17,9 +17,12 @@ type Match = {
   match_date: string | null;
   venue: string | null;
   competition: string | null;
+  category: string | null;
   our_score: number | null;
   opp_score: number | null;
 };
+
+const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
 type Player = {
   clerk_user_id: string;
   full_name: string | null;
@@ -43,12 +46,14 @@ export default function MatchPanel({
 
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
   const [newSeason, setNewSeason] = useState("");
+  const [newTeam, setNewTeam] = useState<"lelaki" | "perempuan">("lelaki");
 
   // Maklumat perlawanan baharu
   const [opponent, setOpponent] = useState("");
   const [matchDate, setMatchDate] = useState("");
   const [venue, setVenue] = useState("");
   const [competition, setCompetition] = useState("");
+  const [category, setCategory] = useState("");
   const [ourScore, setOurScore] = useState("");
   const [oppScore, setOppScore] = useState("");
   const [creating, setCreating] = useState(false);
@@ -103,7 +108,7 @@ export default function MatchPanel({
       const res = await fetch("/api/portal/coach/season", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newSeason }),
+        body: JSON.stringify({ name: newSeason, team: newTeam }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -161,6 +166,7 @@ export default function MatchPanel({
           matchDate,
           venue,
           competition,
+          category,
           ourScore: ourScore === "" ? null : Number(ourScore),
           oppScore: oppScore === "" ? null : Number(oppScore),
         }),
@@ -175,6 +181,7 @@ export default function MatchPanel({
     setMatchDate("");
     setVenue("");
     setCompetition("");
+    setCategory("");
     setOurScore("");
     setOppScore("");
     setCreating(false);
@@ -281,6 +288,14 @@ export default function MatchPanel({
             value={newSeason}
             onChange={(e) => setNewSeason(e.target.value)}
           />
+          <select
+            className={`${inputCls} sm:w-44`}
+            value={newTeam}
+            onChange={(e) => setNewTeam(e.target.value as "lelaki" | "perempuan")}
+          >
+            <option value="lelaki">Lelaki</option>
+            <option value="perempuan">Perempuan</option>
+          </select>
           <button
             type="submit"
             className="shrink-0 rounded-full bg-amber px-6 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep"
@@ -298,7 +313,7 @@ export default function MatchPanel({
             <select className={inputCls} value={seasonId} onChange={(e) => setSeasonId(e.target.value)}>
               {seasons.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.name} — {teamLabel(s.team)}
                   {s.closed ? " (Ditutup)" : ""}
                 </option>
               ))}
@@ -369,6 +384,7 @@ export default function MatchPanel({
               <div className="grid gap-3 sm:grid-cols-2">
                 <input className={inputCls} placeholder="Lawan (cth: SMK Taman Desa)" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
                 <input className={inputCls} placeholder="Pertandingan (cth: MSSD)" value={competition} onChange={(e) => setCompetition(e.target.value)} />
+                <input className={inputCls} placeholder="Kategori — pilihan (cth: Cup, Plate)" value={category} onChange={(e) => setCategory(e.target.value)} />
                 <input type="date" className={inputCls} value={matchDate} onChange={(e) => setMatchDate(e.target.value)} />
                 <input className={inputCls} placeholder="Tempat" value={venue} onChange={(e) => setVenue(e.target.value)} />
                 <div className="flex items-center gap-2">
@@ -400,6 +416,7 @@ export default function MatchPanel({
                         <span className="text-muted">
                           {m.match_date ? ` · ${m.match_date}` : ""}
                           {m.competition ? ` · ${m.competition}` : ""}
+                          {m.category ? ` · ${m.category}` : ""}
                           {r ? ` · ${m.our_score}-${m.opp_score}` : ""}
                         </span>
                         {r && (

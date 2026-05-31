@@ -6,6 +6,7 @@ export type LiveMatch = {
   opponent: string;
   match_date: string | null;
   competition: string | null;
+  category: string | null;
   venue: string | null;
   our_score: number | null;
   opp_score: number | null;
@@ -130,6 +131,7 @@ export default function SeasonResultView({
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 font-sans text-xs text-muted">
             {latest.competition && <span>{latest.competition}</span>}
+            {latest.category && <span>· {latest.category}</span>}
             {latest.match_date && <span>· {latest.match_date}</span>}
             {latest.venue && <span>· {latest.venue}</span>}
             <ResultBadge our={latest.our_score} opp={latest.opp_score} />
@@ -187,7 +189,7 @@ export default function SeasonResultView({
                 </span>
               </div>
               <p className="mt-1 font-sans text-xs text-muted">
-                {[m.competition, m.match_date, m.venue].filter(Boolean).join(" · ")}
+                {[m.competition, m.category, m.match_date, m.venue].filter(Boolean).join(" · ")}
               </p>
               {scorers.length > 0 && (
                 <p className="mt-1.5 font-sans text-xs text-paper/80">⚽ {scorers.join(", ")}</p>
