@@ -371,3 +371,8 @@ grant select, insert, update, delete on public.assessments to authenticated;
 -- ============================================================================
 alter table public.users add column if not exists display_name text;
 alter table public.users add column if not exists is_goalkeeper boolean not null default false;
+
+-- Admin boleh PADAM baris ahli (cth: murid habis sekolah / diban lama).
+drop policy if exists users_delete on public.users;
+create policy users_delete on public.users for delete to authenticated
+  using (public.is_admin());

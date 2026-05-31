@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isAdmin } from "@/lib/portal-auth";
@@ -47,6 +48,43 @@ export async function PATCH(request: Request) {
   if (error) {
     console.error("[coach/member] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini." }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
+// Padam ahli SECARA KEKAL — akaun Clerk + semua data Supabase. Admin sahaja.
+export async function DELETE(request: Request) {
+  const { userId } = await auth();
+  if (!isAdmin(await getMyRole())) {
+    return NextResponse.json({ ok: false, error: "Hanya admin boleh padam." }, { status: 403 });
+  }
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ ok: false, error: "id diperlukan." }, { status: 400 });
+  }
+  if (id === userId) {
+    return NextResponse.json({ ok: false, error: "Tidak boleh padam diri sendiri." }, { status: 400 });
+  }
+
+  // 1. Padam akaun Clerk (supaya tak boleh log masuk / cipta semula baris).
+  try {
+    const client = await clerkClient();
+    await client.users.deleteUser(id);
+  } catch (e) {
+    // Abaikan jika akaun sudah tiada; gagal lain dilog tetapi teruskan.
+    console.error("[coach/member] padam Clerk:", e instanceof Error ? e.message : e);
+  }
+
+  // 2. Padam data berkaitan + baris pengguna di Supabase.
+  const supabase = await createServerSupabase();
+  await supabase.from("attendance").delete().eq("user_id", id);
+  await supabase.from("submissions").delete().eq("user_id", id);
+  await supabase.from("assessments").delete().eq("user_id", id);
+  const { error } = await supabase.from("users").delete().eq("clerk_user_id", id);
+
+  if (error) {
+    console.error("[coach/member] padam gagal:", error.message);
+    return NextResponse.json({ ok: false, error: "Gagal padam ahli." }, { status: 500 });
   }
   return NextResponse.json({ ok: true });
 }
