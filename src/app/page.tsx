@@ -7,6 +7,7 @@ import LogoStory from "@/components/LogoStory";
 import JerseyGallery from "@/components/JerseyGallery";
 import HustleGear from "@/components/HustleGear";
 import Berita from "@/components/Berita";
+import LiveBanner from "@/components/LiveBanner";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
 
@@ -21,6 +22,7 @@ export default function Home() {
       <main className="flex-1">
         <Hero />
         <Marquee />
+        <LiveBanner />
         <Berita />
         <About />
         <Training />
