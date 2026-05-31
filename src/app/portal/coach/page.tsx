@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, Sparkles } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -489,9 +489,7 @@ export default async function CoachPage() {
             label: "Laporan",
             content: (
               <section>
-                <h2 className={sectionTitle}>
-                  <Sparkles className="h-4 w-4" /> Laporan Kemenjadian
-                </h2>
+                <h2 className={sectionTitle}>Laporan Kemenjadian</h2>
                 <ReportPanel players={reportPlayers} />
               </section>
             ),

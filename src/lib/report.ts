@@ -87,7 +87,7 @@ export function generateReport(input: ReportInput): Report {
   }
 
   if (strengths.length === 0) strengths.push("Belum cukup data untuk kekuatan menonjol.");
-  if (improvements.length === 0) improvements.push("Tiada kelemahan ketara — teruskan usaha! 👍");
+  if (improvements.length === 0) improvements.push("Tiada kelemahan ketara — teruskan usaha.");
 
   return { strengths, improvements, recommendation };
 }
