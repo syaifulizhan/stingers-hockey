@@ -334,3 +334,31 @@ drop trigger if exists trg_notify_admins_new_user on public.users;
 create trigger trg_notify_admins_new_user
   after insert on public.users
   for each row execute function public.notify_admins_new_user();
+
+-- ============================================================================
+-- PENILAIAN — kemahiran (padang/GK) & penilaian jurulatih (skala 1–10)
+--   Skor disimpan sebagai JSON {metrik: skor}. Setiap penilaian = 1 baris
+--   (dengan tarikh) supaya boleh jejak peningkatan dari masa ke masa.
+--   Jurulatih/admin menilai; ahli nampak penilaian sendiri sahaja.
+-- ============================================================================
+create table if not exists public.assessments (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     text not null,                          -- pemain (clerk_user_id)
+  assessor    text,                                   -- jurulatih (clerk_user_id)
+  type        text not null check (type in ('skill_field','skill_gk','coach_eval')),
+  assessed_on date not null default current_date,
+  scores      jsonb not null default '{}'::jsonb,
+  note        text,
+  created_at  timestamptz not null default now()
+);
+alter table public.assessments enable row level security;
+
+drop policy if exists assessments_select on public.assessments;
+create policy assessments_select on public.assessments for select to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+
+drop policy if exists assessments_write on public.assessments;
+create policy assessments_write on public.assessments for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+
+grant select, insert, update, delete on public.assessments to authenticated;

@@ -5,6 +5,8 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
 import TaskCard from "@/components/portal/TaskCard";
 import PortalNav from "@/components/portal/PortalNav";
+import AssessmentScores from "@/components/portal/AssessmentScores";
+import { ASSESSMENT_TYPES, type AssessmentType } from "@/lib/assessments";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -53,7 +55,7 @@ export default async function DashboardPage() {
   const user = await currentUser();
   const supabase = await createServerSupabase();
 
-  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes] =
+  const [profileRes, newsRes, tasksRes, subsRes, attRes, sessionsRes, myAttRes, myAssessRes] =
     await Promise.all([
       supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
       supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
@@ -66,6 +68,10 @@ export default async function DashboardPage() {
         .limit(8),
       supabase.from("sessions").select("id, type"),
       supabase.from("attendance").select("session_id, status"),
+      supabase
+        .from("assessments")
+        .select("type, scores, assessed_on")
+        .order("assessed_on", { ascending: false }),
     ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
@@ -91,6 +97,21 @@ export default async function DashboardPage() {
   const attendedTotal = presentTraining + presentMatch;
   const attendancePct =
     totalSessions > 0 ? Math.round((attendedTotal / totalSessions) * 100) : 0;
+
+  // Penilaian terkini ahli ini, satu per jenis (data tersusun desc).
+  const myAssessments = (myAssessRes.data ?? []) as {
+    type: AssessmentType;
+    scores: Record<string, number>;
+    assessed_on: string;
+  }[];
+  const latestByType = new Map<
+    AssessmentType,
+    { scores: Record<string, number>; assessed_on: string }
+  >();
+  for (const a of myAssessments) {
+    if (!latestByType.has(a.type))
+      latestByType.set(a.type, { scores: a.scores ?? {}, assessed_on: a.assessed_on });
+  }
 
   const name =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
@@ -289,6 +310,28 @@ export default async function DashboardPage() {
           <p className="font-sans text-sm text-muted">Belum ada rekod kehadiran.</p>
         )}
       </section>
+
+      {/* Penilaian terkini */}
+      {!isCoachOrAdmin && latestByType.size > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            ⭐ Penilaian Terkini
+          </h2>
+          <div className="flex flex-col gap-4">
+            {ASSESSMENT_TYPES.filter((t) => latestByType.has(t)).map((t) => {
+              const a = latestByType.get(t)!;
+              return (
+                <AssessmentScores
+                  key={t}
+                  type={t as AssessmentType}
+                  scores={a.scores}
+                  assessedOn={a.assessed_on}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
