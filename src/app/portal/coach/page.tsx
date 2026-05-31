@@ -4,6 +4,7 @@ import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox } from "lucide-re
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import PortalNav from "@/components/portal/PortalNav";
+import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MemberRow from "@/components/portal/coach/MemberRow";
@@ -131,6 +132,7 @@ export default async function CoachPage() {
         <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
           <Users className="h-4 w-4" /> Ahli ({members.length})
         </h2>
+        {admin && <SyncClerkButton />}
         <div className="flex flex-col gap-2">
           {members.map((m) => (
             <MemberRow key={m.clerk_user_id} member={m} viewerIsAdmin={admin} />
