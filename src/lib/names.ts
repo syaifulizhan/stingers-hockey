@@ -1,11 +1,11 @@
-// Nama paparan ahli. Kadang pendaftaran guna akaun ibu/bapa, jadi admin
-// boleh tetapkan nama sebenar pemain (display_name) — jika ada, ia digunakan
-// terus (cth: "Zahin"); jika tidak, guna nama pendaftaran.
+// Nama paparan ahli (untuk panel jurulatih). Pangkalnya username Clerk; jika
+// jurulatih tetapkan nama sebenar (display_name), ia muncul dalam kurungan.
+// Contoh: "saifalimran (Saif)". Tanpa nama coach: "saifalimran".
 export function memberName(
   fullName: string | null | undefined,
   displayName?: string | null
 ): string {
+  const base = (fullName && fullName.trim()) || "(tanpa nama)";
   const real = displayName && displayName.trim();
-  if (real) return real;
-  return (fullName && fullName.trim()) || "(tanpa nama)";
+  return real ? `${base} (${real})` : base;
 }

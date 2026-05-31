@@ -54,17 +54,36 @@ export async function POST() {
   }
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase
-    .from("users")
-    .upsert(rows, { onConflict: "clerk_user_id", ignoreDuplicates: true });
 
-  if (error) {
-    console.error("[coach/sync-clerk] gagal:", error.message);
-    return NextResponse.json(
-      { ok: false, error: error.message },
-      { status: 500 }
-    );
+  // Status sedia ada: tahu siapa baru, siapa belum lengkap profil.
+  const { data: existingRows } = await supabase
+    .from("users")
+    .select("clerk_user_id, profile_complete");
+  const existing = new Map(
+    (existingRows ?? []).map((r) => [r.clerk_user_id as string, r.profile_complete as boolean])
+  );
+
+  // 1. Sisipkan ahli BARU (yang belum ada baris).
+  const toInsert = rows.filter((r) => !existing.has(r.clerk_user_id));
+  if (toInsert.length > 0) {
+    const { error } = await supabase.from("users").insert(toInsert);
+    if (error) {
+      console.error("[coach/sync-clerk] insert gagal:", error.message);
+      return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+    }
   }
 
-  return NextResponse.json({ ok: true, total: rows.length });
+  // 2. Kemas kini nama (username Clerk) untuk baris sedia ada yang profil
+  //    BELUM lengkap — tidak menyentuh ahli yang sudah isi profil sebenar.
+  for (const r of rows) {
+    if (existing.get(r.clerk_user_id) === false) {
+      await supabase
+        .from("users")
+        .update({ full_name: r.full_name, email: r.email })
+        .eq("clerk_user_id", r.clerk_user_id)
+        .eq("profile_complete", false);
+    }
+  }
+
+  return NextResponse.json({ ok: true, total: rows.length, inserted: toInsert.length });
 }
