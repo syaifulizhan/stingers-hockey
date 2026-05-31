@@ -471,3 +471,24 @@ create policy match_stats_write on public.match_stats for all to authenticated
 
 grant select, insert, update, delete on public.matches to authenticated;
 grant select, insert, update, delete on public.match_stats to authenticated;
+
+-- ============================================================================
+-- PAPAN LIVE AWAM — benarkan orang awam (anon) baca keputusan perlawanan.
+--   Nama pemain didedah melalui VIEW selamat (NAMA sahaja — bukan IC/telefon).
+-- ============================================================================
+drop policy if exists seasons_public on public.seasons;
+create policy seasons_public on public.seasons for select to anon using (true);
+drop policy if exists matches_public on public.matches;
+create policy matches_public on public.matches for select to anon using (true);
+drop policy if exists match_stats_public on public.match_stats;
+create policy match_stats_public on public.match_stats for select to anon using (true);
+grant select on public.seasons to anon;
+grant select on public.matches to anon;
+grant select on public.match_stats to anon;
+
+-- View selamat: hanya id + nama pilihan (display_name jika ada, jika tidak full_name).
+create or replace view public.public_players as
+  select clerk_user_id,
+         coalesce(nullif(display_name, ''), full_name) as name
+  from public.users;
+grant select on public.public_players to anon, authenticated;

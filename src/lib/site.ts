@@ -6,6 +6,7 @@ export const navLinks = [
   { label: "Logo", labelEn: "Logo", href: "/#logo" },
   { label: "Jersi", labelEn: "Jersey", href: "/#jersi" },
   { label: "Berita", labelEn: "News", href: "/#berita" },
+  { label: "Live", labelEn: "Live", href: "/live" },
   { label: "Tempahan", labelEn: "Order", href: "/hustle-gear" },
   { label: "Hubungi", labelEn: "Contact", href: "/#hubungi" },
 ] as const;
