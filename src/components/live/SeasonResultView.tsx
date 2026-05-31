@@ -10,7 +10,15 @@ export type LiveMatch = {
   venue: string | null;
   our_score: number | null;
   opp_score: number | null;
+  created_at?: string | null;
 };
+
+// Masa untuk susun: guna tarikh perlawanan; jika kosong, guna masa dicipta.
+function recency(m: LiveMatch): number {
+  const t = m.match_date ?? m.created_at ?? "";
+  const ms = new Date(t).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
+}
 export type LiveStat = { match_id: string; user_id: string; stats: Record<string, number> };
 export type LivePlayer = { clerk_user_id: string; name: string | null };
 
@@ -95,6 +103,9 @@ export default function SeasonResultView({
   const ids = new Set(matches.map((m) => m.id));
   const rec = record(matches);
 
+  // Susun terkini → lama (tarikh, atau masa dicipta jika tarikh kosong).
+  const sorted = [...matches].sort((a, b) => recency(b) - recency(a));
+
   const tot: Record<string, Record<string, number>> = {};
   for (const s of stats) {
     if (!ids.has(s.match_id)) continue;
@@ -113,7 +124,7 @@ export default function SeasonResultView({
       .filter((s) => s.match_id === matchId && (s.stats[key] ?? 0) > 0)
       .map((s) => `${nameById.get(s.user_id) || "Ahli"} (${s.stats[key]})`);
 
-  const latest = matches.find((m) => m.our_score != null) ?? matches[0];
+  const latest = sorted[0];
 
   return (
     <>
@@ -170,10 +181,10 @@ export default function SeasonResultView({
 
       {/* Senarai perlawanan */}
       <div className="mt-6 flex flex-col gap-2">
-        {matches.length === 0 && (
+        {sorted.length === 0 && (
           <p className="font-sans text-sm text-muted">Tiada perlawanan.</p>
         )}
-        {matches.map((m) => {
+        {sorted.map((m) => {
           const scorers = contributors(m.id, "goals");
           return (
             <div key={m.id} className="rounded-xl border border-line bg-bg-soft/50 p-4">
