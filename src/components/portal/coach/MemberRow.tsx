@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Check, X } from "lucide-react";
+import { MoreVertical, Check, X } from "lucide-react";
 import { memberName } from "@/lib/names";
 
 type Member = {
@@ -16,6 +16,30 @@ type Member = {
   is_goalkeeper?: boolean;
 };
 
+function MenuItem({
+  onClick,
+  danger,
+  children,
+}: {
+  onClick: () => void;
+  danger?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full rounded-lg px-3 py-2 text-left font-sans text-sm transition-colors ${
+        danger
+          ? "text-red-400 hover:bg-red-500/10"
+          : "text-paper hover:bg-amber/10 hover:text-amber"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function MemberRow({
   member,
   viewerIsAdmin,
@@ -25,10 +49,14 @@ export default function MemberRow({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameVal, setNameVal] = useState(member.display_name ?? "");
 
+  const close = () => setMenuOpen(false);
+
   const setRole = async (role: "member" | "coach") => {
+    close();
     setBusy(true);
     try {
       const res = await fetch("/api/portal/coach/role", {
@@ -65,6 +93,7 @@ export default function MemberRow({
   };
 
   const setBanned = async (banned: boolean) => {
+    close();
     const who = memberName(member.full_name, member.display_name);
     if (banned && !window.confirm(`Ban ${who}? Mereka akan dihalang log masuk dan hantaran/media mereka dipadam.`)) return;
     setBusy(true);
@@ -84,6 +113,30 @@ export default function MemberRow({
     router.refresh();
   };
 
+  const del = async () => {
+    close();
+    const who = memberName(member.full_name, member.display_name);
+    if (
+      !window.confirm(
+        `Padam ${who} secara KEKAL?\n\nAkaun & semua rekod (kehadiran, hantaran, penilaian) akan dibuang. Tindakan ini TIDAK boleh diundur.`
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const res = await fetch(
+        `/api/portal/coach/member?id=${encodeURIComponent(member.clerk_user_id)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error();
+    } catch {
+      setBusy(false);
+      window.alert("Gagal padam ahli.");
+      return;
+    }
+    router.refresh();
+  };
+
   const roleBadge =
     member.role === "admin"
       ? "bg-amber text-ink"
@@ -92,6 +145,7 @@ export default function MemberRow({
         : "border border-line text-muted";
 
   const isPlayer = member.role === "member";
+  const canManage = viewerIsAdmin && member.role !== "admin";
 
   return (
     <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-soft/50 px-4 py-3">
@@ -127,18 +181,8 @@ export default function MemberRow({
           </div>
         ) : (
           <>
-            <p className="flex items-center gap-1.5 font-sans text-sm font-medium text-paper">
+            <p className="truncate font-sans text-sm font-medium text-paper">
               {memberName(member.full_name, member.display_name)}
-              {viewerIsAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setEditingName(true)}
-                  aria-label="Edit nama"
-                  className="text-muted transition-colors hover:text-amber"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-              )}
             </p>
             <p className="font-sans text-xs text-muted">
               Tahun {member.year || "-"} · {member.class || "-"}
@@ -147,7 +191,7 @@ export default function MemberRow({
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2">
         {member.is_goalkeeper && (
           <span className="rounded-full bg-amber/20 px-2 py-1 font-sans text-xs font-semibold uppercase text-amber" title="Penjaga Gol">
             🧤 GK
@@ -161,46 +205,53 @@ export default function MemberRow({
         <span className={`rounded-full px-2.5 py-1 font-sans text-xs font-semibold uppercase ${roleBadge}`}>
           {member.role}
         </span>
-        {/* Admin sahaja boleh ubah; tak boleh ubah admin lain */}
-        {viewerIsAdmin && member.role !== "admin" && (
-          <>
-            {isPlayer && !member.banned && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => patchMember({ isGoalkeeper: !member.is_goalkeeper })}
-                className={`rounded-full border px-3 py-1 font-sans text-xs font-semibold transition-colors disabled:opacity-50 ${
-                  member.is_goalkeeper
-                    ? "border-amber bg-amber/10 text-amber"
-                    : "border-line text-paper hover:border-amber hover:text-amber"
-                }`}
-              >
-                {member.is_goalkeeper ? "GK ✓" : "Tanda GK"}
-              </button>
-            )}
-            {!member.banned && (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => setRole(member.role === "coach" ? "member" : "coach")}
-                className="rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber disabled:opacity-50"
-              >
-                {busy ? "…" : member.role === "coach" ? "Turunkan" : "Jadikan Coach"}
-              </button>
-            )}
+
+        {canManage && (
+          <div className="relative">
             <button
               type="button"
               disabled={busy}
-              onClick={() => setBanned(!member.banned)}
-              className={`rounded-full border px-3 py-1 font-sans text-xs font-semibold transition-colors disabled:opacity-50 ${
-                member.banned
-                  ? "border-amber text-amber hover:bg-amber hover:text-ink"
-                  : "border-red-500/40 text-red-400 hover:bg-red-500 hover:text-paper"
-              }`}
+              onClick={() => setMenuOpen((o) => !o)}
+              aria-label="Tindakan"
+              className="rounded-full border border-line p-1.5 text-muted transition-colors hover:border-amber hover:text-amber disabled:opacity-50"
             >
-              {busy ? "…" : member.banned ? "Authorize" : "Ban"}
+              <MoreVertical className="h-4 w-4" />
             </button>
-          </>
+
+            {menuOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={close} />
+                <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-line bg-bg-soft p-1.5 shadow-xl">
+                  <MenuItem
+                    onClick={() => {
+                      close();
+                      setEditingName(true);
+                    }}
+                  >
+                    ✏️ Edit nama
+                  </MenuItem>
+                  {isPlayer && !member.banned && (
+                    <MenuItem onClick={() => patchMember({ isGoalkeeper: !member.is_goalkeeper })}>
+                      {member.is_goalkeeper ? "🧤 Buang penanda GK" : "🧤 Tanda GK"}
+                    </MenuItem>
+                  )}
+                  {!member.banned && (
+                    <MenuItem
+                      onClick={() => setRole(member.role === "coach" ? "member" : "coach")}
+                    >
+                      {member.role === "coach" ? "Turunkan jadi Ahli" : "Jadikan Coach"}
+                    </MenuItem>
+                  )}
+                  <MenuItem onClick={() => setBanned(!member.banned)} danger={!member.banned}>
+                    {member.banned ? "Authorize (nyahban)" : "Ban"}
+                  </MenuItem>
+                  <MenuItem onClick={del} danger>
+                    🗑️ Padam kekal
+                  </MenuItem>
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>
