@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import ShareButton from "@/components/ShareButton";
 
 type NewsRow = {
   id: string;
@@ -28,13 +29,16 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
       <h1 className="display mt-6 text-4xl leading-tight text-paper sm:text-5xl">
         {news.title}
       </h1>
-      <p className="mt-3 font-sans text-sm text-muted">
-        {new Date(news.published_at).toLocaleDateString(locale, {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+        <p className="font-sans text-sm text-muted">
+          {new Date(news.published_at).toLocaleDateString(locale, {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </p>
+        <ShareButton title={news.title} />
+      </div>
 
       {news.image_url && (
         // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
