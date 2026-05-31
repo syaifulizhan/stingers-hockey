@@ -414,8 +414,24 @@ grant select, insert, update, delete on public.fitness_tests to authenticated;
 --   Semua ahli boleh lihat senarai perlawanan; ahli nampak statistik sendiri.
 --   Jurulatih/admin urus semua.
 -- ============================================================================
+-- Season untuk kumpulkan perlawanan (cth: "Musim 2026", "MSSD 2026").
+create table if not exists public.seasons (
+  id          uuid primary key default gen_random_uuid(),
+  name        text not null,
+  created_by  text,
+  created_at  timestamptz not null default now()
+);
+alter table public.seasons enable row level security;
+drop policy if exists seasons_select on public.seasons;
+create policy seasons_select on public.seasons for select to authenticated using (true);
+drop policy if exists seasons_write on public.seasons;
+create policy seasons_write on public.seasons for all to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+grant select, insert, update, delete on public.seasons to authenticated;
+
 create table if not exists public.matches (
   id          uuid primary key default gen_random_uuid(),
+  season_id   uuid references public.seasons(id) on delete cascade,
   opponent    text not null,
   match_date  date,
   venue       text,
@@ -425,6 +441,8 @@ create table if not exists public.matches (
   created_by  text,
   created_at  timestamptz not null default now()
 );
+-- Untuk pemasangan sedia ada: tambah season_id jika belum ada.
+alter table public.matches add column if not exists season_id uuid references public.seasons(id) on delete cascade;
 alter table public.matches enable row level security;
 
 drop policy if exists matches_select on public.matches;

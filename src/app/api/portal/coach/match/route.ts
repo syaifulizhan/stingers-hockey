@@ -6,6 +6,7 @@ import { getMyRole, isCoach } from "@/lib/portal-auth";
 
 const base = {
   opponent: z.string().trim().min(1, { message: "Nama lawan diperlukan." }).max(120),
+  seasonId: z.string().uuid().nullable().optional(),
   matchDate: z.string().optional().or(z.literal("")),
   venue: z.string().max(120).optional().or(z.literal("")),
   competition: z.string().max(120).optional().or(z.literal("")),
@@ -15,6 +16,7 @@ const base = {
 
 function row(d: {
   opponent: string;
+  seasonId?: string | null;
   matchDate?: string;
   venue?: string;
   competition?: string;
@@ -23,6 +25,7 @@ function row(d: {
 }) {
   return {
     opponent: d.opponent,
+    season_id: d.seasonId ?? null,
     match_date: d.matchDate || null,
     venue: d.venue || null,
     competition: d.competition || null,
