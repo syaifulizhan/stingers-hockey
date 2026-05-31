@@ -73,15 +73,14 @@ export async function POST() {
     }
   }
 
-  // 2. Kemas kini nama (username Clerk) untuk baris sedia ada yang profil
-  //    BELUM lengkap — tidak menyentuh ahli yang sudah isi profil sebenar.
+  // 2. Kemas kini nama paparan kepada username Clerk untuk SEMUA baris sedia
+  //    ada (nama sebenar pemain diuruskan berasingan melalui display_name).
   for (const r of rows) {
-    if (existing.get(r.clerk_user_id) === false) {
+    if (existing.has(r.clerk_user_id) && r.full_name) {
       await supabase
         .from("users")
         .update({ full_name: r.full_name, email: r.email })
-        .eq("clerk_user_id", r.clerk_user_id)
-        .eq("profile_complete", false);
+        .eq("clerk_user_id", r.clerk_user_id);
     }
   }
 

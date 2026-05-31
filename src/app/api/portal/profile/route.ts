@@ -43,7 +43,8 @@ export async function POST(request: Request) {
   const { error } = await supabase.from("users").upsert(
     {
       clerk_user_id: userId,
-      full_name: d.fullName,
+      // Nama paparan = username Clerk (diuruskan oleh ensureUserRow/Segerak);
+      // nama penuh borang dihantar ke Google Sheet sahaja.
       email,
       year: d.year,
       class: d.className,
