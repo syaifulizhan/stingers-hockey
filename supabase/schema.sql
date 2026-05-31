@@ -271,6 +271,11 @@ drop policy if exists "members upload task proof" on storage.objects;
 create policy "members upload task proof" on storage.objects for insert to authenticated
   with check (bucket_id = 'task-proof');
 
+-- Ahli boleh padam fail bukti SENDIRI (fail disimpan dalam folder = clerk_user_id).
+drop policy if exists "members delete own task proof" on storage.objects;
+create policy "members delete own task proof" on storage.objects for delete to authenticated
+  using (bucket_id = 'task-proof' and (storage.foldername(name))[1] = auth.jwt()->>'sub');
+
 -- ============================================================================
 -- PADAM HANTARAN — ahli boleh padam hantaran sendiri; coach boleh padam apa saja
 -- ============================================================================
