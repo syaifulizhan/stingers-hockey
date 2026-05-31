@@ -61,6 +61,40 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
+// Edit berita (tajuk + isi).
+const editSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
+  body: z.string().trim().max(2000).optional().or(z.literal("")),
+});
+
+export async function PATCH(request: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Permintaan tidak sah." }, { status: 400 });
+  }
+  const parsed = editSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: "Data tidak sah." }, { status: 422 });
+  }
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("news")
+    .update({ title: parsed.data.title, body: parsed.data.body || null })
+    .eq("id", parsed.data.id);
+  if (error) {
+    console.error("[coach/news] edit gagal:", error.message);
+    return NextResponse.json({ ok: false, error: "Gagal kemas kini berita." }, { status: 403 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 // Padam berita (RLS: hanya coach/admin).
 export async function DELETE(request: Request) {
   const { userId } = await auth();

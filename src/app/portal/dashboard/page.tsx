@@ -167,27 +167,29 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* Tugasan */}
-      <section className="mt-8">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <ClipboardList className="h-4 w-4" /> Tugasan Latihan
-        </h2>
-        {tasks && tasks.length > 0 ? (
-          <div className="flex flex-col gap-3">
-            {tasks.map((t: { id: string; title: string; description: string | null; due_date: string | null }) => (
-              <TaskCard
-                key={t.id}
-                task={t}
-                submission={subByTask.get(t.id) ?? null}
-              />
-            ))}
-          </div>
-        ) : (
-          <p className="font-sans text-sm text-muted">
-            Tiada tugasan buat masa ini. Jurulatih akan beri tugasan nanti.
-          </p>
-        )}
-      </section>
+      {/* Tugasan — hanya untuk ahli (admin/coach urus di Panel Jurulatih) */}
+      {!isCoachOrAdmin && (
+        <section className="mt-8">
+          <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <ClipboardList className="h-4 w-4" /> Tugasan Latihan
+          </h2>
+          {tasks && tasks.length > 0 ? (
+            <div className="flex flex-col gap-3">
+              {tasks.map((t: { id: string; title: string; description: string | null; due_date: string | null }) => (
+                <TaskCard
+                  key={t.id}
+                  task={t}
+                  submission={subByTask.get(t.id) ?? null}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="font-sans text-sm text-muted">
+              Tiada tugasan buat masa ini. Jurulatih akan beri tugasan nanti.
+            </p>
+          )}
+        </section>
+      )}
 
       {/* Kehadiran */}
       <section className="mt-8">

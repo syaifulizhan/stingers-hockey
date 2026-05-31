@@ -37,17 +37,20 @@ export default function NotificationBell() {
     };
   }, []);
 
-  const toggle = async () => {
+  const markAllRead = async () => {
+    if (unread === 0) return;
+    setUnread(0);
+    try {
+      await fetch("/api/portal/notifications", { method: "POST" });
+    } catch {
+      // abaikan
+    }
+  };
+
+  const toggle = () => {
     const next = !open;
     setOpen(next);
-    if (next && unread > 0) {
-      setUnread(0);
-      try {
-        await fetch("/api/portal/notifications", { method: "POST" });
-      } catch {
-        // abaikan
-      }
-    }
+    if (next) markAllRead(); // mark as read bila dibuka
   };
 
   return (
@@ -70,8 +73,17 @@ export default function NotificationBell() {
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 z-50 mt-2 w-80 max-w-[85vw] overflow-hidden rounded-xl border border-line bg-bg-soft shadow-xl">
-            <div className="border-b border-line px-4 py-3 font-sans text-sm font-semibold text-paper">
-              Notifikasi
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <span className="font-sans text-sm font-semibold text-paper">
+                Notifikasi
+              </span>
+              <button
+                type="button"
+                onClick={markAllRead}
+                className="font-sans text-xs font-semibold text-amber transition-colors hover:text-amber-deep"
+              >
+                Tandai semua dibaca
+              </button>
             </div>
             <div className="max-h-96 overflow-y-auto">
               {items.length === 0 ? (
@@ -87,9 +99,11 @@ export default function NotificationBell() {
                         <p className="mt-0.5 font-sans text-xs text-muted">{n.body}</p>
                       )}
                       <p className="mt-1 font-sans text-[0.65rem] text-muted">
-                        {new Date(n.created_at).toLocaleDateString("ms-MY", {
+                        {new Date(n.created_at).toLocaleString("ms-MY", {
                           day: "numeric",
                           month: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
                         })}
                       </p>
                     </>
