@@ -97,6 +97,8 @@ export default async function CoachPage() {
     const key = `${a.user_id}:${a.type}`;
     if (!latestAssessment[key]) latestAssessment[key] = a.scores ?? {}; // tersusun desc → pertama = terkini
   }
+  // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
+  const activeMembers = members.filter((m) => !m.banned);
   const playerMembers = members
     .filter((m) => m.role === "member" && !m.banned)
     .map((m) => ({
@@ -197,14 +199,14 @@ export default async function CoachPage() {
             </span>
           </div>
         )}
-        <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
+        <TaskForm members={activeMembers.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
         {tasks.length > 0 && (
           <div className="mt-4 flex flex-col gap-1">
             {tasks.map((t) => (
               <TaskAdminItem
                 key={t.id}
                 task={t}
-                members={members.map((m) => ({
+                members={activeMembers.map((m) => ({
                   clerk_user_id: m.clerk_user_id,
                   full_name: memberName(m.full_name, m.display_name),
                 }))}
@@ -227,7 +229,7 @@ export default async function CoachPage() {
         </h2>
         <AttendancePanel
           sessions={sessions}
-          members={members.map((m) => ({
+          members={activeMembers.map((m) => ({
             clerk_user_id: m.clerk_user_id,
             full_name: memberName(m.full_name, m.display_name),
           }))}
