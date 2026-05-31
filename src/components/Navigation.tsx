@@ -7,11 +7,14 @@ import { Menu, X, LogIn, LayoutDashboard, LogOut } from "lucide-react";
 import { useAuth, UserButton, SignOutButton } from "@clerk/nextjs";
 import { navLinks } from "@/lib/site";
 import Wordmark from "@/components/ui/Wordmark";
+import LangToggle from "@/components/ui/LangToggle";
+import { useLang } from "@/lib/i18n";
 
 export default function Navigation() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
+  const { lang, t } = useLang();
 
   // Background solid + blur bila scroll > 40px
   useEffect(() => {
@@ -64,7 +67,7 @@ export default function Navigation() {
                 href={link.href}
                 className="font-sans text-sm font-medium uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
               >
-                {link.label}
+                {lang === "en" ? link.labelEn : link.label}
               </Link>
             </li>
           ))}
@@ -72,6 +75,7 @@ export default function Navigation() {
 
         {/* Akaun desktop — ikut status login */}
         <div className="hidden items-center gap-4 md:flex">
+          <LangToggle />
           {isLoaded && isSignedIn ? (
             <>
               <Link
@@ -89,7 +93,7 @@ export default function Navigation() {
               className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
             >
               <LogIn className="h-4 w-4" />
-              Log Masuk
+              {t("Log Masuk", "Log In")}
             </Link>
           )}
         </div>
@@ -123,14 +127,17 @@ export default function Navigation() {
               transition={{ type: "spring", stiffness: 320, damping: 34 }}
               className="fixed inset-y-0 right-0 z-50 flex w-72 flex-col gap-2 border-l border-line bg-bg-soft p-6 md:hidden"
             >
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                aria-label="Tutup menu"
-                className="mb-6 self-end text-paper"
-              >
-                <X className="h-7 w-7" />
-              </button>
+              <div className="mb-6 flex items-center justify-between">
+                <LangToggle />
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  aria-label={t("Tutup menu", "Close menu")}
+                  className="text-paper"
+                >
+                  <X className="h-7 w-7" />
+                </button>
+              </div>
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -138,7 +145,7 @@ export default function Navigation() {
                   onClick={() => setOpen(false)}
                   className="display py-2 text-2xl text-paper transition-colors hover:text-amber"
                 >
-                  {link.label}
+                  {lang === "en" ? link.labelEn : link.label}
                 </Link>
               ))}
               {isLoaded && isSignedIn ? (
@@ -149,7 +156,7 @@ export default function Navigation() {
                     className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
                   >
                     <LayoutDashboard className="h-4 w-4" />
-                    Portal Saya
+                    {t("Portal Saya", "My Portal")}
                   </Link>
                   <SignOutButton redirectUrl="/">
                     <button
@@ -158,7 +165,7 @@ export default function Navigation() {
                       className="inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
                     >
                       <LogOut className="h-4 w-4" />
-                      Log Keluar
+                      {t("Log Keluar", "Log Out")}
                     </button>
                   </SignOutButton>
                 </>
@@ -169,7 +176,7 @@ export default function Navigation() {
                   className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
                 >
                   <LogIn className="h-4 w-4" />
-                  Log Masuk
+                  {t("Log Masuk", "Log In")}
                 </Link>
               )}
             </motion.div>

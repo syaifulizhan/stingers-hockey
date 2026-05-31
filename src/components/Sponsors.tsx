@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
+import { useLang } from "@/lib/i18n";
 
 const sponsors = [
   {
@@ -12,12 +13,16 @@ const sponsors = [
 ];
 
 export default function Sponsors() {
+  const { t } = useLang();
   return (
     <section className="py-20">
       <div className="mx-auto max-w-7xl px-6 text-center">
         <Reveal>
           <h2 className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-            Setinggi-tinggi Penghargaan Kepada Penaja Kami
+            {t(
+              "Setinggi-tinggi Penghargaan Kepada Penaja Kami",
+              "Our Heartfelt Thanks to Our Sponsors"
+            )}
           </h2>
         </Reveal>
 

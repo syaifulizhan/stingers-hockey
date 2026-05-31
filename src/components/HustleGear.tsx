@@ -3,8 +3,10 @@
 import Button from "@/components/ui/Button";
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
+import { useLang } from "@/lib/i18n";
 
 export default function HustleGear() {
+  const { t } = useLang();
   return (
     <section className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -23,15 +25,18 @@ export default function HustleGear() {
                 <h2 className="display mt-5 text-5xl text-paper sm:text-6xl">
                   Hustle Gear
                   <br />
-                  <span className="text-amber">Kini Kembali</span>
+                  <span className="text-amber">{t("Kini Kembali", "Is Back")}</span>
                 </h2>
                 <p className="mt-6 max-w-lg font-sans text-base leading-relaxed text-muted">
-                  Pakaian rasmi sesi latihan pasukan — direka khas untuk
-                  keselesaan dan identiti pemain Stingers Hockey di padang. Lebih
-                  sporty, lebih eksklusif. Simbol semangat satu pasukan.
+                  {t(
+                    "Pakaian rasmi sesi latihan pasukan — direka khas untuk keselesaan dan identiti pemain Stingers Hockey di padang. Lebih sporty, lebih eksklusif. Simbol semangat satu pasukan.",
+                    "The official team training kit — designed for the comfort and identity of Stingers Hockey players on the field. Sportier, more exclusive. A symbol of one team's spirit."
+                  )}
                 </p>
                 <div className="mt-8">
-                  <Button href="/hustle-gear">Buat Tempahan →</Button>
+                  <Button href="/hustle-gear">
+                    {t("Buat Tempahan →", "Place Order →")}
+                  </Button>
                 </div>
               </div>
 

@@ -3,16 +3,9 @@
 // Marquee strip — scroll mendatar infinite, paused on hover.
 // Animasi CSS murni (dihormati oleh prefers-reduced-motion melalui globals).
 
-const items = [
-  { text: "Strike Hard", accent: true },
-  { text: "Strike Fast", accent: true },
-  { text: "Disiplin", accent: false },
-  { text: "Semangat", accent: false },
-  { text: "Kemahiran", accent: false },
-  { text: "Stingers Hockey", accent: true },
-];
+import { useLang } from "@/lib/i18n";
 
-function Row() {
+function Row({ items }: { items: { text: string; accent: boolean }[] }) {
   return (
     <ul className="flex shrink-0 items-center gap-8 px-4">
       {items.map((item, i) => (
@@ -34,12 +27,22 @@ function Row() {
 }
 
 export default function Marquee() {
+  const { t } = useLang();
+  const items = [
+    { text: "Strike Hard", accent: true },
+    { text: "Strike Fast", accent: true },
+    { text: t("Disiplin", "Discipline"), accent: false },
+    { text: t("Semangat", "Spirit"), accent: false },
+    { text: t("Kemahiran", "Skill"), accent: false },
+    { text: "Stingers Hockey", accent: true },
+  ];
+
   return (
     <div className="group overflow-hidden border-y border-line bg-bg-soft py-4">
       <div className="flex w-max animate-[marquee_24s_linear_infinite] group-hover:[animation-play-state:paused]">
-        <Row />
-        <Row />
-        <Row />
+        <Row items={items} />
+        <Row items={items} />
+        <Row items={items} />
       </div>
     </div>
   );

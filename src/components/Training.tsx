@@ -3,28 +3,37 @@
 import { Dot } from "lucide-react";
 import Card from "@/components/ui/Card";
 import Reveal from "@/components/ui/Reveal";
-
-const sessions = [
-  {
-    no: "01",
-    days: "Selasa & Rabu",
-    squad: "Lelaki",
-    time: "7.30 pagi – 9.30 pagi",
-  },
-  {
-    no: "02",
-    days: "Khamis & Jumaat",
-    squad: "Perempuan",
-    time: "7.30 pagi – 9.30 pagi",
-  },
-];
-
-const chips = [
-  "Jurulatih akan menilai prestasi anda di padang",
-  "Pemain terpilih dijemput sertai skuad 2026",
-];
+import { useLang } from "@/lib/i18n";
 
 export default function Training() {
+  const { t } = useLang();
+
+  const sessions = [
+    {
+      no: "01",
+      days: t("Selasa & Rabu", "Tuesday & Wednesday"),
+      squad: t("Lelaki", "Boys"),
+      time: t("7.30 pagi – 9.30 pagi", "7:30 AM – 9:30 AM"),
+    },
+    {
+      no: "02",
+      days: t("Khamis & Jumaat", "Thursday & Friday"),
+      squad: t("Perempuan", "Girls"),
+      time: t("7.30 pagi – 9.30 pagi", "7:30 AM – 9:30 AM"),
+    },
+  ];
+
+  const chips = [
+    t(
+      "Jurulatih akan menilai prestasi anda di padang",
+      "Coaches will assess your performance on the field"
+    ),
+    t(
+      "Pemain terpilih dijemput sertai skuad 2026",
+      "Selected players are invited to join the 2026 squad"
+    ),
+  ];
+
   return (
     <section id="latihan" className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -33,19 +42,21 @@ export default function Training() {
           <div>
             <Reveal>
               <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-                Jadual Latihan
+                {t("Jadual Latihan", "Training Schedule")}
               </span>
             </Reveal>
             <Reveal delay={0.1}>
               <h2 className="display mt-5 text-5xl text-paper sm:text-6xl lg:text-7xl">
-                Padang Menanti
+                {t("Padang Menanti", "The Field Awaits")}
               </h2>
             </Reveal>
           </div>
           <Reveal delay={0.15}>
             <p className="max-w-sm font-sans text-base text-muted sm:text-right">
-              Multipurpose Court, SK Taman Desaminium. Sedia berkasut, tenaga &
-              semangat juang.
+              {t(
+                "Multipurpose Court, SK Taman Desaminium. Sedia berkasut, tenaga & semangat juang.",
+                "Multipurpose Court, SK Taman Desaminium. Bring your boots, energy & fighting spirit."
+              )}
             </p>
           </Reveal>
         </div>

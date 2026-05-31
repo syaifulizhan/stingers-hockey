@@ -3,15 +3,17 @@
 import { motion } from "framer-motion";
 import Reveal from "@/components/ui/Reveal";
 import SmartImage from "@/components/ui/SmartImage";
+import { useLang } from "@/lib/i18n";
 
 const stats = [
-  { value: "2017", label: "Ditubuhkan" },
-  { value: "13+", label: "Edisi Jersi" },
-  { value: "2", label: "Skuad L & P" },
-  { value: "∞", label: "Semangat Juang" },
+  { value: "2017", label: "Ditubuhkan", labelEn: "Established" },
+  { value: "13+", label: "Edisi Jersi", labelEn: "Jersey Editions" },
+  { value: "2", label: "Skuad L & P", labelEn: "Boys & Girls Squads" },
+  { value: "∞", label: "Semangat Juang", labelEn: "Fighting Spirit" },
 ];
 
 export default function About() {
+  const { lang, t } = useLang();
   return (
     <section id="tentang" className="bg-bg-soft py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -20,26 +22,28 @@ export default function About() {
         <div>
           <Reveal>
             <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-              Tentang Kami
+              {t("Tentang Kami", "About Us")}
             </span>
           </Reveal>
           <Reveal delay={0.1}>
             <h2 className="display mt-5 text-5xl text-paper sm:text-6xl lg:text-7xl">
-              Bukan Sekadar{" "}
-              <span className="text-outline">Percubaan</span>
+              {t("Bukan Sekadar", "More Than Just a")}{" "}
+              <span className="text-outline">{t("Percubaan", "Tryout")}</span>
             </h2>
           </Reveal>
           <Reveal delay={0.2}>
             <p className="mt-7 max-w-xl font-sans text-lg leading-relaxed text-muted">
-              Ini peluang untuk{" "}
+              {t("Ini peluang untuk", "This is your chance to")}{" "}
               <strong className="font-semibold text-paper">
-                tunjuk kehebatan anda
+                {t("tunjuk kehebatan anda", "show what you've got")}
               </strong>
-              . Stingers Hockey menjadi tempat pemain berlatih bersungguh-sungguh,
-              bermain dengan semangat, dan sentiasa maju. Kami mencari bakat
-              baharu yang bersedia meningkat ke peringkat seterusnya.{" "}
+              .{" "}
+              {t(
+                "Stingers Hockey menjadi tempat pemain berlatih bersungguh-sungguh, bermain dengan semangat, dan sentiasa maju. Kami mencari bakat baharu yang bersedia meningkat ke peringkat seterusnya.",
+                "Stingers Hockey is where players train hard, play with heart, and keep improving. We're looking for new talent ready to step up to the next level."
+              )}{" "}
               <strong className="font-semibold text-amber">
-                Tampil. Menyinar.
+                {t("Tampil. Menyinar.", "Step Up. Shine.")}
               </strong>
             </p>
           </Reveal>
@@ -68,7 +72,7 @@ export default function About() {
                 {stat.value}
               </span>
               <span className="font-sans text-sm uppercase tracking-wider text-muted">
-                {stat.label}
+                {lang === "en" ? stat.labelEn : stat.label}
               </span>
             </motion.div>
           ))}

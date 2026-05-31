@@ -8,6 +8,7 @@ import SplashScreen from "@/components/SplashScreen";
 import PullToRefresh from "@/components/PullToRefresh";
 import IdleLogout from "@/components/portal/IdleLogout";
 import LogoutRefresh from "@/components/portal/LogoutRefresh";
+import { LanguageProvider } from "@/lib/i18n";
 
 // Tema Clerk (gelap + amber) — dikongsi laman utama & portal.
 const clerkAppearance = {
@@ -135,7 +136,7 @@ export default function RootLayout({
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
           />
-          {children}
+          <LanguageProvider>{children}</LanguageProvider>
           <PullToRefresh />
           <IdleLogout />
           <LogoutRefresh />

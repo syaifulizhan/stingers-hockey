@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { jerseys } from "@/lib/jerseys";
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
+import { useLang } from "@/lib/i18n";
 
 export default function JerseyGallery() {
+  const { t } = useLang();
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
@@ -42,18 +44,21 @@ export default function JerseyGallery() {
           <div>
             <Reveal>
               <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-                Arkib
+                {t("Arkib", "Archive")}
               </span>
             </Reveal>
             <Reveal delay={0.1}>
               <h2 className="display mt-5 text-5xl text-paper sm:text-6xl lg:text-7xl">
-                Legasi Jersi
+                {t("Legasi Jersi", "Jersey Legacy")}
               </h2>
             </Reveal>
           </div>
           <Reveal delay={0.15}>
             <p className="max-w-sm font-sans text-base text-muted sm:text-right">
-              13 edisi sejak 2022 — setiap satu cerita pasukan.
+              {t(
+                "13 edisi sejak 2022 — setiap satu cerita pasukan.",
+                "13 editions since 2022 — each one a team story."
+              )}
             </p>
           </Reveal>
         </div>
