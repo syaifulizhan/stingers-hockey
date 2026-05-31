@@ -173,7 +173,6 @@ export default async function CoachPage() {
           {
             id: "ahli",
             label: "Ahli",
-            icon: "👥",
             content: (
               <section>
                 <h2 className={sectionTitle}>
@@ -187,7 +186,6 @@ export default async function CoachPage() {
           {
             id: "kehadiran",
             label: "Kehadiran",
-            icon: "🗓️",
             content: (
               <section>
                 <h2 className={sectionTitle}>
@@ -211,7 +209,6 @@ export default async function CoachPage() {
           {
             id: "tugasan",
             label: "Tugasan",
-            icon: "📋",
             content: (
               <section>
                 <h2 className={sectionTitle}>
@@ -258,7 +255,6 @@ export default async function CoachPage() {
           {
             id: "penilaian",
             label: "Penilaian",
-            icon: "⭐",
             content: (
               <section>
                 <h2 className={sectionTitle}>
@@ -275,7 +271,6 @@ export default async function CoachPage() {
           {
             id: "berita",
             label: "Berita",
-            icon: "📰",
             content: (
               <section>
                 <h2 className={sectionTitle}>
