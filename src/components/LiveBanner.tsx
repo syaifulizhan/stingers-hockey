@@ -14,8 +14,9 @@ type Match = {
   created_at: string | null;
 };
 
+// "Terkini" = paling baru direkod (created_at); fallback ke tarikh perlawanan.
 function recency(m: Match): number {
-  const ms = new Date(m.match_date ?? m.created_at ?? "").getTime();
+  const ms = new Date(m.created_at ?? m.match_date ?? "").getTime();
   return Number.isNaN(ms) ? 0 : ms;
 }
 
