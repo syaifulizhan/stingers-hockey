@@ -54,6 +54,11 @@ export default function MatchPanel({
   const [newSeason, setNewSeason] = useState("");
   const [newTeam, setNewTeam] = useState<"lelaki" | "perempuan">("lelaki");
 
+  // Edit season sedia ada
+  const [editingSeason, setEditingSeason] = useState(false);
+  const [seasonName, setSeasonName] = useState("");
+  const [seasonTeam, setSeasonTeam] = useState<"lelaki" | "perempuan">("lelaki");
+
   // Maklumat perlawanan baharu
   const [opponent, setOpponent] = useState("");
   const [matchDate, setMatchDate] = useState("");
@@ -160,6 +165,31 @@ export default function MatchPanel({
       window.alert("Gagal kemas kini season.");
       return;
     }
+    router.refresh();
+  };
+
+  const startEditSeason = () => {
+    const s = seasons.find((x) => x.id === seasonId);
+    if (!s) return;
+    setSeasonName(s.name);
+    setSeasonTeam(s.team === "perempuan" ? "perempuan" : "lelaki");
+    setEditingSeason(true);
+  };
+
+  const saveSeasonEdit = async () => {
+    if (seasonName.trim() === "") return;
+    try {
+      const res = await fetch("/api/portal/coach/season", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: seasonId, name: seasonName, team: seasonTeam }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      window.alert("Gagal kemas kini season.");
+      return;
+    }
+    setEditingSeason(false);
     router.refresh();
   };
 
@@ -375,31 +405,76 @@ export default function MatchPanel({
             Cipta season dahulu untuk mula merekod perlawanan.
           </p>
         ) : (
-          <div className="flex items-center gap-2">
-            <select className={inputCls} value={seasonId} onChange={(e) => setSeasonId(e.target.value)}>
-              {seasons.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} — {teamLabel(s.team)}
-                  {s.closed ? " (Ditutup)" : ""}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onClick={toggleClosed}
-              className="shrink-0 whitespace-nowrap rounded-full border border-line px-4 py-2 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
-            >
-              {seasons.find((s) => s.id === seasonId)?.closed ? "Buka Semula" : "Tutup Season"}
-            </button>
-            <button
-              type="button"
-              onClick={deleteSeason}
-              aria-label="Padam season"
-              className="shrink-0 rounded-lg border border-line p-2 text-muted transition-colors hover:border-red-500/50 hover:text-red-400"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
+          <>
+            {editingSeason ? (
+              <div className="flex flex-col gap-2 rounded-lg border border-line bg-ink/40 p-3 sm:flex-row sm:items-center">
+                <input
+                  className={inputCls}
+                  value={seasonName}
+                  onChange={(e) => setSeasonName(e.target.value)}
+                  placeholder="Nama season"
+                />
+                <select
+                  className={`${inputCls} sm:w-44`}
+                  value={seasonTeam}
+                  onChange={(e) => setSeasonTeam(e.target.value as "lelaki" | "perempuan")}
+                >
+                  <option value="lelaki">Lelaki</option>
+                  <option value="perempuan">Perempuan</option>
+                </select>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveSeasonEdit}
+                    className="rounded-full bg-amber px-5 py-2 font-sans text-xs font-semibold uppercase tracking-wider text-ink hover:bg-amber-deep"
+                  >
+                    Simpan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingSeason(false)}
+                    className="rounded-full border border-line px-4 py-2 font-sans text-xs text-paper hover:border-amber"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <select className={inputCls} value={seasonId} onChange={(e) => setSeasonId(e.target.value)}>
+                  {seasons.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — {teamLabel(s.team)}
+                      {s.closed ? " (Ditutup)" : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={startEditSeason}
+                  aria-label="Edit season"
+                  className="shrink-0 rounded-lg border border-line p-2 text-muted transition-colors hover:border-amber hover:text-amber"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleClosed}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-line px-4 py-2 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
+                >
+                  {seasons.find((s) => s.id === seasonId)?.closed ? "Buka Semula" : "Tutup Season"}
+                </button>
+                <button
+                  type="button"
+                  onClick={deleteSeason}
+                  aria-label="Padam season"
+                  className="shrink-0 rounded-lg border border-line p-2 text-muted transition-colors hover:border-red-500/50 hover:text-red-400"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {seasons.find((s) => s.id === seasonId)?.closed && (

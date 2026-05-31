@@ -47,16 +47,27 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: false, error: "Permintaan tidak sah." }, { status: 400 });
   }
   const parsed = z
-    .object({ id: z.string().uuid(), closed: z.boolean() })
+    .object({
+      id: z.string().uuid(),
+      name: z.string().trim().min(1).max(80).optional(),
+      team: z.enum(["lelaki", "perempuan"]).optional(),
+      closed: z.boolean().optional(),
+    })
     .safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ ok: false, error: "Data tidak sah." }, { status: 422 });
   }
+  const { id, name, team, closed } = parsed.data;
+  const update: Record<string, unknown> = {};
+  if (name !== undefined) update.name = name;
+  if (team !== undefined) update.team = team;
+  if (closed !== undefined) update.closed = closed;
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ ok: false, error: "Tiada perubahan." }, { status: 422 });
+  }
+  // Nota: created_at TIDAK diubah → susunan kekal.
   const supabase = await createServerSupabase();
-  const { error } = await supabase
-    .from("seasons")
-    .update({ closed: parsed.data.closed })
-    .eq("id", parsed.data.id);
+  const { error } = await supabase.from("seasons").update(update).eq("id", id);
   if (error) {
     console.error("[coach/season] tutup gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini season." }, { status: 500 });
