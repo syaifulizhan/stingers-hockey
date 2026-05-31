@@ -7,6 +7,7 @@ type NewsRow = {
   body: string | null;
   image_url: string | null;
   published_at: string;
+  slug: string | null;
 };
 
 // Server component: ambil berita, kemudian render paparan (client) yang dwibahasa.
@@ -14,7 +15,7 @@ export default async function Berita() {
   const supabase = createPublicSupabase();
   const { data } = await supabase
     .from("news")
-    .select("id, title, body, image_url, published_at")
+    .select("id, title, body, image_url, published_at, slug")
     .order("published_at", { ascending: false })
     .limit(3);
 

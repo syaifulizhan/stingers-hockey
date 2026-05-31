@@ -99,8 +99,11 @@ create table if not exists public.news (
   body         text,
   image_url    text,
   author       text,
+  slug         text,                                  -- slug URL dari tajuk
   published_at timestamptz not null default now()
 );
+alter table public.news add column if not exists slug text;
+create unique index if not exists news_slug_key on public.news (slug) where slug is not null;
 
 -- ============================================================================
 -- FUNGSI PEMBANTU — semak peranan pengguna semasa

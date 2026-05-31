@@ -10,6 +10,7 @@ type NewsRow = {
   body: string | null;
   image_url: string | null;
   published_at: string;
+  slug: string | null;
 };
 
 export default function BeritaView({ news }: { news: NewsRow[] }) {
@@ -34,7 +35,7 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
           {news.map((n, i) => (
             <Reveal key={n.id} delay={0.1 + i * 0.08}>
               <Link
-                href={`/berita/${n.id}`}
+                href={`/berita/${n.slug ?? n.id}`}
                 className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-bg-soft transition-colors hover:border-amber/60"
               >
                 {n.image_url ? (
