@@ -246,7 +246,7 @@ export default function MemberRow({
                     {member.banned ? "Authorize (nyahban)" : "Ban"}
                   </MenuItem>
                   <MenuItem onClick={del} danger>
-                    🗑️ Padam kekal
+                    Padam kekal
                   </MenuItem>
                 </div>
               </>
