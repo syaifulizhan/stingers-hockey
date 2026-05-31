@@ -8,7 +8,7 @@ import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
 import FitnessSummary from "@/components/portal/FitnessSummary";
 import MatchPerformance from "@/components/portal/MatchPerformance";
-import { ASSESSMENT_TYPES, type AssessmentType } from "@/lib/assessments";
+import { ASSESSMENT_TYPES, assessmentAverage, type AssessmentType } from "@/lib/assessments";
 import { memberName } from "@/lib/names";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
@@ -164,6 +164,30 @@ export default async function DashboardPage() {
     ? Math.round((filledCount(profile) / PROFILE_COLS.length) * 100)
     : 0;
 
+  // Ringkasan ringkas pemain (di atas dashboard).
+  const skillAvg = latestByType.has("skill_field")
+    ? assessmentAverage("skill_field", latestByType.get("skill_field")!.scores)
+    : null;
+  const gkAvg = latestByType.has("skill_gk")
+    ? assessmentAverage("skill_gk", latestByType.get("skill_gk")!.scores)
+    : null;
+  const coachAvg = latestByType.has("coach_eval")
+    ? assessmentAverage("coach_eval", latestByType.get("coach_eval")!.scores)
+    : null;
+  const totalGoals = myMatchRows.reduce((s, r) => s + (r.stats.goals ?? 0), 0);
+  const totalSaves = myMatchRows.reduce((s, r) => s + (r.stats.save ?? 0), 0);
+  const skillForRole = isGoalkeeper ? gkAvg : skillAvg;
+  const summaryChips = [
+    { label: "Kehadiran", value: totalSessions > 0 ? `${attendancePct}%` : "—" },
+    { label: "Kemahiran", value: skillForRole != null ? `${skillForRole}/10` : "—" },
+    { label: "Penilaian Jurulatih", value: coachAvg != null ? `${coachAvg}/10` : "—" },
+    {
+      label: isGoalkeeper ? "Save" : "Gol",
+      value: myMatchRows.length ? String(isGoalkeeper ? totalSaves : totalGoals) : "—",
+    },
+    { label: "Pencapaian", value: String(myAchievements.length) },
+  ];
+
   const subByTask = new Map(submissions.map((s) => [s.task_id, s]));
 
   return (
@@ -203,6 +227,28 @@ export default async function DashboardPage() {
           {percent >= 100 ? "Kemas kini profil →" : "Lengkapkan profil →"}
         </Link>
       </section>
+
+      {/* Ringkasan Saya (ahli sahaja) */}
+      {!isCoachOrAdmin && (
+        <section className="mt-6">
+          <h2 className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            Ringkasan Saya
+          </h2>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {summaryChips.map((c) => (
+              <div
+                key={c.label}
+                className="rounded-xl border border-line bg-bg-soft/50 px-3 py-3 text-center"
+              >
+                <div className="display text-2xl text-amber">{c.value}</div>
+                <div className="font-sans text-[0.65rem] uppercase tracking-wide text-muted">
+                  {c.label}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Berita */}
       <section className="mt-8">
