@@ -60,6 +60,48 @@ export async function POST(request: Request) {
   return NextResponse.json({ ok: true });
 }
 
+// Edit tugasan.
+const editSchema = z.object({
+  id: z.string().uuid(),
+  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  dueDate: z.string().optional().or(z.literal("")),
+  assignedTo: z.string().optional().or(z.literal("")),
+});
+
+export async function PATCH(request: Request) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
+  }
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ ok: false, error: "Permintaan tidak sah." }, { status: 400 });
+  }
+  const parsed = editSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ ok: false, error: "Data tidak sah." }, { status: 422 });
+  }
+  const d = parsed.data;
+  const supabase = await createServerSupabase();
+  const { error } = await supabase
+    .from("tasks")
+    .update({
+      title: d.title,
+      description: d.description || null,
+      due_date: d.dueDate || null,
+      assigned_to: d.assignedTo || null,
+    })
+    .eq("id", d.id);
+  if (error) {
+    console.error("[coach/task] edit gagal:", error.message);
+    return NextResponse.json({ ok: false, error: "Gagal kemas kini tugasan." }, { status: 403 });
+  }
+  return NextResponse.json({ ok: true });
+}
+
 // Padam tugasan (RLS: hanya coach/admin). Hantaran berkaitan turut terpadam (cascade).
 export async function DELETE(request: Request) {
   const { userId } = await auth();

@@ -7,7 +7,8 @@ import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MemberRow from "@/components/portal/coach/MemberRow";
-import DeleteButton from "@/components/portal/coach/DeleteButton";
+import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
+import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 import NotificationBell from "@/components/portal/NotificationBell";
@@ -21,10 +22,11 @@ type Member = {
   role: string;
   banned: boolean;
 };
-type NewsRow = { id: string; title: string; published_at: string };
+type NewsRow = { id: string; title: string; body: string | null; published_at: string };
 type TaskRow = {
   id: string;
   title: string;
+  description: string | null;
   assigned_to: string | null;
   due_date: string | null;
 };
@@ -53,8 +55,8 @@ export default async function CoachPage() {
         .from("users")
         .select("clerk_user_id, full_name, year, class, role, banned")
         .order("full_name", { ascending: true }),
-      supabase.from("news").select("id, title, published_at").order("published_at", { ascending: false }).limit(10),
-      supabase.from("tasks").select("id, title, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
+      supabase.from("news").select("id, title, body, published_at").order("published_at", { ascending: false }).limit(10),
+      supabase.from("tasks").select("id, title, description, assigned_to, due_date").order("created_at", { ascending: false }).limit(20),
       supabase.from("sessions").select("id, title, date").order("created_at", { ascending: false }).limit(30),
       supabase.from("attendance").select("session_id, user_id, status"),
       supabase
@@ -128,26 +130,11 @@ export default async function CoachPage() {
         </h2>
         <NewsForm />
         {news.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-1">
+          <div className="mt-4 flex flex-col gap-1">
             {news.map((n) => (
-              <li
-                key={n.id}
-                className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 font-sans text-sm text-paper/80 hover:bg-bg-soft/50"
-              >
-                <span>
-                  • {n.title}{" "}
-                  <span className="text-muted">
-                    ({new Date(n.published_at).toLocaleDateString("ms-MY")})
-                  </span>
-                </span>
-                <DeleteButton
-                  endpoint="/api/portal/coach/news"
-                  id={n.id}
-                  confirmMsg={`Padam berita "${n.title}"?`}
-                />
-              </li>
+              <NewsAdminItem key={n.id} news={n} />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
@@ -158,27 +145,23 @@ export default async function CoachPage() {
         </h2>
         <TaskForm members={members.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: m.full_name }))} />
         {tasks.length > 0 && (
-          <ul className="mt-4 flex flex-col gap-1">
+          <div className="mt-4 flex flex-col gap-1">
             {tasks.map((t) => (
-              <li
+              <TaskAdminItem
                 key={t.id}
-                className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 font-sans text-sm text-paper/80 hover:bg-bg-soft/50"
-              >
-                <span>
-                  • {t.title}{" "}
-                  <span className="text-muted">
-                    → {t.assigned_to ? nameById.get(t.assigned_to) || "ahli" : "Semua ahli"}
-                    {t.due_date ? ` · akhir ${t.due_date}` : ""}
-                  </span>
-                </span>
-                <DeleteButton
-                  endpoint="/api/portal/coach/task"
-                  id={t.id}
-                  confirmMsg={`Padam tugasan "${t.title}"? Hantaran ahli untuk tugasan ini juga akan terpadam.`}
-                />
-              </li>
+                task={t}
+                members={members.map((m) => ({
+                  clerk_user_id: m.clerk_user_id,
+                  full_name: m.full_name,
+                }))}
+                assigneeName={
+                  t.assigned_to
+                    ? nameById.get(t.assigned_to) || "ahli"
+                    : "Semua ahli"
+                }
+              />
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
