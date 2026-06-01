@@ -92,6 +92,9 @@ create table if not exists public.submissions (
   unique (task_id, user_id)
 );
 
+-- Tanda hantaran lewat (selepas tarikh akhir tugasan).
+alter table public.submissions add column if not exists late boolean not null default false;
+
 -- ── Jadual: news (pengumuman) ───────────────────────────────────────────────
 create table if not exists public.news (
   id           uuid primary key default gen_random_uuid(),
