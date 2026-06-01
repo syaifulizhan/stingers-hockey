@@ -304,8 +304,9 @@ export default async function CoachPage() {
     arr.push(s);
     subsByTask.set(s.task_id, arr);
   }
+  // Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
   const isPastDue = (t: TaskRow) =>
-    !!t.due_date && Date.now() > new Date(`${t.due_date}T23:59:59`).getTime();
+    !!t.due_date && Date.now() > new Date(`${t.due_date}T23:59:59+08:00`).getTime();
   // Task lepas tarikh akhir = arkib (hantaran kuncup dalam task itu).
   // Hantaran task AKTIF kekal di seksyen "Semak Hantaran" di bawah.
   const pastDueTaskIds = new Set(tasks.filter(isPastDue).map((t) => t.id));
