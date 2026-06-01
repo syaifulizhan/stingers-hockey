@@ -79,13 +79,13 @@ export default function AttendanceStats({
           const champ = r.pct > 0 && r.pct === topPct;
           return (
             <div key={r.clerk_user_id} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between gap-3 font-sans text-sm">
-                <span className="flex items-center gap-1.5 text-paper">
-                  {champ && <Trophy className="h-3.5 w-3.5 text-amber" />}
-                  {memberName(r.full_name, r.display_name)}
+              <div className="flex items-center justify-between gap-2 font-sans text-sm">
+                <span className="flex min-w-0 items-center gap-1.5 text-paper">
+                  {champ && <Trophy className="h-3.5 w-3.5 shrink-0 text-amber" />}
+                  <span className="truncate">{memberName(r.full_name, r.display_name)}</span>
                 </span>
-                <span className="flex items-center gap-2">
-                  <span className="text-xs text-muted">
+                <span className="flex shrink-0 items-center gap-2">
+                  <span className="whitespace-nowrap text-xs text-muted">
                     🏃 {r.p.training}/{totalTraining} · 🏑 {r.p.match}/{totalMatch}
                   </span>
                   <span className="font-semibold tabular-nums text-amber">{r.pct}%</span>

@@ -286,17 +286,17 @@ export default function AttendancePanel({
               return (
                 <div
                   key={m.clerk_user_id}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-soft/50 px-4 py-2.5"
+                  className="flex flex-col gap-2 rounded-lg border border-line bg-bg-soft/50 px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <span className="flex items-center gap-2 font-sans text-sm text-paper">
-                    {m.full_name || "(tanpa nama)"}
+                  <span className="flex min-w-0 items-center gap-2 font-sans text-sm text-paper">
+                    <span className="truncate">{m.full_name || "(tanpa nama)"}</span>
                     {badge && (
-                      <span className="rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-amber">
+                      <span className="shrink-0 rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-amber">
                         {badge}
                       </span>
                     )}
                   </span>
-                  <div className="flex gap-1.5">
+                  <div className="flex flex-wrap gap-1.5">
                     {STATUSES.map((s) => (
                       <button
                         key={s.value}

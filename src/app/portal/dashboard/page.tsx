@@ -414,14 +414,14 @@ export default async function DashboardPage() {
               ) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between rounded-lg border border-line bg-bg-soft/50 px-4 py-3"
+                  className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-soft/50 px-4 py-3"
                 >
-                  <span className="font-sans text-sm text-paper/90">
+                  <span className="min-w-0 truncate font-sans text-sm text-paper/90">
                     {a.sessions?.title ?? "Sesi latihan"}
                     {a.sessions?.date ? ` — ${a.sessions.date}` : ""}
                   </span>
                   <span
-                    className={`font-sans text-xs font-semibold uppercase ${
+                    className={`shrink-0 font-sans text-xs font-semibold uppercase ${
                       a.status === "present"
                         ? "text-amber"
                         : a.status === "excused"
