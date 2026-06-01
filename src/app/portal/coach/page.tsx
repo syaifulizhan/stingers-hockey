@@ -56,6 +56,14 @@ type SubmissionRow = {
   tasks: { title: string } | null;
 };
 
+// Hujung hari (11:59:59pm) waktu Malaysia (+08:00) pada satu tarikh.
+const myEndOfDay = (date: string) => new Date(`${date}T23:59:59+08:00`).getTime();
+// Lewat = dihantar selepas hujung tarikh akhir (waktu Malaysia).
+// Dikira terus daripada masa hantar vs tarikh akhir — tak bergantung pada
+// nilai `late` lama yang mungkin salah (bug zon masa dulu).
+const isLate = (submittedAt: string, due: string | null | undefined) =>
+  !!due && new Date(submittedAt).getTime() > myEndOfDay(due);
+
 // Sentiasa render segar — elak Router Cache sajikan data lama selepas navigasi.
 export const dynamic = "force-dynamic";
 
@@ -81,7 +89,7 @@ export default async function CoachPage() {
         .select("id, task_id, content, status, submitted_at, media_url, user_id, late, tasks(title)")
         .order("submitted_at", { ascending: false })
         .limit(200),
-      supabase.from("submissions").select("task_id, user_id, status, late"),
+      supabase.from("submissions").select("task_id, user_id, status, late, submitted_at"),
       supabase
         .from("assessments")
         .select("user_id, type, scores, assessed_on")
@@ -286,6 +294,9 @@ export default async function CoachPage() {
       is_goalkeeper: m.is_goalkeeper,
     }));
 
+  // Tarikh akhir setiap task — untuk kira "Lewat" terus di tab coach.
+  const dueById = new Map(tasks.map((t) => [t.id, t.due_date]));
+
   const submissions = subs.map((s) => ({
     id: s.id,
     task_id: s.task_id,
@@ -293,7 +304,7 @@ export default async function CoachPage() {
     status: s.status,
     submitted_at: s.submitted_at,
     media_url: s.media_url,
-    late: s.late,
+    late: isLate(s.submitted_at, dueById.get(s.task_id)),
     task_title: s.tasks?.title ?? "Tugasan",
     member_name: nameById.get(s.user_id) || "Ahli",
   }));
@@ -305,8 +316,7 @@ export default async function CoachPage() {
     subsByTask.set(s.task_id, arr);
   }
   // Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
-  const isPastDue = (t: TaskRow) =>
-    !!t.due_date && Date.now() > new Date(`${t.due_date}T23:59:59+08:00`).getTime();
+  const isPastDue = (t: TaskRow) => !!t.due_date && Date.now() > myEndOfDay(t.due_date);
   // Task lepas tarikh akhir = arkib (hantaran kuncup dalam task itu).
   // Hantaran task AKTIF kekal di seksyen "Semak Hantaran" di bawah.
   const pastDueTaskIds = new Set(tasks.filter(isPastDue).map((t) => t.id));
@@ -319,6 +329,7 @@ export default async function CoachPage() {
     user_id: string;
     status: string;
     late: boolean;
+    submitted_at: string;
   }[];
   const memberIds = new Set(
     members
@@ -335,7 +346,7 @@ export default async function CoachPage() {
     acc.submitted += 1;
     if (s.status === "reviewed") acc.reviewed += 1;
     if (s.status === "revise") acc.revise += 1;
-    if (s.late) acc.late += 1;
+    if (isLate(s.submitted_at, dueById.get(s.task_id))) acc.late += 1;
     byTask.set(s.task_id, acc);
   }
   const taskSummary = (t: TaskRow) => {
