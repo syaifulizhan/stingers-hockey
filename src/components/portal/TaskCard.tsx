@@ -31,10 +31,12 @@ export default function TaskCard({
   task,
   submission,
   readOnly = false,
+  compact = false,
 }: {
   task: Task;
   submission: Submission;
   readOnly?: boolean;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const supabase = useSupabase();
@@ -152,45 +154,47 @@ export default function TaskCard({
   }
 
   return (
-    <div className="rounded-xl border border-line bg-bg-soft/50 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-sans text-base font-semibold text-paper">{task.title}</h3>
-          {task.description && (
-            <p className="mt-1 font-sans text-sm text-muted">{task.description}</p>
-          )}
-          {task.due_date && (
-            <p className="mt-2 inline-flex items-center gap-1.5 font-sans text-xs text-muted">
-              <Clock className="h-3.5 w-3.5" />
-              Tarikh akhir: {task.due_date}
-            </p>
-          )}
+    <div className={compact ? "" : "rounded-xl border border-line bg-bg-soft/50 p-5"}>
+      {!compact && (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-sans text-base font-semibold text-paper">{task.title}</h3>
+            {task.description && (
+              <p className="mt-1 font-sans text-sm text-muted">{task.description}</p>
+            )}
+            {task.due_date && (
+              <p className="mt-2 inline-flex items-center gap-1.5 font-sans text-xs text-muted">
+                <Clock className="h-3.5 w-3.5" />
+                Tarikh akhir: {task.due_date}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            {!submitted ? (
+              <span className="rounded-full border border-line px-3 py-1 font-sans text-xs text-muted">
+                Belum
+              </span>
+            ) : status === "reviewed" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber px-3 py-1 font-sans text-xs font-semibold text-ink">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Disemak Coach
+              </span>
+            ) : status === "revise" ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-paper/15 px-3 py-1 font-sans text-xs font-semibold text-paper">
+                <RotateCcw className="h-3.5 w-3.5" /> Perlu Ulang
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
+              </span>
+            )}
+            {submission?.late && (
+              <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 font-sans text-[0.65rem] font-semibold uppercase text-orange-400">
+                Lewat
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5">
-          {!submitted ? (
-            <span className="rounded-full border border-line px-3 py-1 font-sans text-xs text-muted">
-              Belum
-            </span>
-          ) : status === "reviewed" ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber px-3 py-1 font-sans text-xs font-semibold text-ink">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Disemak Coach
-            </span>
-          ) : status === "revise" ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-paper/15 px-3 py-1 font-sans text-xs font-semibold text-paper">
-              <RotateCcw className="h-3.5 w-3.5" /> Perlu Ulang
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
-            </span>
-          )}
-          {submission?.late && (
-            <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 font-sans text-[0.65rem] font-semibold uppercase text-orange-400">
-              Lewat
-            </span>
-          )}
-        </div>
-      </div>
+      )}
 
       {/* Bukti sedia ada (bila tidak sedang edit) */}
       {!open && submission?.media_url && (

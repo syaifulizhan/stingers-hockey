@@ -80,7 +80,7 @@ export default async function CoachPage() {
         .select("id, content, status, submitted_at, media_url, user_id, late, tasks(title)")
         .order("submitted_at", { ascending: false })
         .limit(50),
-      supabase.from("submissions").select("task_id, user_id"),
+      supabase.from("submissions").select("task_id, user_id, status, late"),
       supabase
         .from("assessments")
         .select("user_id, type, scores, assessed_on")
@@ -301,6 +301,8 @@ export default async function CoachPage() {
   const allSubs = (allSubsRes.data ?? []) as unknown as {
     task_id: string;
     user_id: string;
+    status: string;
+    late: boolean;
   }[];
   const memberIds = new Set(
     members
@@ -308,27 +310,27 @@ export default async function CoachPage() {
       .map((m) => m.clerk_user_id)
   );
   const memberCount = memberIds.size;
-  const submittedByTask = new Map<string, number>();
+
+  // Kiraan setiap task (ahli aktif sahaja).
+  const byTask = new Map<string, { submitted: number; reviewed: number; revise: number; late: number }>();
   for (const s of allSubs) {
-    if (memberIds.has(s.user_id)) {
-      submittedByTask.set(s.task_id, (submittedByTask.get(s.task_id) ?? 0) + 1);
-    }
+    if (!memberIds.has(s.user_id)) continue;
+    const acc = byTask.get(s.task_id) ?? { submitted: 0, reviewed: 0, revise: 0, late: 0 };
+    acc.submitted += 1;
+    if (s.status === "reviewed") acc.reviewed += 1;
+    if (s.status === "revise") acc.revise += 1;
+    if (s.late) acc.late += 1;
+    byTask.set(s.task_id, acc);
   }
-  const taskStat = (t: TaskRow) => {
-    // Sasaran: 1 ahli jika ditugaskan khusus kepada ahli; jika tidak, semua ahli.
-    const total = t.assigned_to
-      ? memberIds.has(t.assigned_to)
-        ? 1
-        : 0
-      : memberCount;
-    const submitted = submittedByTask.get(t.id) ?? 0;
-    const pct = total > 0 ? Math.round((submitted / total) * 100) : 0;
-    return { submitted, total, pct };
+  const taskSummary = (t: TaskRow) => {
+    // Sasaran: 1 ahli jika ditugaskan khusus; jika tidak, semua ahli aktif.
+    const target = t.assigned_to ? (memberIds.has(t.assigned_to) ? 1 : 0) : memberCount;
+    const c = byTask.get(t.id) ?? { submitted: 0, reviewed: 0, revise: 0, late: 0 };
+    const pct = target > 0 ? Math.round((c.submitted / target) * 100) : 0;
+    return { target, ...c, pct };
   };
   const avgSubmissionPct = tasks.length
-    ? Math.round(
-        tasks.reduce((sum, t) => sum + taskStat(t).pct, 0) / tasks.length
-      )
+    ? Math.round(tasks.reduce((sum, t) => sum + taskSummary(t).pct, 0) / tasks.length)
     : 0;
 
   const sectionTitle =
@@ -435,7 +437,7 @@ export default async function CoachPage() {
                             ? nameById.get(t.assigned_to) || "ahli"
                             : "Semua ahli"
                         }
-                        stat={admin ? taskStat(t) : null}
+                        summary={taskSummary(t)}
                       />
                     ))}
                   </div>
