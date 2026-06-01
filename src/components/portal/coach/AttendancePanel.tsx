@@ -7,8 +7,13 @@ const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none focus:border-amber";
 
 type Session = { id: string; title: string; date: string | null; type?: string };
-type Member = { clerk_user_id: string; full_name: string | null };
+type Member = { clerk_user_id: string; full_name: string | null; role?: string };
 type Attendance = { session_id: string; user_id: string; status: string };
+
+// Jurulatih/admin di atas, kemudian ahli biasa.
+const rolePriority = (r?: string) => (r === "admin" ? 0 : r === "coach" ? 1 : 2);
+const roleBadge = (r?: string) =>
+  r === "admin" ? "Admin" : r === "coach" ? "Jurulatih" : null;
 
 const typeLabel = (t?: string) => (t === "match" ? "🏑 Perlawanan" : "🏃 Latihan");
 
@@ -273,15 +278,23 @@ export default function AttendancePanel({
 
           {/* Senarai ahli + butang status */}
           <div className="flex flex-col gap-2">
-            {members.map((m) => {
+            {[...members]
+              .sort((a, b) => rolePriority(a.role) - rolePriority(b.role))
+              .map((m) => {
               const current = statusMap[`${selectedId}:${m.clerk_user_id}`];
+              const badge = roleBadge(m.role);
               return (
                 <div
                   key={m.clerk_user_id}
                   className="flex items-center justify-between gap-3 rounded-lg border border-line bg-bg-soft/50 px-4 py-2.5"
                 >
-                  <span className="font-sans text-sm text-paper">
+                  <span className="flex items-center gap-2 font-sans text-sm text-paper">
                     {m.full_name || "(tanpa nama)"}
+                    {badge && (
+                      <span className="rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-amber">
+                        {badge}
+                      </span>
+                    )}
                   </span>
                   <div className="flex gap-1.5">
                     {STATUSES.map((s) => (

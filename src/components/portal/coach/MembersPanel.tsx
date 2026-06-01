@@ -44,7 +44,11 @@ export default function MembersPanel({
         return true;
     }
   };
-  const list = members.filter(match);
+  // Jurulatih/admin di atas, kemudian ahli biasa.
+  const rolePriority = (r: string) => (r === "admin" ? 0 : r === "coach" ? 1 : 2);
+  const list = members
+    .filter(match)
+    .sort((a, b) => rolePriority(a.role) - rolePriority(b.role));
 
   const tabs: { key: Filter; label: string }[] = [
     { key: "ahli", label: "Ahli" },
