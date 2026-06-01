@@ -3,7 +3,6 @@ import { currentUser } from "@clerk/nextjs/server";
 import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { ensureUserRow } from "@/lib/portal-auth";
-import TaskCard from "@/components/portal/TaskCard";
 import PlayerTaskList from "@/components/portal/PlayerTaskList";
 import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
@@ -348,21 +347,10 @@ export default async function DashboardPage() {
         <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
           <ClipboardList className="h-4 w-4" /> Tugasan Latihan
         </h2>
-        {isCoachOrAdmin ? (
-          tasks.length > 0 ? (
-            <div className="flex flex-col gap-3">
-              {tasks.map((t: { id: string; title: string; description: string | null; due_date: string | null }) => (
-                <TaskCard key={t.id} task={t} submission={subByTask.get(t.id) ?? null} readOnly />
-              ))}
-            </div>
-          ) : (
-            <p className="font-sans text-sm text-muted">Tiada tugasan buat masa ini.</p>
-          )
-        ) : (
-          <PlayerTaskList
-            items={tasks.map((t) => ({ task: t, submission: subByTask.get(t.id) ?? null }))}
-          />
-        )}
+        <PlayerTaskList
+          items={tasks.map((t) => ({ task: t, submission: subByTask.get(t.id) ?? null }))}
+          readOnly={isCoachOrAdmin}
+        />
       </section>
       {isCoachOrAdmin && (
         <p className="mt-2 font-sans text-xs text-muted">

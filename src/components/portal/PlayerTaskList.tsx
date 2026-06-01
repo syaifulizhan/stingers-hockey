@@ -29,9 +29,24 @@ function statusOf(s: Submission): { label: string; cls: string } {
   return { label: "Dihantar", cls: "bg-amber/15 text-amber" };
 }
 
-export default function PlayerTaskList({ items }: { items: Item[] }) {
-  // Tugasan terkini (pertama) terbuka; yang lama kuncup.
-  const [openId, setOpenId] = useState<string | null>(items[0]?.task.id ?? null);
+export default function PlayerTaskList({
+  items,
+  readOnly = false,
+}: {
+  items: Item[];
+  readOnly?: boolean;
+}) {
+  // Task BARU (belum tamat) terbuka; task TAMAT kuncup. Setiap satu boleh toggle.
+  const [openIds, setOpenIds] = useState<Set<string>>(
+    () => new Set(items.filter((it) => !isPastDue(it.task.due_date)).map((it) => it.task.id))
+  );
+  const toggle = (id: string) =>
+    setOpenIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   if (items.length === 0) {
     return (
@@ -44,20 +59,21 @@ export default function PlayerTaskList({ items }: { items: Item[] }) {
   return (
     <div className="flex flex-col gap-2">
       {items.map(({ task, submission }) => {
-        const open = openId === task.id;
+        const open = openIds.has(task.id);
+        const past = isPastDue(task.due_date);
         const st = statusOf(submission);
         return (
           <div key={task.id} className="overflow-hidden rounded-xl border border-line bg-bg-soft/50">
             <button
               type="button"
-              onClick={() => setOpenId(open ? null : task.id)}
+              onClick={() => toggle(task.id)}
               className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left"
             >
               <span className="min-w-0 truncate font-sans text-sm font-semibold text-paper">
                 {task.title}
               </span>
               <span className="flex shrink-0 items-center gap-2">
-                {isPastDue(task.due_date) ? (
+                {past ? (
                   <span className="rounded-full border border-line px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-muted">
                     Tamat
                   </span>
@@ -66,14 +82,16 @@ export default function PlayerTaskList({ items }: { items: Item[] }) {
                     Baru
                   </span>
                 )}
-                {submission?.late && (
+                {!readOnly && submission?.late && (
                   <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-orange-400">
                     Lewat
                   </span>
                 )}
-                <span className={`rounded-full px-2.5 py-0.5 font-sans text-[0.65rem] font-semibold ${st.cls}`}>
-                  {st.label}
-                </span>
+                {!readOnly && (
+                  <span className={`rounded-full px-2.5 py-0.5 font-sans text-[0.65rem] font-semibold ${st.cls}`}>
+                    {st.label}
+                  </span>
+                )}
                 <ChevronDown className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`} />
               </span>
             </button>
@@ -85,7 +103,8 @@ export default function PlayerTaskList({ items }: { items: Item[] }) {
                 {task.due_date && (
                   <p className="mb-3 font-sans text-xs text-muted">Tarikh akhir: {task.due_date}</p>
                 )}
-                <TaskCard task={task} submission={submission} compact />
+                {/* Coach/admin: baca sahaja — tiada borang hantar. */}
+                {!readOnly && <TaskCard task={task} submission={submission} compact />}
               </div>
             )}
           </div>
