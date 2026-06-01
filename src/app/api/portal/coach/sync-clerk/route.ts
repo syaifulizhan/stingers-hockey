@@ -31,8 +31,7 @@ export async function POST() {
   while (true) {
     const res = await client.users.getUserList({ limit, offset });
     for (const u of res.data) {
-      const fullName =
-        u.username || [u.firstName, u.lastName].filter(Boolean).join(" ") || null;
+      const fullName = u.username || u.firstName || u.lastName || null;
       const email =
         u.emailAddresses.find((e) => e.id === u.primaryEmailAddressId)
           ?.emailAddress ??
