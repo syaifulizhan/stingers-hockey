@@ -33,7 +33,7 @@ export default function PortalNav({ badge }: { badge?: string }) {
         )}
       </div>
 
-      <nav className="flex items-center gap-1.5">
+      <nav className="flex flex-wrap items-center justify-end gap-1.5">
         {links.map(({ href, label, Icon }) => {
           const active =
             href === "/" ? pathname === "/" : pathname.startsWith(href);

@@ -12,11 +12,9 @@ export async function ensureUserRow() {
   const { userId } = await auth();
   if (!userId) return;
   const user = await currentUser();
-  // Utamakan username Clerk (bukan nama dari akaun Google/email).
-  const fullName =
-    user?.username ||
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    null;
+  // Utamakan username Clerk; jika tiada, guna nama pendek (firstName sahaja) —
+  // BUKAN nama penuh dari akaun Google/email MOE.
+  const fullName = user?.username || user?.firstName || user?.lastName || null;
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
   const supabase = await createServerSupabase();
 
