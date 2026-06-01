@@ -230,25 +230,27 @@ export default async function DashboardPage() {
         <PushToggle />
       </div>
 
-      {/* Kad: kelengkapan profil */}
-      <section className="mt-6 rounded-2xl border border-line bg-bg-soft/50 p-6">
-        <div className="mb-2 flex items-center justify-between font-sans text-sm">
-          <span className="text-paper/90">Profil lengkap</span>
-          <span className="font-semibold text-amber">{percent}%</span>
-        </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink">
-          <div
-            className="h-full rounded-full bg-amber transition-all"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
-        <Link
-          href="/portal/onboarding"
-          className="mt-4 inline-block font-sans text-sm font-semibold text-amber hover:text-amber-deep"
-        >
-          {percent >= 100 ? "Kemas kini profil →" : "Lengkapkan profil →"}
-        </Link>
-      </section>
+      {/* Kad: kelengkapan profil — hilang bila dah lengkap (100%) */}
+      {percent < 100 && (
+        <section className="mt-6 rounded-2xl border border-line bg-bg-soft/50 p-6">
+          <div className="mb-2 flex items-center justify-between font-sans text-sm">
+            <span className="text-paper/90">Profil lengkap</span>
+            <span className="font-semibold text-amber">{percent}%</span>
+          </div>
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-ink">
+            <div
+              className="h-full rounded-full bg-amber transition-all"
+              style={{ width: `${percent}%` }}
+            />
+          </div>
+          <Link
+            href="/portal/onboarding"
+            className="mt-4 inline-block font-sans text-sm font-semibold text-amber hover:text-amber-deep"
+          >
+            Lengkapkan profil →
+          </Link>
+        </section>
+      )}
 
       {/* Ringkasan Saya (ahli sahaja) */}
       {!isCoachOrAdmin && (
