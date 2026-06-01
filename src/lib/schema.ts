@@ -8,7 +8,7 @@ export const genderOptions = ["Lelaki", "Perempuan"] as const;
 export const experienceOptions = [
   "Tiada",
   "Sekolah Lama",
-  "Klinik",
+  "Kelab",
   "Akademi",
 ] as const;
 
