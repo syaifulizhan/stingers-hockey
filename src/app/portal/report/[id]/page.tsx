@@ -6,6 +6,8 @@ import PrintBar from "@/components/portal/PrintButton";
 
 // Laporan boleh dicetak. RLS: ahli hanya baca data sendiri; jurulatih/admin
 // boleh baca mana-mana pemain (untuk akses pemain lain).
+export const dynamic = "force-dynamic";
+
 export default async function ReportPage({
   params,
 }: {

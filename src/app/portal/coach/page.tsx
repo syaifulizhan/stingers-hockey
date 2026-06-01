@@ -54,6 +54,9 @@ type SubmissionRow = {
   tasks: { title: string } | null;
 };
 
+// Sentiasa render segar — elak Router Cache sajikan data lama selepas navigasi.
+export const dynamic = "force-dynamic";
+
 export default async function CoachPage() {
   // Pengawal: hanya coach/admin boleh masuk.
   const role = await getMyRole();

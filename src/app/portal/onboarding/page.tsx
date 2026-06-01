@@ -4,6 +4,8 @@ import { ensureUserRow } from "@/lib/portal-auth";
 import OnboardingForm from "@/components/portal/OnboardingForm";
 import type { ProfileInput } from "@/lib/portal-schema";
 
+export const dynamic = "force-dynamic";
+
 export default async function OnboardingPage() {
   // Cipta baris ahli kalau belum ada (nampak di panel jurulatih serta-merta).
   await ensureUserRow();

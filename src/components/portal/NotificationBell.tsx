@@ -17,24 +17,33 @@ export default function NotificationBell() {
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
 
+  const load = async () => {
+    try {
+      const res = await fetch("/api/portal/notifications", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      setItems(data.items ?? []);
+      setUnread(data.unread ?? 0);
+    } catch {
+      // senyap — loceng tidak kritikal
+    }
+  };
+
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch("/api/portal/notifications", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = await res.json();
-        setItems(data.items ?? []);
-        setUnread(data.unread ?? 0);
-      } catch {
-        // senyap — loceng tidak kritikal
-      }
+    const first = setTimeout(load, 0); // muat awal
+    const t = setInterval(load, 30000); // semak setiap 30s
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
     };
-    const first = setTimeout(load, 0); // muat awal (bukan segerak dalam effect)
-    const t = setInterval(load, 60000); // semak setiap 60s
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", load);
     return () => {
       clearTimeout(first);
       clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", load);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const markAllRead = async () => {
@@ -42,6 +51,7 @@ export default function NotificationBell() {
     setUnread(0);
     try {
       await fetch("/api/portal/notifications", { method: "POST" });
+      await load(); // segerak dengan server supaya kiraan tepat
     } catch {
       // abaikan
     }
