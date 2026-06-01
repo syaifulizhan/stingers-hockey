@@ -9,3 +9,13 @@ export function memberName(
   const real = displayName && displayName.trim();
   return real ? `${base} (${real})` : base;
 }
+
+// Nama tunggal — guna nama yang jurulatih tetapkan (display_name) jika ada,
+// jika tidak guna nama sedia ada. (Tiada kurungan.)
+export function preferredName(
+  fullName: string | null | undefined,
+  displayName?: string | null
+): string {
+  const real = displayName && displayName.trim();
+  return real || (fullName && fullName.trim()) || "(tanpa nama)";
+}

@@ -13,6 +13,9 @@ import { memberName } from "@/lib/names";
 import { generateReport } from "@/lib/report";
 import ReportPreview from "@/components/portal/ReportPreview";
 import PushToggle from "@/components/portal/PushToggle";
+import SummaryChips from "@/components/portal/SummaryChips";
+import CoachMemberSummary from "@/components/portal/CoachMemberSummary";
+import { buildPlayerSummaries } from "@/lib/player-summaries";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 // Medan WAJIB untuk kira "% lengkap". Medan pilihan (catatan, tel. pemain,
@@ -165,6 +168,8 @@ export default async function DashboardPage() {
   const name = memberName(baseName, (profile?.display_name as string) ?? null);
   const role = (profile?.role as string) ?? "member";
   const isCoachOrAdmin = role === "coach" || role === "admin";
+  // Jurulatih: ringkasan semua ahli (untuk dropdown "Ringkasan Pemain").
+  const playerSummaries = isCoachOrAdmin ? await buildPlayerSummaries(supabase) : [];
   const percent = profile
     ? Math.round((filledCount(profile) / PROFILE_COLS.length) * 100)
     : 0;
@@ -251,25 +256,23 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {/* Ringkasan Saya (ahli sahaja) */}
+      {/* Ringkasan Saya (ahli biasa) */}
       {!isCoachOrAdmin && (
         <section className="mt-6">
           <h2 className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
             Ringkasan Saya
           </h2>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-            {summaryChips.map((c) => (
-              <div
-                key={c.label}
-                className="rounded-xl border border-line bg-bg-soft/50 px-3 py-3 text-center"
-              >
-                <div className="display text-2xl text-amber">{c.value}</div>
-                <div className="font-sans text-[0.65rem] uppercase tracking-wide text-muted">
-                  {c.label}
-                </div>
-              </div>
-            ))}
-          </div>
+          <SummaryChips chips={summaryChips} />
+        </section>
+      )}
+
+      {/* Ringkasan Pemain (jurulatih) — pilih ahli dari dropdown */}
+      {isCoachOrAdmin && (
+        <section className="mt-6">
+          <h2 className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            Ringkasan Pemain
+          </h2>
+          <CoachMemberSummary players={playerSummaries} />
         </section>
       )}
 
