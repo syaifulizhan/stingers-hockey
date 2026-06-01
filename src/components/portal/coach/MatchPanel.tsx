@@ -50,7 +50,10 @@ export default function MatchPanel({
 }) {
   const router = useRouter();
 
-  const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
+  const [seasonId, setSeasonId] = useState(
+    seasons.find((s) => !s.closed)?.id ?? "" // lalai: season terbuka pertama
+  );
+  const [showClosed, setShowClosed] = useState(false);
   const [newSeason, setNewSeason] = useState("");
   const [newTeam, setNewTeam] = useState<"lelaki" | "perempuan">("lelaki");
 
@@ -370,6 +373,16 @@ export default function MatchPanel({
       stats: s.stats ?? {},
     }));
 
+  // Season ditutup dikuncupkan — hanya season terbuka kelihatan secara lalai.
+  const closedCount = seasons.filter((s) => s.closed).length;
+  const visibleSeasons = showClosed ? seasons : seasons.filter((s) => !s.closed);
+  useEffect(() => {
+    if (!showClosed && seasons.find((s) => s.id === seasonId)?.closed) {
+      setSeasonId(seasons.find((s) => !s.closed)?.id ?? "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showClosed]);
+
   return (
     <div className="flex flex-col gap-8">
       {/* ── Season ── */}
@@ -400,9 +413,23 @@ export default function MatchPanel({
           </button>
         </form>
 
+        {closedCount > 0 && (
+          <button
+            type="button"
+            onClick={() => setShowClosed((v) => !v)}
+            className="mb-2 font-sans text-xs font-semibold text-amber hover:text-amber-deep"
+          >
+            {showClosed ? "Sembunyikan season ditutup" : `Tunjuk season ditutup (${closedCount})`}
+          </button>
+        )}
+
         {seasons.length === 0 ? (
           <p className="font-sans text-sm text-muted">
             Cipta season dahulu untuk mula merekod perlawanan.
+          </p>
+        ) : visibleSeasons.length === 0 ? (
+          <p className="font-sans text-sm text-muted">
+            Tiada season aktif. Cipta season baharu di atas, atau tekan “Tunjuk season ditutup”.
           </p>
         ) : (
           <>
@@ -442,7 +469,7 @@ export default function MatchPanel({
             ) : (
               <div className="flex items-center gap-2">
                 <select className={inputCls} value={seasonId} onChange={(e) => setSeasonId(e.target.value)}>
-                  {seasons.map((s) => (
+                  {visibleSeasons.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} — {teamLabel(s.team)}
                       {s.closed ? " (Ditutup)" : ""}
