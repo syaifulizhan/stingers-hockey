@@ -50,9 +50,7 @@ export default function MatchPanel({
 }) {
   const router = useRouter();
 
-  const [seasonId, setSeasonId] = useState(
-    seasons.find((s) => !s.closed)?.id ?? "" // lalai: season terbuka pertama
-  );
+  const [seasonId, setSeasonId] = useState(""); // lalai: Pilih Season
   const [showClosed, setShowClosed] = useState(false);
   const [newSeason, setNewSeason] = useState("");
   const [newTeam, setNewTeam] = useState<"lelaki" | "perempuan">("lelaki");
@@ -470,6 +468,7 @@ export default function MatchPanel({
             ) : (
               <div className="flex items-center gap-2">
                 <select className={inputCls} value={seasonId} onChange={(e) => setSeasonId(e.target.value)}>
+                  <option value="">— Pilih Season —</option>
                   {visibleSeasons.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} — {teamLabel(s.team)}
