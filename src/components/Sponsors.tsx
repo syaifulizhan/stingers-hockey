@@ -51,26 +51,26 @@ export default function Sponsors() {
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="mt-10 flex flex-wrap justify-center gap-6">
+          <div className="mx-auto mt-10 grid max-w-md grid-cols-2 gap-3 sm:flex sm:max-w-none sm:flex-wrap sm:justify-center sm:gap-6">
             {sponsors.map((s) => (
               <motion.div
                 key={s.name}
                 whileHover={{ scale: 1.04 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="rounded-xl border border-line bg-bg-soft/60 p-6"
+                className="rounded-xl border border-line bg-bg-soft/60 p-4 sm:p-6"
               >
                 {s.kind === "logo" ? (
                   <SmartImage
                     src={s.image}
                     alt={`Penaja: ${s.name}`}
                     label={s.name}
-                    className="h-28 w-56"
-                    sizes="224px"
+                    className="h-24 w-full sm:h-28 sm:w-56"
+                    sizes="(max-width: 640px) 50vw, 224px"
                     fit="contain"
                   />
                 ) : (
-                  <div className="flex h-28 w-56 flex-col items-center justify-center text-center">
-                    <span className="display text-3xl leading-tight text-paper">
+                  <div className="flex h-24 w-full flex-col items-center justify-center text-center sm:h-28 sm:w-56">
+                    <span className="display text-2xl leading-tight text-paper sm:text-3xl">
                       {s.highlight}
                     </span>
                     <span className="mt-2 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.25em] text-muted">
