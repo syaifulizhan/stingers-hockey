@@ -409,6 +409,7 @@ export default async function CoachPage() {
                   members={activeMembers.map((m) => ({
                     clerk_user_id: m.clerk_user_id,
                     full_name: memberName(m.full_name, m.display_name),
+                    role: m.role,
                   }))}
                   attendance={attendance}
                 />
