@@ -43,9 +43,13 @@ export async function POST() {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
   }
   const supabase = await createServerSupabase();
-  await supabase
+  const { error } = await supabase
     .from("users")
     .update({ last_seen_notifications: new Date().toISOString() })
     .eq("clerk_user_id", userId);
+  if (error) {
+    console.error("[notifications] tandai dibaca gagal:", error.message);
+    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }
