@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { CheckCircle2, Clock, Paperclip, X, Trash2, RotateCcw } from "lucide-react";
+import { CheckCircle2, Clock, Paperclip, X, Trash2, RotateCcw, Download } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
+
+// Pautan muat turun (Supabase Storage: ?download paksa simpan fail).
+const downloadUrl = (u: string) => u + (u.includes("?") ? "&" : "?") + "download";
 
 type Task = {
   id: string;
@@ -21,7 +24,7 @@ type Submission = {
   late?: boolean;
 } | null;
 
-const MAX_MB = 50;
+const MAX_MB = 5;
 
 function isVideo(url: string) {
   return /\.(mp4|mov|webm|m4v|ogg)(\?|$)/i.test(url);
@@ -78,7 +81,9 @@ export default function TaskCard({
       return;
     }
     if (f.size > MAX_MB * 1024 * 1024) {
-      setError(`Fail terlalu besar (maksimum ${MAX_MB}MB). Cuba klip lebih pendek.`);
+      setError(
+        `Saiz fail melebihi ${MAX_MB}MB. Sila muat naik video atau gambar yang lebih kecil (cth: klip video lebih pendek).`
+      );
       return;
     }
     setError(null);
@@ -198,13 +203,21 @@ export default function TaskCard({
 
       {/* Bukti sedia ada (bila tidak sedang edit) */}
       {!open && submission?.media_url && (
-        <div className="mt-3 overflow-hidden rounded-lg border border-line">
-          {isVideo(submission.media_url) ? (
-            <video src={submission.media_url} controls className="max-h-64 w-full" />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- bukti dari Supabase Storage
-            <img src={submission.media_url} alt="Bukti" className="max-h-64 w-full object-contain" />
-          )}
+        <div className="mt-3">
+          <div className="overflow-hidden rounded-lg border border-line">
+            {isVideo(submission.media_url) ? (
+              <video src={submission.media_url} controls className="max-h-64 w-full" />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element -- bukti dari Supabase Storage
+              <img src={submission.media_url} alt="Bukti" className="max-h-64 w-full object-contain" />
+            )}
+          </div>
+          <a
+            href={downloadUrl(submission.media_url)}
+            className="mt-2 inline-flex items-center gap-1 font-sans text-xs font-semibold text-amber transition-colors hover:text-amber-deep"
+          >
+            <Download className="h-3.5 w-3.5" /> Muat turun
+          </a>
         </div>
       )}
 

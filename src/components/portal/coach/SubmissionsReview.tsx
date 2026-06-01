@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, Download } from "lucide-react";
+
+// Pautan muat turun (Supabase Storage: ?download paksa simpan fail).
+const downloadUrl = (u: string) => u + (u.includes("?") ? "&" : "?") + "download";
 
 type Submission = {
   id: string;
@@ -113,17 +116,25 @@ export default function SubmissionsReview({
 
             {/* Bukti gambar/video */}
             {s.media_url && (
-              <div className="mt-3 overflow-hidden rounded-lg border border-line">
-                {isVideo(s.media_url) ? (
-                  <video src={s.media_url} controls className="max-h-72 w-full" />
-                ) : (
-                  // eslint-disable-next-line @next/next/no-img-element -- bukti dari Supabase Storage
-                  <img
-                    src={s.media_url}
-                    alt="Bukti"
-                    className="max-h-72 w-full object-contain"
-                  />
-                )}
+              <div className="mt-3">
+                <div className="overflow-hidden rounded-lg border border-line">
+                  {isVideo(s.media_url) ? (
+                    <video src={s.media_url} controls className="max-h-72 w-full" />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- bukti dari Supabase Storage
+                    <img
+                      src={s.media_url}
+                      alt="Bukti"
+                      className="max-h-72 w-full object-contain"
+                    />
+                  )}
+                </div>
+                <a
+                  href={downloadUrl(s.media_url)}
+                  className="mt-2 inline-flex items-center gap-1 font-sans text-xs font-semibold text-amber transition-colors hover:text-amber-deep"
+                >
+                  <Download className="h-3.5 w-3.5" /> Muat turun
+                </a>
               </div>
             )}
 
