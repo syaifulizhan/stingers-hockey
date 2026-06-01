@@ -18,6 +18,10 @@ type Submission = {
 } | null;
 type Item = { task: Task; submission: Submission };
 
+// Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
+const isPastDue = (due: string | null) =>
+  !!due && Date.now() > new Date(`${due}T23:59:59+08:00`).getTime();
+
 function statusOf(s: Submission): { label: string; cls: string } {
   if (!s) return { label: "Belum", cls: "border border-line text-muted" };
   if (s.status === "reviewed") return { label: "Disemak", cls: "bg-amber text-ink" };
@@ -53,6 +57,15 @@ export default function PlayerTaskList({ items }: { items: Item[] }) {
                 {task.title}
               </span>
               <span className="flex shrink-0 items-center gap-2">
+                {isPastDue(task.due_date) ? (
+                  <span className="rounded-full border border-line px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-muted">
+                    Tamat
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
+                    Baru
+                  </span>
+                )}
                 {submission?.late && (
                   <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-orange-400">
                     Lewat
