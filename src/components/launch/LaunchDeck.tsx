@@ -62,7 +62,7 @@ function Bar({ w }: { w: string }) {
   );
 }
 
-export default function LaunchDeck() {
+export default function LaunchDeck({ qr }: { qr: string }) {
   return (
     <div className="deck-area">
       {/* SLIDE 1 — Tajuk */}
@@ -318,20 +318,28 @@ export default function LaunchDeck() {
             STINGERS APP — <span className="text-amber">Hoki Digital</span> Untuk Generasi Masa
             Hadapan.
           </p>
-          <p className="mt-6 font-sans text-base font-semibold text-paper">Layari hoki.my</p>
+          {/* QR code → hoki.my */}
+          <div className="mt-7 flex items-center gap-4">
+            <div
+              className="h-28 w-28 rounded-xl bg-white p-2"
+              dangerouslySetInnerHTML={{ __html: qr }}
+            />
+            <div>
+              <p className="font-sans text-base font-semibold text-paper">Imbas untuk buka</p>
+              <p className="font-sans text-sm text-amber">hoki.my</p>
+            </div>
+          </div>
         </div>
         <div className="flex justify-center">
           <PhoneMockup>
             <div className="flex h-full flex-col items-center justify-center gap-4 px-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-[1.4rem] bg-amber shadow-lg">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[1.3rem] bg-amber shadow-lg">
                 <span className="display text-3xl text-ink">S</span>
               </div>
               <p className="font-sans text-sm font-bold text-paper">STINGERS</p>
-              <div className="w-full rounded-xl bg-amber px-3 py-2 text-center font-sans text-xs font-semibold uppercase tracking-wider text-ink">
-                Tambah ke Skrin Utama
-              </div>
+              <div className="h-32 w-32 rounded-xl bg-white p-2" dangerouslySetInnerHTML={{ __html: qr }} />
               <p className="text-center font-sans text-[0.6rem] text-muted">
-                Buka di Safari / Chrome → Kongsi → Tambah ke Skrin Utama
+                Imbas → Kongsi → Tambah ke Skrin Utama
               </p>
             </div>
           </PhoneMockup>
