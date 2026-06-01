@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Star, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -22,7 +22,6 @@ import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachSummary from "@/components/portal/coach/CoachSummary";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
-import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 type Member = {
   clerk_user_id: string;
@@ -46,6 +45,7 @@ type SessionRow = { id: string; title: string; date: string | null; type: string
 type AttendanceRow = { session_id: string; user_id: string; status: string };
 type SubmissionRow = {
   id: string;
+  task_id: string;
   content: string | null;
   status: string;
   submitted_at: string;
@@ -77,9 +77,9 @@ export default async function CoachPage() {
       supabase.from("attendance").select("session_id, user_id, status"),
       supabase
         .from("submissions")
-        .select("id, content, status, submitted_at, media_url, user_id, late, tasks(title)")
+        .select("id, task_id, content, status, submitted_at, media_url, user_id, late, tasks(title)")
         .order("submitted_at", { ascending: false })
-        .limit(50),
+        .limit(200),
       supabase.from("submissions").select("task_id, user_id, status, late"),
       supabase
         .from("assessments")
@@ -287,6 +287,7 @@ export default async function CoachPage() {
 
   const submissions = subs.map((s) => ({
     id: s.id,
+    task_id: s.task_id,
     content: s.content,
     status: s.status,
     submitted_at: s.submitted_at,
@@ -295,6 +296,15 @@ export default async function CoachPage() {
     task_title: s.tasks?.title ?? "Tugasan",
     member_name: nameById.get(s.user_id) || "Ahli",
   }));
+  // Hantaran ikut task + helper "lepas tarikh akhir" (selepas 11:59pm hari akhir).
+  const subsByTask = new Map<string, typeof submissions>();
+  for (const s of submissions) {
+    const arr = subsByTask.get(s.task_id) ?? [];
+    arr.push(s);
+    subsByTask.set(s.task_id, arr);
+  }
+  const isPastDue = (t: TaskRow) =>
+    !!t.due_date && Date.now() > new Date(`${t.due_date}T23:59:59`).getTime();
 
   // Peratusan penghantaran (admin sahaja) — berdasarkan AHLI aktif sahaja
   // (bukan admin/coach, dan bukan yang diban).
@@ -422,8 +432,8 @@ export default async function CoachPage() {
                   </div>
                 )}
                 <TaskForm members={activeMembers.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))} />
-                {tasks.length > 0 && (
-                  <div className="mt-4 flex flex-col gap-1">
+                {tasks.length > 0 ? (
+                  <div className="mt-4 flex flex-col gap-2">
                     {tasks.map((t) => (
                       <TaskAdminItem
                         key={t.id}
@@ -438,15 +448,14 @@ export default async function CoachPage() {
                             : "Semua ahli"
                         }
                         summary={taskSummary(t)}
+                        submissions={subsByTask.get(t.id) ?? []}
+                        defaultOpen={!isPastDue(t)}
                       />
                     ))}
                   </div>
+                ) : (
+                  <p className="mt-4 font-sans text-sm text-muted">Belum ada tugasan.</p>
                 )}
-
-                <h3 className="mb-4 mt-10 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-                  <Inbox className="h-4 w-4" /> Semak Hantaran Tugasan
-                </h3>
-                <SubmissionsReview submissions={submissions} />
               </section>
             ),
           },

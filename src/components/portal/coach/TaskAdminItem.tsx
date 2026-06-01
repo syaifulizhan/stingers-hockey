@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, ChevronDown } from "lucide-react";
+import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
@@ -22,20 +23,34 @@ type Summary = {
   revise: number;
   late: number;
 };
+type Sub = {
+  id: string;
+  content: string | null;
+  status: string;
+  submitted_at: string;
+  media_url: string | null;
+  late?: boolean;
+  task_title: string;
+  member_name: string;
+};
 
 export default function TaskAdminItem({
   task,
   members,
   assigneeName,
   summary = null,
+  submissions = [],
+  defaultOpen = false,
 }: {
   task: Task;
   members: Member[];
   assigneeName: string;
   summary?: Summary | null;
+  submissions?: Sub[];
+  defaultOpen?: boolean;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -166,20 +181,27 @@ export default function TaskAdminItem({
           {task.description && (
             <p className="mb-3 font-sans text-xs text-muted">{task.description}</p>
           )}
-          <div className="flex gap-2">
+
+          {/* Semak hantaran — bersarang dalam task ini */}
+          <h4 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            Semak Hantaran ({submissions.length})
+          </h4>
+          <SubmissionsReview submissions={submissions} />
+
+          <div className="mt-3 flex gap-2 border-t border-line pt-3">
             <button
               type="button"
               onClick={() => setEditing(true)}
               className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
             >
-              <Pencil className="h-3.5 w-3.5" /> Edit
+              <Pencil className="h-3.5 w-3.5" /> Edit Tugasan
             </button>
             <button
               type="button"
               onClick={del}
               className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-muted transition-colors hover:border-red-500/50 hover:text-red-400"
             >
-              <Trash2 className="h-3.5 w-3.5" /> Padam
+              <Trash2 className="h-3.5 w-3.5" /> Padam Tugasan
             </button>
           </div>
         </div>
