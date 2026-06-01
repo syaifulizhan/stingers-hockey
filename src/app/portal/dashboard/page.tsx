@@ -12,6 +12,7 @@ import { ASSESSMENT_TYPES, assessmentAverage, type AssessmentType } from "@/lib/
 import { memberName } from "@/lib/names";
 import { generateReport } from "@/lib/report";
 import ReportPreview from "@/components/portal/ReportPreview";
+import PushToggle from "@/components/portal/PushToggle";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
 const PROFILE_COLS = [
@@ -223,6 +224,11 @@ export default async function DashboardPage() {
           🏑 Panel Jurulatih →
         </Link>
       )}
+
+      {/* Notifikasi push */}
+      <div className="mt-6">
+        <PushToggle />
+      </div>
 
       {/* Kad: kelengkapan profil */}
       <section className="mt-6 rounded-2xl border border-line bg-bg-soft/50 p-6">

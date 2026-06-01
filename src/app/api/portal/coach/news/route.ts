@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { sendPush } from "@/lib/push";
 import { makeSlug } from "@/lib/slug";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -67,10 +68,19 @@ export async function POST(request: Request) {
   }
 
   // Notifikasi broadcast kepada semua ahli.
+  const link = data?.id ? `/portal/news/${data.id}` : "/portal/dashboard";
   await supabase.from("notifications").insert({
     user_id: null,
     title: `Berita baharu: ${parsed.data.title}`,
-    link: data?.id ? `/portal/news/${data.id}` : "/portal/dashboard",
+    link,
+  });
+
+  // Push notification ke semua telefon yang melanggan.
+  await sendPush(supabase, {
+    userIds: null,
+    title: "Berita baharu — Stingers Hockey",
+    body: parsed.data.title,
+    url: link,
   });
 
   return NextResponse.json({ ok: true });
