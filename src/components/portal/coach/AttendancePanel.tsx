@@ -32,7 +32,7 @@ export default function AttendancePanel({
   const [newDate, setNewDate] = useState("");
   const [newType, setNewType] = useState<"training" | "match">("training");
   const [creating, setCreating] = useState(false);
-  const [selectedId, setSelectedId] = useState(sessions[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(""); // lalai: Pilih sesi
 
   // Peta status tempatan: "sessionId:userId" → status.
   const initialMap = useMemo(() => {
@@ -194,6 +194,7 @@ export default function AttendancePanel({
               value={selectedId}
               onChange={(e) => setSelectedId(e.target.value)}
             >
+              <option value="">— Pilih sesi —</option>
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
                   {typeLabel(s.type)} · {s.title}
@@ -201,7 +202,15 @@ export default function AttendancePanel({
                 </option>
               ))}
             </select>
+          </div>
 
+          {!selectedId ? (
+            <p className="font-sans text-sm text-muted">
+              Pilih sesi di atas untuk rekod kehadiran ahli.
+            </p>
+          ) : (
+            <>
+          <div>
             {/* Edit / padam sesi terpilih */}
             {editing ? (
               <div className="mt-3 flex flex-col gap-2 rounded-lg border border-line bg-ink/40 p-3 sm:flex-row sm:items-end">
@@ -280,14 +289,14 @@ export default function AttendancePanel({
                         key={s.value}
                         type="button"
                         onClick={() => mark(m.clerk_user_id, s.value)}
-                        className={`rounded-full px-3 py-1 font-sans text-xs font-semibold transition-colors ${
+                        className={`rounded-full border px-3 py-1 font-sans text-xs font-semibold transition-colors ${
                           current === s.value
                             ? s.value === "present"
-                              ? "bg-amber text-ink"
-                              : s.value === "excused"
-                                ? "bg-paper/20 text-paper"
-                                : "bg-paper/10 text-paper/70"
-                            : "border border-line text-muted hover:border-amber hover:text-amber"
+                              ? "border-green-500/50 bg-green-500/20 text-green-400"
+                              : s.value === "absent"
+                                ? "border-red-500/50 bg-red-500/20 text-red-400"
+                                : "border-amber/50 bg-amber/20 text-amber"
+                            : "border-line text-muted hover:border-amber hover:text-amber"
                         }`}
                       >
                         {s.label}
@@ -301,6 +310,8 @@ export default function AttendancePanel({
               <p className="font-sans text-sm text-muted">Belum ada ahli.</p>
             )}
           </div>
+            </>
+          )}
         </>
       )}
     </div>
