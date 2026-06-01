@@ -328,6 +328,12 @@ export default async function DashboardPage() {
                     {new Date(n.published_at).toLocaleDateString("ms-MY")}
                   </p>
                 </div>
+                {Date.now() - new Date(n.published_at).getTime() <
+                  7 * 24 * 60 * 60 * 1000 && (
+                  <span className="shrink-0 rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
+                    Baru
+                  </span>
+                )}
                 <ChevronRight className="h-5 w-5 shrink-0 text-muted" />
               </Link>
             ))}

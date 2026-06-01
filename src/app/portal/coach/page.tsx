@@ -354,7 +354,10 @@ export default async function CoachPage() {
     const target = t.assigned_to ? (memberIds.has(t.assigned_to) ? 1 : 0) : memberCount;
     const c = byTask.get(t.id) ?? { submitted: 0, reviewed: 0, revise: 0, late: 0 };
     const pct = target > 0 ? Math.round((c.submitted / target) * 100) : 0;
-    return { target, ...c, pct };
+    // Tidak hantar: ahli yang langsung tak hantar SELEPAS tarikh akhir tamat.
+    // (Sebelum tamat, mereka cuma "belum hantar lagi" — bukan dikira gagal.)
+    const notSubmitted = isPastDue(t) ? Math.max(0, target - c.submitted) : 0;
+    return { target, ...c, notSubmitted, pct };
   };
   const avgSubmissionPct = tasks.length
     ? Math.round(tasks.reduce((sum, t) => sum + taskSummary(t).pct, 0) / tasks.length)

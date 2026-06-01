@@ -22,6 +22,7 @@ type Summary = {
   reviewed: number;
   revise: number;
   late: number;
+  notSubmitted: number;
 };
 type Sub = {
   id: string;
@@ -140,9 +141,10 @@ export default function TaskAdminItem({
   const stats = summary
     ? [
         { label: "Hantar", value: `${summary.submitted}/${summary.target}` },
+        { label: "Tidak Hantar", value: `${summary.notSubmitted}/${summary.target}` },
+        { label: "Lewat", value: `${summary.late}/${summary.target}` },
         { label: "Disemak", value: `${summary.reviewed}/${summary.target}` },
         { label: "Minta Ulang", value: `${summary.revise}/${summary.target}` },
-        { label: "Lewat", value: `${summary.late}/${summary.target}` },
       ]
     : [];
 
@@ -161,15 +163,26 @@ export default function TaskAdminItem({
             {task.due_date ? ` · akhir ${task.due_date}` : ""}
           </span>
         </span>
-        <ChevronDown
-          className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
-        />
+        <span className="flex shrink-0 items-center gap-2">
+          {archived ? (
+            <span className="rounded-full border border-line px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-muted">
+              Tamat
+            </span>
+          ) : (
+            <span className="rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
+              Baru
+            </span>
+          )}
+          <ChevronDown
+            className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </span>
       </button>
 
       {open && (
         <div className="border-t border-line px-3 py-3">
           {summary && (
-            <div className="mb-3 grid grid-cols-4 gap-2">
+            <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {stats.map((s) => (
                 <div key={s.label} className="rounded-lg bg-ink/50 py-2 text-center">
                   <div className="font-sans text-sm font-bold text-amber tabular-nums">{s.value}</div>
