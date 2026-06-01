@@ -5,6 +5,7 @@ import { preferredName } from "@/lib/names";
 export type PlayerSummary = {
   id: string;
   name: string;
+  position: string | null;
   isGoalkeeper: boolean;
   chips: { label: string; value: string }[];
 };
@@ -16,11 +17,11 @@ export async function buildPlayerSummaries(
 ): Promise<PlayerSummary[]> {
   const [membersRes, assessRes, sessionsRes, attRes, matchStatsRes, achRes] =
     await Promise.all([
-      supabase.from("users").select("clerk_user_id, full_name, display_name, role, banned, is_goalkeeper"),
+      supabase.from("users").select("clerk_user_id, full_name, display_name, role, banned, is_goalkeeper, position"),
       supabase.from("assessments").select("user_id, type, scores, assessed_on").order("assessed_on", { ascending: false }),
       supabase.from("sessions").select("id, type"),
       supabase.from("attendance").select("user_id, status"),
-      supabase.from("match_stats").select("user_id, stats"),
+      supabase.from("match_stats").select("user_id, stats, position, created_at").order("created_at", { ascending: false }),
       supabase.from("achievements").select("player_id"),
     ]);
 
@@ -31,6 +32,7 @@ export async function buildPlayerSummaries(
     role: string;
     banned: boolean;
     is_goalkeeper: boolean;
+    position: string | null;
   };
   const members = ((membersRes.data ?? []) as M[]).filter(
     (m) => m.role === "member" && !m.banned
@@ -52,9 +54,15 @@ export async function buildPlayerSummaries(
 
   const goals = new Map<string, number>();
   const saves = new Map<string, number>();
-  for (const s of (matchStatsRes.data ?? []) as { user_id: string; stats: Record<string, number> }[]) {
+  const latestPos = new Map<string, string>(); // posisi terkini dipilih jurulatih
+  for (const s of (matchStatsRes.data ?? []) as {
+    user_id: string;
+    stats: Record<string, number>;
+    position: string | null;
+  }[]) {
     goals.set(s.user_id, (goals.get(s.user_id) ?? 0) + (s.stats?.goals ?? 0));
     saves.set(s.user_id, (saves.get(s.user_id) ?? 0) + (s.stats?.save ?? 0));
+    if (s.position && !latestPos.has(s.user_id)) latestPos.set(s.user_id, s.position);
   }
 
   const achCount = new Map<string, number>();
@@ -77,6 +85,7 @@ export async function buildPlayerSummaries(
       return {
         id,
         name: preferredName(m.full_name, m.display_name),
+        position: latestPos.get(id) ?? m.position ?? null,
         isGoalkeeper: gk,
         _goals: g,
         _saves: sv,

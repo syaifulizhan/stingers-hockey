@@ -23,9 +23,21 @@ export default function CoachMemberSummary({ players }: { players: PlayerSummary
         {players.map((p) => (
           <option key={p.id} value={p.id}>
             {p.name}
+            {p.position ? ` · ${p.position}` : ""}
           </option>
         ))}
       </select>
+
+      <p className="flex items-center gap-2 font-sans text-base font-semibold text-paper">
+        {selected.name}
+        {selected.position && (
+          <>
+            <span className="h-1.5 w-1.5 rounded-full bg-muted" aria-hidden />
+            <span className="font-normal text-muted">{selected.position}</span>
+          </>
+        )}
+      </p>
+
       <SummaryChips chips={selected.chips} />
     </div>
   );
