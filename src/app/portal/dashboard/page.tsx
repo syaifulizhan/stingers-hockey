@@ -71,7 +71,7 @@ export default async function DashboardPage() {
       supabase.from("users").select("*").eq("clerk_user_id", user!.id).maybeSingle(),
       supabase.from("news").select("*").order("published_at", { ascending: false }).limit(8),
       supabase.from("tasks").select("*").order("created_at", { ascending: false }),
-      supabase.from("submissions").select("task_id, content, status, media_url"),
+      supabase.from("submissions").select("task_id, content, status, media_url, late"),
       supabase
         .from("attendance")
         .select("status, created_at, sessions(title, date)")

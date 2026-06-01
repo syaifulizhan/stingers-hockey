@@ -10,6 +10,7 @@ type Submission = {
   status: string;
   submitted_at: string;
   media_url: string | null;
+  late?: boolean;
   task_title: string;
   member_name: string;
 };
@@ -81,8 +82,13 @@ export default function SubmissionsReview({
           <div key={s.id} className="rounded-xl border border-line bg-bg-soft/50 p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-sans text-sm font-semibold text-paper">
+                <p className="flex items-center gap-2 font-sans text-sm font-semibold text-paper">
                   {s.member_name}
+                  {s.late && (
+                    <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-orange-400">
+                      Lewat
+                    </span>
+                  )}
                 </p>
                 <p className="font-sans text-xs text-amber">{s.task_title}</p>
               </div>

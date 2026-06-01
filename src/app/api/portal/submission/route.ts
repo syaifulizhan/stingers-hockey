@@ -42,6 +42,17 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+
+  // Tanda "lewat" jika dihantar selepas tarikh akhir tugasan.
+  const { data: task } = await supabase
+    .from("tasks")
+    .select("due_date")
+    .eq("id", parsed.data.taskId)
+    .maybeSingle();
+  let late = false;
+  const due = (task as { due_date: string | null } | null)?.due_date;
+  if (due) late = new Date() > new Date(`${due}T23:59:59`);
+
   const { error } = await supabase.from("submissions").upsert(
     {
       task_id: parsed.data.taskId,
@@ -49,6 +60,7 @@ export async function POST(request: Request) {
       content: parsed.data.content,
       media_url: parsed.data.mediaUrl || null,
       status: "submitted",
+      late,
       submitted_at: new Date().toISOString(),
     },
     { onConflict: "task_id,user_id" }

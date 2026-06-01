@@ -18,6 +18,7 @@ type Submission = {
   content: string | null;
   status: string;
   media_url: string | null;
+  late?: boolean;
 } | null;
 
 const MAX_MB = 50;
@@ -165,23 +166,30 @@ export default function TaskCard({
             </p>
           )}
         </div>
-        {!submitted ? (
-          <span className="shrink-0 rounded-full border border-line px-3 py-1 font-sans text-xs text-muted">
-            Belum
-          </span>
-        ) : status === "reviewed" ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber px-3 py-1 font-sans text-xs font-semibold text-ink">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Disemak Coach
-          </span>
-        ) : status === "revise" ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-paper/15 px-3 py-1 font-sans text-xs font-semibold text-paper">
-            <RotateCcw className="h-3.5 w-3.5" /> Perlu Ulang
-          </span>
-        ) : (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
-            <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
-          </span>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          {!submitted ? (
+            <span className="rounded-full border border-line px-3 py-1 font-sans text-xs text-muted">
+              Belum
+            </span>
+          ) : status === "reviewed" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber px-3 py-1 font-sans text-xs font-semibold text-ink">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Disemak Coach
+            </span>
+          ) : status === "revise" ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-paper/15 px-3 py-1 font-sans text-xs font-semibold text-paper">
+              <RotateCcw className="h-3.5 w-3.5" /> Perlu Ulang
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber/15 px-3 py-1 font-sans text-xs font-semibold text-amber">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Dihantar
+            </span>
+          )}
+          {submission?.late && (
+            <span className="rounded-full bg-orange-500/20 px-2.5 py-0.5 font-sans text-[0.65rem] font-semibold uppercase text-orange-400">
+              Lewat
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Bukti sedia ada (bila tidak sedang edit) */}
