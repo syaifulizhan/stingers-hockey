@@ -19,8 +19,8 @@ export default async function ReportPage({
   return (
     <div className="min-h-screen bg-ink py-6">
       <PrintBar />
-      <div className="px-4">
-        <div className="mx-auto max-w-3xl overflow-hidden rounded-lg shadow-xl">
+      <div className="overflow-x-auto px-4">
+        <div className="mx-auto w-fit overflow-hidden rounded-lg shadow-xl">
           <ReportDocument data={data} />
         </div>
       </div>

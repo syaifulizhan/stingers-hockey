@@ -186,11 +186,15 @@ body {
   overscroll-behavior-y: contain;
 }
 
-/* Elak skrol mendatar tak sengaja (cth teks/dropdown panjang di mobile) */
-html,
+/* Elak skrol mendatar tak sengaja (cth teks/dropdown panjang di mobile).
+   Guna `clip` — bukan `hidden` — supaya scroll menegak (Android) tidak rosak.
+   `hidden` memaksa overflow-y jadi auto & mencipta bekas scroll yang konflik. */
+html {
+  overflow-x: clip;
+}
 body {
-  max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
+  max-width: 100vw;
 }
 
 /* Cetak laporan: tunjuk hanya dokumen, sembunyikan selebihnya. */
