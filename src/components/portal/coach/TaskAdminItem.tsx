@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ChevronDown } from "lucide-react";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
@@ -15,21 +15,27 @@ type Task = {
   due_date: string | null;
   assigned_to: string | null;
 };
-
-type Stat = { submitted: number; total: number; pct: number };
+type Summary = {
+  target: number;
+  submitted: number;
+  reviewed: number;
+  revise: number;
+  late: number;
+};
 
 export default function TaskAdminItem({
   task,
   members,
   assigneeName,
-  stat = null,
+  summary = null,
 }: {
   task: Task;
   members: Member[];
   assigneeName: string;
-  stat?: Stat | null;
+  summary?: Summary | null;
 }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -114,47 +120,70 @@ export default function TaskAdminItem({
     );
   }
 
+  const stats = summary
+    ? [
+        { label: "Hantar", value: `${summary.submitted}/${summary.target}` },
+        { label: "Disemak", value: `${summary.reviewed}/${summary.target}` },
+        { label: "Minta Ulang", value: `${summary.revise}/${summary.target}` },
+        { label: "Lewat", value: `${summary.late}/${summary.target}` },
+      ]
+    : [];
+
   return (
-    <div className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 font-sans text-sm text-paper/80 hover:bg-bg-soft/50">
-      <span className="min-w-0">
-        • {task.title}{" "}
-        <span className="text-muted">
-          → {assigneeName}
-          {task.due_date ? ` · akhir ${task.due_date}` : ""}
-        </span>
-        {stat && (
-          <span
-            className={`ml-2 rounded-full px-2 py-0.5 font-sans text-[0.65rem] font-semibold ${
-              stat.pct >= 100
-                ? "bg-amber text-ink"
-                : stat.pct > 0
-                  ? "bg-amber/20 text-amber"
-                  : "bg-paper/10 text-paper/60"
-            }`}
-            title="Penghantaran ahli"
-          >
-            {stat.submitted}/{stat.total} hantar ({stat.pct}%)
+    <div className="rounded-lg border border-line bg-bg-soft/40">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left font-sans text-sm text-paper/90"
+      >
+        <span className="min-w-0 truncate">
+          {task.title}
+          <span className="text-muted">
+            {" "}
+            → {assigneeName}
+            {task.due_date ? ` · akhir ${task.due_date}` : ""}
           </span>
-        )}
-      </span>
-      <span className="flex shrink-0 items-center gap-1">
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          aria-label="Edit"
-          className="rounded-md p-1.5 text-muted transition-colors hover:bg-amber/10 hover:text-amber"
-        >
-          <Pencil className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={del}
-          aria-label="Padam"
-          className="rounded-md p-1.5 text-muted transition-colors hover:bg-amber/10 hover:text-amber"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      </span>
+        </span>
+        <ChevronDown
+          className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      {open && (
+        <div className="border-t border-line px-3 py-3">
+          {summary && (
+            <div className="mb-3 grid grid-cols-4 gap-2">
+              {stats.map((s) => (
+                <div key={s.label} className="rounded-lg bg-ink/50 py-2 text-center">
+                  <div className="font-sans text-sm font-bold text-amber tabular-nums">{s.value}</div>
+                  <div className="font-sans text-[0.55rem] uppercase tracking-wide text-muted">
+                    {s.label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {task.description && (
+            <p className="mb-3 font-sans text-xs text-muted">{task.description}</p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
+            <button
+              type="button"
+              onClick={del}
+              className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-muted transition-colors hover:border-red-500/50 hover:text-red-400"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Padam
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
