@@ -143,6 +143,8 @@ export default function MemberRow({
       : member.role === "coach"
         ? "bg-amber/20 text-amber"
         : "border border-line text-muted";
+  const roleLabel =
+    member.role === "admin" ? "Admin" : member.role === "coach" ? "Jurulatih" : "Ahli Biasa";
 
   const isPlayer = member.role === "member";
   const canManage = viewerIsAdmin && member.role !== "admin";
@@ -203,7 +205,7 @@ export default function MemberRow({
           </span>
         )}
         <span className={`rounded-full px-2.5 py-1 font-sans text-xs font-semibold uppercase ${roleBadge}`}>
-          {member.role}
+          {roleLabel}
         </span>
 
         {canManage && (
@@ -239,7 +241,7 @@ export default function MemberRow({
                     <MenuItem
                       onClick={() => setRole(member.role === "coach" ? "member" : "coach")}
                     >
-                      {member.role === "coach" ? "Turunkan jadi Ahli" : "Jadikan Coach"}
+                      {member.role === "coach" ? "Turunkan jadi Ahli" : "Jadikan Jurulatih"}
                     </MenuItem>
                   )}
                   <MenuItem onClick={() => setBanned(!member.banned)} danger={!member.banned}>
