@@ -51,7 +51,8 @@ export async function POST(request: Request) {
     .maybeSingle();
   let late = false;
   const due = (task as { due_date: string | null } | null)?.due_date;
-  if (due) late = new Date() > new Date(`${due}T23:59:59`);
+  // Lewat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
+  if (due) late = Date.now() > new Date(`${due}T23:59:59+08:00`).getTime();
 
   const { error } = await supabase.from("submissions").upsert(
     {
