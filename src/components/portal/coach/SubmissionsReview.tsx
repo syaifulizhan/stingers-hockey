@@ -89,9 +89,9 @@ export default function SubmissionsReview({
               <span
                 className={`shrink-0 rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${
                   status === "reviewed"
-                    ? "bg-amber text-ink"
+                    ? "bg-green-500/20 text-green-400"
                     : status === "revise"
-                      ? "bg-paper/15 text-paper"
+                      ? "bg-red-500/20 text-red-400"
                       : "border border-line text-muted"
                 }`}
               >
@@ -129,14 +129,22 @@ export default function SubmissionsReview({
               <button
                 type="button"
                 onClick={() => setStatus(s.id, "reviewed")}
-                className="rounded-full border border-line px-4 py-1.5 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
+                className={`rounded-full border px-4 py-1.5 font-sans text-xs font-semibold transition-colors ${
+                  status === "reviewed"
+                    ? "border-green-500/50 bg-green-500/20 text-green-400"
+                    : "border-line text-paper hover:border-green-500/50 hover:text-green-400"
+                }`}
               >
                 Tanda Disemak
               </button>
               <button
                 type="button"
                 onClick={() => setStatus(s.id, "revise")}
-                className="rounded-full border border-line px-4 py-1.5 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber"
+                className={`rounded-full border px-4 py-1.5 font-sans text-xs font-semibold transition-colors ${
+                  status === "revise"
+                    ? "border-red-500/50 bg-red-500/20 text-red-400"
+                    : "border-line text-paper hover:border-red-500/50 hover:text-red-400"
+                }`}
               >
                 Minta Ulang
               </button>
