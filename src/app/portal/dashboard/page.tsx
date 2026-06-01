@@ -53,6 +53,9 @@ type AttendanceRow = {
   sessions: { title: string; date: string | null } | null;
 };
 
+// Sentiasa render segar — elak Router Cache sajikan data lama selepas navigasi.
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   // Cipta baris ahli kalau belum ada (nampak di panel jurulatih serta-merta).
   await ensureUserRow();
