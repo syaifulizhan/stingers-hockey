@@ -21,7 +21,7 @@ export async function buildPlayerSummaries(
       supabase.from("assessments").select("user_id, type, scores, assessed_on").order("assessed_on", { ascending: false }),
       supabase.from("sessions").select("id, type"),
       supabase.from("attendance").select("user_id, status"),
-      supabase.from("match_stats").select("user_id, stats, position, created_at").order("created_at", { ascending: false }),
+      supabase.from("match_stats").select("user_id, stats"),
       supabase.from("achievements").select("player_id"),
     ]);
 
@@ -54,15 +54,12 @@ export async function buildPlayerSummaries(
 
   const goals = new Map<string, number>();
   const saves = new Map<string, number>();
-  const latestPos = new Map<string, string>(); // posisi terkini dipilih jurulatih
   for (const s of (matchStatsRes.data ?? []) as {
     user_id: string;
     stats: Record<string, number>;
-    position: string | null;
   }[]) {
     goals.set(s.user_id, (goals.get(s.user_id) ?? 0) + (s.stats?.goals ?? 0));
     saves.set(s.user_id, (saves.get(s.user_id) ?? 0) + (s.stats?.save ?? 0));
-    if (s.position && !latestPos.has(s.user_id)) latestPos.set(s.user_id, s.position);
   }
 
   const achCount = new Map<string, number>();
@@ -85,7 +82,7 @@ export async function buildPlayerSummaries(
       return {
         id,
         name: preferredName(m.full_name, m.display_name),
-        position: latestPos.get(id) ?? m.position ?? null,
+        position: m.position ?? null, // posisi dari profil ahli
         isGoalkeeper: gk,
         _goals: g,
         _saves: sv,
