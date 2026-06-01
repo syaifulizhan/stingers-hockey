@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Star, Activity, Swords, Trophy } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -11,6 +11,7 @@ import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MembersPanel from "@/components/portal/coach/MembersPanel";
+import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 import NewsAdminItem from "@/components/portal/coach/NewsAdminItem";
 import TaskAdminItem from "@/components/portal/coach/TaskAdminItem";
 import AttendancePanel from "@/components/portal/coach/AttendancePanel";
@@ -305,6 +306,10 @@ export default async function CoachPage() {
   }
   const isPastDue = (t: TaskRow) =>
     !!t.due_date && Date.now() > new Date(`${t.due_date}T23:59:59`).getTime();
+  // Task lepas tarikh akhir = arkib (hantaran kuncup dalam task itu).
+  // Hantaran task AKTIF kekal di seksyen "Semak Hantaran" di bawah.
+  const pastDueTaskIds = new Set(tasks.filter(isPastDue).map((t) => t.id));
+  const activeSubmissions = submissions.filter((s) => !pastDueTaskIds.has(s.task_id));
 
   // Peratusan penghantaran (admin sahaja) — berdasarkan AHLI aktif sahaja
   // (bukan admin/coach, dan bukan yang diban).
@@ -449,6 +454,7 @@ export default async function CoachPage() {
                         }
                         summary={taskSummary(t)}
                         submissions={subsByTask.get(t.id) ?? []}
+                        archived={isPastDue(t)}
                         defaultOpen={!isPastDue(t)}
                       />
                     ))}
@@ -456,6 +462,11 @@ export default async function CoachPage() {
                 ) : (
                   <p className="mt-4 font-sans text-sm text-muted">Belum ada tugasan.</p>
                 )}
+
+                <h3 className="mb-4 mt-10 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+                  <Inbox className="h-4 w-4" /> Semak Hantaran Tugasan
+                </h3>
+                <SubmissionsReview submissions={activeSubmissions} />
               </section>
             ),
           },
