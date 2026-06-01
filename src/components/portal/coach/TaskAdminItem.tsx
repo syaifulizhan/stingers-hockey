@@ -41,6 +41,7 @@ export default function TaskAdminItem({
   summary = null,
   submissions = [],
   defaultOpen = false,
+  archived = false,
 }: {
   task: Task;
   members: Member[];
@@ -48,6 +49,7 @@ export default function TaskAdminItem({
   summary?: Summary | null;
   submissions?: Sub[];
   defaultOpen?: boolean;
+  archived?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
@@ -182,11 +184,15 @@ export default function TaskAdminItem({
             <p className="mb-3 font-sans text-xs text-muted">{task.description}</p>
           )}
 
-          {/* Semak hantaran — bersarang dalam task ini */}
-          <h4 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
-            Semak Hantaran ({submissions.length})
-          </h4>
-          <SubmissionsReview submissions={submissions} />
+          {/* Hantaran lama dikuncup bersama task (selepas tarikh akhir) */}
+          {archived && (
+            <>
+              <h4 className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+                Semak Hantaran ({submissions.length})
+              </h4>
+              <SubmissionsReview submissions={submissions} />
+            </>
+          )}
 
           <div className="mt-3 flex gap-2 border-t border-line pt-3">
             <button
