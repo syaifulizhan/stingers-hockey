@@ -1,7 +1,7 @@
 // Service worker Stingers Hockey — membolehkan pemasangan (PWA) & sokongan luar talian asas.
 // Strategi: network-first untuk navigasi (sentiasa cuba versi terbaru), cache fallback.
 
-const CACHE = "stingers-v2";
+const CACHE = "stingers-v3";
 const OFFLINE_URLS = ["/", "/hustle-gear"];
 
 self.addEventListener("install", (event) => {
@@ -19,6 +19,39 @@ self.addEventListener("activate", (event) => {
         Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
+  );
+});
+
+// ── Push notification ──
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = data.title || "Stingers Hockey";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: data.url || "/portal/dashboard" },
+      vibrate: [80, 40, 80],
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (w.url.includes(url) && "focus" in w) return w.focus();
+      }
+      return self.clients.openWindow(url);
+    })
   );
 });
 

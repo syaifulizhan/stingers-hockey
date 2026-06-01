@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { sendPush } from "@/lib/push";
 
 // Coach kemas kini status hantaran ahli (semak / minta ulang).
 const schema = z.object({
@@ -50,6 +51,11 @@ export async function POST(request: Request) {
       user_id: data.user_id,
       title,
       link: "/portal/dashboard",
+    });
+    await sendPush(supabase, {
+      userIds: [data.user_id],
+      title,
+      url: "/portal/dashboard",
     });
   }
 

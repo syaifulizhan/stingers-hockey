@@ -344,6 +344,35 @@ create trigger trg_notify_admins_new_user
   for each row execute function public.notify_admins_new_user();
 
 -- ============================================================================
+-- WEB PUSH — langganan push notification (pop-up skrin telefon)
+--   user simpan langganan sendiri; coach/admin boleh baca semua (untuk hantar).
+-- ============================================================================
+create table if not exists public.push_subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    text not null,
+  endpoint   text not null unique,
+  p256dh     text not null,
+  auth       text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.push_subscriptions enable row level security;
+
+drop policy if exists push_select on public.push_subscriptions;
+create policy push_select on public.push_subscriptions for select to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+drop policy if exists push_insert on public.push_subscriptions;
+create policy push_insert on public.push_subscriptions for insert to authenticated
+  with check (user_id = auth.jwt()->>'sub');
+drop policy if exists push_update on public.push_subscriptions;
+create policy push_update on public.push_subscriptions for update to authenticated
+  using (user_id = auth.jwt()->>'sub') with check (user_id = auth.jwt()->>'sub');
+drop policy if exists push_delete on public.push_subscriptions;
+create policy push_delete on public.push_subscriptions for delete to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+
+grant select, insert, update, delete on public.push_subscriptions to authenticated;
+
+-- ============================================================================
 -- PENILAIAN — kemahiran (padang/GK) & penilaian jurulatih (skala 1–10)
 --   Skor disimpan sebagai JSON {metrik: skor}. Setiap penilaian = 1 baris
 --   (dengan tarikh) supaya boleh jejak peningkatan dari masa ke masa.
