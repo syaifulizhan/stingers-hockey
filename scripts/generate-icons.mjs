@@ -29,6 +29,7 @@ async function make(size, pad, out) {
 
 await make(192, 0.12, "icon-192.png");
 await make(512, 0.12, "icon-512.png");
+await make(192, 0.2, "icon-maskable-192.png"); // maskable kecil (zon selamat)
 await make(512, 0.2, "icon-maskable-512.png"); // lebih ruang utk zon selamat maskable
 await make(180, 0.12, "apple-touch-icon.png");
 console.log("Selesai — ikon PWA dijana dari logo sebenar.");
