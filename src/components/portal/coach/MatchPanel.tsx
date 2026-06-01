@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, ChevronDown } from "lucide-react";
 import { matchMetrics, matchResult, HOCKEY_POSITIONS } from "@/lib/match";
 import { memberName } from "@/lib/names";
 
@@ -417,8 +417,9 @@ export default function MatchPanel({
           <button
             type="button"
             onClick={() => setShowClosed((v) => !v)}
-            className="mb-2 font-sans text-xs font-semibold text-amber hover:text-amber-deep"
+            className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-amber transition-colors hover:border-amber"
           >
+            <ChevronDown className={`h-4 w-4 transition-transform ${showClosed ? "rotate-180" : ""}`} />
             {showClosed ? "Sembunyikan season ditutup" : `Tunjuk season ditutup (${closedCount})`}
           </button>
         )}
