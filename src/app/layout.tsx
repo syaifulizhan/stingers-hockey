@@ -6,7 +6,6 @@ import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashScreen from "@/components/SplashScreen";
 import PullToRefresh from "@/components/PullToRefresh";
-import IdleLogout from "@/components/portal/IdleLogout";
 import LogoutRefresh from "@/components/portal/LogoutRefresh";
 import { LanguageProvider } from "@/lib/i18n";
 
@@ -138,7 +137,6 @@ export default function RootLayout({
           />
           <LanguageProvider>{children}</LanguageProvider>
           <PullToRefresh />
-          <IdleLogout />
           <LogoutRefresh />
           <SplashScreen />
           <ServiceWorker />
