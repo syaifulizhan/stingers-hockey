@@ -15,6 +15,8 @@ import ReportPreview from "@/components/portal/ReportPreview";
 import PushToggle from "@/components/portal/PushToggle";
 
 // Lajur yang dikira untuk peratus "% lengkap" profil.
+// Medan WAJIB untuk kira "% lengkap". Medan pilihan (catatan, tel. pemain,
+// no. pendaftaran sekolah) TIDAK dikira.
 const PROFILE_COLS = [
   "full_name",
   "year",
@@ -23,13 +25,10 @@ const PROFILE_COLS = [
   "gender",
   "ic_number",
   "school",
-  "school_reg_no",
-  "player_phone",
   "guardian_phone",
   "guardian_email",
   "experience",
   "position",
-  "notes",
 ];
 
 function filledCount(row: Record<string, unknown> | null) {
