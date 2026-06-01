@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellOff, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Bell, Check } from "lucide-react";
 
 const VAPID = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -14,11 +15,13 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return out;
 }
 
+type View = "prompt" | "flash" | "hidden";
+
 export default function PushToggle() {
   const [supported, setSupported] = useState(false);
-  const [enabled, setEnabled] = useState(false);
+  const [view, setView] = useState<View>("prompt");
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
     const ok =
@@ -31,20 +34,20 @@ export default function PushToggle() {
     if (ok) {
       navigator.serviceWorker.ready
         .then((reg) => reg.pushManager.getSubscription())
-        .then((sub) => setEnabled(!!sub))
+        .then((sub) => {
+          if (sub) setView("hidden"); // sudah dihidupkan → sembunyi terus
+        })
         .catch(() => {});
     }
   }, []);
 
-  if (!supported) return null;
-
   const enable = async () => {
     setBusy(true);
-    setMsg(null);
+    setErr(null);
     try {
       const perm = await Notification.requestPermission();
       if (perm !== "granted") {
-        setMsg("Kebenaran notifikasi ditolak.");
+        setErr("Kebenaran ditolak. Benarkan dalam tetapan pelayar.");
         setBusy(false);
         return;
       }
@@ -60,62 +63,44 @@ export default function PushToggle() {
         body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
       });
       if (!res.ok) throw new Error();
-      setEnabled(true);
-      setMsg("Notifikasi dihidupkan.");
+      setBusy(false);
+      setView("flash"); // papar "Berjaya" lalu lenyap
     } catch {
-      setMsg("Gagal hidupkan notifikasi. Cuba lagi.");
-    } finally {
+      setErr("Gagal hidupkan. Cuba lagi.");
       setBusy(false);
     }
   };
 
-  const disable = async () => {
-    setBusy(true);
-    setMsg(null);
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await fetch(`/api/portal/push?endpoint=${encodeURIComponent(sub.endpoint)}`, {
-          method: "DELETE",
-        });
-        await sub.unsubscribe();
-      }
-      setEnabled(false);
-      setMsg("Notifikasi dimatikan.");
-    } catch {
-      setMsg("Gagal matikan.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (!supported || view === "hidden") return null;
+
+  if (view === "flash") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1, 1, 0] }}
+        transition={{ duration: 2.6, times: [0, 0.12, 0.75, 1] }}
+        onAnimationComplete={() => setView("hidden")}
+        className="flex items-center gap-2 font-sans text-sm font-semibold text-amber"
+      >
+        <Check className="h-4 w-4" /> Berjaya dihidupkan
+      </motion.div>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-line bg-bg-soft/50 px-5 py-4">
       <span className="flex items-center gap-2 font-sans text-sm text-paper">
-        {enabled ? <Check className="h-4 w-4 text-amber" /> : <Bell className="h-4 w-4 text-amber" />}
-        {enabled ? "Notifikasi push dihidupkan" : "Dapat notifikasi di telefon"}
+        <Bell className="h-4 w-4 text-amber" /> Dapatkan notifikasi di telefon
       </span>
-      {enabled ? (
-        <button
-          type="button"
-          onClick={disable}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full border border-line px-4 py-1.5 font-sans text-xs font-semibold text-paper transition-colors hover:border-amber hover:text-amber disabled:opacity-60"
-        >
-          <BellOff className="h-3.5 w-3.5" /> Matikan
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={enable}
-          disabled={busy}
-          className="inline-flex items-center gap-1.5 rounded-full bg-amber px-4 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep disabled:opacity-60"
-        >
-          <Bell className="h-3.5 w-3.5" /> {busy ? "…" : "Hidupkan"}
-        </button>
-      )}
-      {msg && <span className="font-sans text-xs text-muted">{msg}</span>}
+      <button
+        type="button"
+        onClick={enable}
+        disabled={busy}
+        className="rounded-full bg-amber px-5 py-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep disabled:opacity-60"
+      >
+        {busy ? "Sedang hidupkan…" : "Hidupkan Notifikasi"}
+      </button>
+      {err && <span className="font-sans text-xs text-muted">{err}</span>}
     </div>
   );
 }
