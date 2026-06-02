@@ -8,6 +8,15 @@ import { KID_SIZES, ADULT_SIZES, ringgit } from "@/lib/shop";
 
 const SIZE_ORDER = [...KID_SIZES, ...ADULT_SIZES];
 
+const csv = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
+const downloadCsvFile = (lines: string[], name: string) => {
+  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+};
+
 type Item = {
   category: string;
   label: string;
@@ -71,6 +80,18 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
     router.refresh();
   };
 
+  // Senarai susun untuk edaran kepada pelanggan (tempahan disahkan).
+  const downloadCustomerCsv = () => {
+    const confirmed = orders.filter((o) => o.status === "disahkan");
+    const lines = [["Nama", "Telefon", "Item", "Saiz", "Kuantiti", "Cetak Nama"].map(csv).join(",")];
+    for (const o of confirmed) {
+      for (const it of o.items ?? []) {
+        lines.push([o.full_name, o.phone, it.label, it.size, it.qty, it.name_print ? "Ya" : "-"].map(csv).join(","));
+      }
+    }
+    downloadCsvFile(lines, `susun-pelanggan-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   return (
     <div className="mb-8">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -93,13 +114,22 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowPivot((v) => !v)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
-        >
-          <Table2 className="h-3.5 w-3.5" /> Jana Pivot
-        </button>
+        <div className="flex gap-1.5">
+          <button
+            type="button"
+            onClick={downloadCustomerCsv}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
+          >
+            <Download className="h-3.5 w-3.5" /> Senarai Susun
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPivot((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
+          >
+            <Table2 className="h-3.5 w-3.5" /> Jana Pivot
+          </button>
+        </div>
       </div>
 
       {showPivot && <Pivot orders={orders} />}
@@ -218,6 +248,23 @@ function Pivot({ orders }: { orders: Order[] }) {
     a.click();
   };
 
+  // Hustle Gear (baharu) — ikut saiz sahaja (standardize).
+  const hustleSizes = new Map<string, number>();
+  for (const o of confirmed) {
+    for (const it of o.items ?? []) {
+      if (it.category !== "hustle_gear") continue;
+      hustleSizes.set(it.size, (hustleSizes.get(it.size) ?? 0) + it.qty);
+    }
+  }
+  const hSizes = SIZE_ORDER.filter((s) => hustleSizes.has(s));
+  const hTotal = [...hustleSizes.values()].reduce((a, b) => a + b, 0);
+  const downloadHustleCsv = () => {
+    const lines = [["Saiz", "Kuantiti"].join(",")];
+    for (const s of hSizes) lines.push([s, hustleSizes.get(s) ?? 0].join(","));
+    lines.push(["JUMLAH", hTotal].join(","));
+    downloadCsvFile(lines, `pivot-hustle-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   return (
     <div className="mb-4 overflow-hidden rounded-xl border border-amber/40 bg-ink/40 p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -271,6 +318,36 @@ function Pivot({ orders }: { orders: Order[] }) {
             Cetak nama: <span className="text-paper">{namePrint}</span> · Jumlah (RM):{" "}
             <span className="text-paper">{ringgit(grandRM)}</span>
           </p>
+        </div>
+      )}
+
+      {/* Pivot Hustle Gear (ikut saiz) */}
+      {hSizes.length > 0 && (
+        <div className="mt-5 border-t border-amber/30 pt-4">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
+              Pivot Hustle Gear
+            </p>
+            <button type="button" onClick={downloadHustleCsv} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber">
+              <Download className="h-3.5 w-3.5" /> CSV
+            </button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse font-sans text-xs">
+              <thead>
+                <tr className="text-muted">
+                  {hSizes.map((s) => <th key={s} className="px-2 py-1 text-center">{s}</th>)}
+                  <th className="px-2 py-1 text-center font-bold text-amber">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="border-t border-line text-paper">
+                  {hSizes.map((s) => <td key={s} className="px-2 py-1 text-center tabular-nums">{hustleSizes.get(s) ?? "–"}</td>)}
+                  <td className="px-2 py-1 text-center font-bold tabular-nums text-amber">{hTotal}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
