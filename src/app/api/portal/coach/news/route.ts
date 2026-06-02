@@ -73,6 +73,8 @@ export async function POST(request: Request) {
     user_id: null,
     title: `Berita baharu: ${parsed.data.title}`,
     link,
+    ref_type: "news",
+    ref_id: data?.id ?? null,
   });
 
   // Push notification ke semua telefon yang melanggan.
@@ -137,5 +139,7 @@ export async function DELETE(request: Request) {
     console.error("[coach/news] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+  // Buang notifikasi berita berkaitan supaya tak tertinggal di loceng.
+  await supabase.from("notifications").delete().eq("ref_type", "news").eq("ref_id", id);
   return NextResponse.json({ ok: true });
 }
