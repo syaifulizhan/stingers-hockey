@@ -12,6 +12,7 @@ type Item = {
   category: string;
   label: string;
   reka_bentuk?: string | null;
+  penutup?: string | null;
   lengan?: string | null;
   material?: string | null;
   edition_id?: string;
@@ -180,14 +181,14 @@ function Pivot({ orders }: { orders: Order[] }) {
   const confirmed = orders.filter((o) => o.status === "disahkan");
 
   // Jersi: kumpul ikut Reka Bentuk · Lengan · Material × Saiz.
-  const rows = new Map<string, { reka: string; lengan: string; material: string; sizes: Record<string, number>; total: number }>();
+  const rows = new Map<string, { reka: string; penutup: string; lengan: string; material: string; sizes: Record<string, number>; total: number }>();
   const sizeSet = new Set<string>();
   let namePrint = 0;
   for (const o of confirmed) {
     for (const it of o.items ?? []) {
       if (it.category !== "jersi") continue;
-      const k = `${it.reka_bentuk}|${it.lengan}|${it.material}`;
-      const row = rows.get(k) ?? { reka: it.reka_bentuk ?? "", lengan: it.lengan ?? "", material: it.material ?? "", sizes: {}, total: 0 };
+      const k = `${it.reka_bentuk}|${it.penutup}|${it.lengan}|${it.material}`;
+      const row = rows.get(k) ?? { reka: it.reka_bentuk ?? "", penutup: it.penutup ?? "", lengan: it.lengan ?? "", material: it.material ?? "", sizes: {}, total: 0 };
       row.sizes[it.size] = (row.sizes[it.size] ?? 0) + it.qty;
       row.total += it.qty;
       rows.set(k, row);
@@ -201,12 +202,12 @@ function Pivot({ orders }: { orders: Order[] }) {
   const grandRM = confirmed.reduce((s, o) => s + (Number(o.total) || 0), 0);
 
   const downloadCsv = () => {
-    const head = ["Reka Bentuk", "Lengan", "Material", ...sizes, "Jumlah"];
+    const head = ["Reka Bentuk", "Penutup", "Lengan", "Material", ...sizes, "Jumlah"];
     const lines = [head.join(",")];
     for (const r of rowList) {
-      lines.push([r.reka, r.lengan, r.material, ...sizes.map((s) => r.sizes[s] ?? 0), r.total].join(","));
+      lines.push([r.reka, r.penutup, r.lengan, r.material, ...sizes.map((s) => r.sizes[s] ?? 0), r.total].join(","));
     }
-    lines.push(["GRAND TOTAL", "", "", ...sizes.map(() => ""), grand].join(","));
+    lines.push(["GRAND TOTAL", "", "", "", ...sizes.map(() => ""), grand].join(","));
     lines.push("");
     lines.push(`Cetak nama: ${namePrint}`);
     lines.push(`Jumlah (RM): ${grandRM.toFixed(2)}`);
@@ -237,6 +238,7 @@ function Pivot({ orders }: { orders: Order[] }) {
             <thead>
               <tr className="text-muted">
                 <th className="px-2 py-1 text-left">Reka Bentuk</th>
+                <th className="px-2 py-1 text-left">Penutup</th>
                 <th className="px-2 py-1 text-left">Lengan</th>
                 <th className="px-2 py-1 text-left">Material</th>
                 {sizes.map((s) => <th key={s} className="px-2 py-1 text-center">{s}</th>)}
@@ -247,6 +249,7 @@ function Pivot({ orders }: { orders: Order[] }) {
               {rowList.map((r, i) => (
                 <tr key={i} className="border-t border-line text-paper">
                   <td className="px-2 py-1">{r.reka}</td>
+                  <td className="px-2 py-1">{r.penutup || "–"}</td>
                   <td className="px-2 py-1">{r.lengan}</td>
                   <td className="px-2 py-1">{r.material}</td>
                   {sizes.map((s) => <td key={s} className="px-2 py-1 text-center tabular-nums">{r.sizes[s] ?? "–"}</td>)}
@@ -254,7 +257,7 @@ function Pivot({ orders }: { orders: Order[] }) {
                 </tr>
               ))}
               <tr className="border-t-2 border-amber/40 font-bold text-amber">
-                <td className="px-2 py-1" colSpan={3}>GRAND TOTAL</td>
+                <td className="px-2 py-1" colSpan={4}>GRAND TOTAL</td>
                 {sizes.map((s) => (
                   <td key={s} className="px-2 py-1 text-center tabular-nums">
                     {rowList.reduce((sum, r) => sum + (r.sizes[s] ?? 0), 0)}

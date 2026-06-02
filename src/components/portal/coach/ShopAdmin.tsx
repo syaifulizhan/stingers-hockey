@@ -18,7 +18,10 @@ const num = (v: unknown) => Number(v) || 0;
 const ringgit = (n: number) => `RM ${n.toFixed(2)}`;
 
 // Ciri berstruktur jersi (untuk pivot supplier yang kemas).
-const REKA_BENTUK = ["Bulat", "Berkolar", "Muslimah"];
+const REKA_BENTUK = ["Bulat", "Berkolar Mandarin", "Berkolar Klasik", "Berkolar Biasa", "Muslimah"];
+const PENUTUP = ["Butang", "Zip"];
+// Reka bentuk yang ada bukaan kolar (boleh Butang/Zip). Lain → tiada penutup.
+const CLOSURE_REKA = ["Bulat", "Berkolar Mandarin", "Berkolar Biasa"];
 const LENGAN = ["Pendek", "Panjang"];
 const MATERIAL = ["Biasa", "Lycra"];
 
@@ -30,7 +33,7 @@ const JERSI_CHARTS = [
 ];
 const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz" }];
 const variantLabel = (v: Variant) =>
-  [v.reka_bentuk, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
+  [v.reka_bentuk, v.penutup, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
 
 type Product = {
   id: string;
@@ -52,6 +55,7 @@ type Variant = {
   reka_bentuk?: string | null;
   lengan?: string | null;
   material?: string | null;
+  penutup?: string | null;
 };
 type Edition = {
   id: string;
@@ -471,24 +475,31 @@ function VariantEditor({
   supabase: SB;
 }) {
   const [rekaBentuk, setRekaBentuk] = useState("");
+  const [penutup, setPenutup] = useState("");
   const [lengan, setLengan] = useState("");
   const [material, setMaterial] = useState("");
   const [price, setPrice] = useState("");
+  const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const add = () =>
     run(async () => {
       if (!rekaBentuk || !lengan || !material) throw new Error("Sila pilih Reka Bentuk, Lengan & Material.");
+      if (hasClosure && !penutup) throw new Error("Sila pilih Penutup (Butang/Zip).");
+      const pen = hasClosure ? penutup : null;
+      const label = [rekaBentuk, pen, lengan, material].filter(Boolean).join(" · ");
       const { error } = await supabase.from("shop_variants").insert({
         product_id: productId,
         reka_bentuk: rekaBentuk,
+        penutup: pen,
         lengan,
         material,
-        label: `${rekaBentuk} · ${lengan} · ${material}`,
+        label,
         price: num(price),
         sort_order: variants.length,
       });
       if (error) throw new Error(error.message);
       setRekaBentuk("");
+      setPenutup("");
       setLengan("");
       setMaterial("");
       setPrice("");
@@ -516,11 +527,24 @@ function VariantEditor({
           ))}
         </ul>
       )}
-      <div className="grid gap-2 sm:grid-cols-4">
-        <select className={inputCls} value={rekaBentuk} onChange={(e) => setRekaBentuk(e.target.value)}>
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <select
+          className={inputCls}
+          value={rekaBentuk}
+          onChange={(e) => {
+            setRekaBentuk(e.target.value);
+            if (!CLOSURE_REKA.includes(e.target.value)) setPenutup("");
+          }}
+        >
           <option value="">Reka Bentuk…</option>
           {REKA_BENTUK.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
+        {hasClosure && (
+          <select className={inputCls} value={penutup} onChange={(e) => setPenutup(e.target.value)}>
+            <option value="">Penutup…</option>
+            {PENUTUP.map((x) => <option key={x} value={x}>{x}</option>)}
+          </select>
+        )}
         <select className={inputCls} value={lengan} onChange={(e) => setLengan(e.target.value)}>
           <option value="">Lengan…</option>
           {LENGAN.map((x) => <option key={x} value={x}>{x}</option>)}
