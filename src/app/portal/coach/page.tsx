@@ -22,6 +22,7 @@ import MatchPanel from "@/components/portal/coach/MatchPanel";
 import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachSummary from "@/components/portal/coach/CoachSummary";
 import ShopAdmin from "@/components/portal/coach/ShopAdmin";
+import OrderReview from "@/components/portal/coach/OrderReview";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 
@@ -384,17 +385,20 @@ export default async function CoachPage() {
   let shopProducts: Record<string, unknown>[] = [];
   let shopVariants: Record<string, unknown>[] = [];
   let shopEditions: Record<string, unknown>[] = [];
+  let shopOrders: Record<string, unknown>[] = [];
   let shopSettings = { pakej_discount_percent: 0, pakej_min_items: 2 };
   if (admin) {
-    const [pRes, vRes, eRes, sRes] = await Promise.all([
+    const [pRes, vRes, eRes, sRes, oRes] = await Promise.all([
       supabase.from("shop_products").select("*"),
       supabase.from("shop_variants").select("*").order("sort_order", { ascending: true }),
       supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
       supabase.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
+      supabase.from("shop_orders").select("*").order("created_at", { ascending: false }),
     ]);
     shopProducts = (pRes.data ?? []) as Record<string, unknown>[];
     shopVariants = (vRes.data ?? []) as Record<string, unknown>[];
     shopEditions = (eRes.data ?? []) as Record<string, unknown>[];
+    shopOrders = (oRes.data ?? []) as Record<string, unknown>[];
     if (sRes.data) shopSettings = sRes.data as typeof shopSettings;
   }
 
@@ -621,6 +625,7 @@ export default async function CoachPage() {
                       <h2 className={sectionTitle}>
                         <ShoppingBag className="h-4 w-4" /> Urus Tempahan Pasukan
                       </h2>
+                      <OrderReview orders={shopOrders as never} />
                       <ShopAdmin
                         products={shopProducts as never}
                         variants={shopVariants as never}
