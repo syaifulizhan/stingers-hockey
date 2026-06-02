@@ -356,9 +356,11 @@ export default async function DashboardPage() {
         </h2>
         <PlayerTaskList
           items={tasks.map((t) => ({
-            task: t,
+            // Pangkas: JANGAN hantar senarai pengecualian penuh ke pelayar ahli —
+            // hantar tugasan asas sahaja supaya nota ahli lain tak terdedah.
+            task: { id: t.id, title: t.title, description: t.description, due_date: t.due_date },
             submission: subByTask.get(t.id) ?? null,
-            // Arahan/limit khas untuk ahli ini (jika dia dalam senarai pengecualian).
+            // Arahan/limit khas untuk ahli ini sahaja (jika dia dalam pengecualian).
             note: (t.exceptions ?? []).find((e) => e.uid === user!.id)?.note ?? null,
           }))}
           readOnly={isCoachOrAdmin}
