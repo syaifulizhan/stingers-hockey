@@ -35,9 +35,9 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       {
-        name: "Tempah Hustle Gear",
+        name: "Tempahan Pasukan",
         short_name: "Tempahan",
-        url: "/hustle-gear",
+        url: "/tempahan",
       },
       {
         name: "Daftar Pemain",
