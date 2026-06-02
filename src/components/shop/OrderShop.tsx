@@ -39,7 +39,7 @@ type Variant = {
   lengan: string | null;
   material: string | null;
 };
-type Edition = { id: string; name: string; year: string | null; price: number | string };
+type Edition = { id: string; name: string; year: string | null; price: number | string; kind: string | null };
 type Settings = {
   pakej_discount_percent: number;
   pakej_min_items: number;
@@ -48,7 +48,7 @@ type Settings = {
 };
 type CartItem = {
   key: string;
-  category: "jersi" | "hustle_gear" | "jersi_lama";
+  category: "jersi" | "hustle_gear" | "jersi_lama" | "hustle_lama";
   label: string;
   reka_bentuk?: string | null;
   penutup?: string | null;
@@ -156,7 +156,7 @@ export default function OrderShop({
   const tabs = [
     { id: "jersi", label: t("Jersi", "Jersey") },
     { id: "hustle_gear", label: "Hustle Gear" },
-    { id: "jersi_lama", label: t("Jersi Lama", "Old Jerseys") },
+    { id: "jersi_lama", label: t("Koleksi Lama", "Past Collection") },
     { id: "pakej", label: t("Pakej Jimat", "Bundle") },
   ];
   const [tab, setTab] = useState("jersi");
@@ -214,7 +214,7 @@ export default function OrderShop({
           )}
           {tab === "hustle_gear" && <HustleConfig pp={hustlePP} hustle={hustle} onAdd={addItem} />}
           {tab === "jersi_lama" && (
-            <EditionConfig editions={editions} pp={jersiPP} jersi={jersi} onAdd={addItem} />
+            <EditionConfig editions={editions} jersi={jersi} hustle={hustle} jersiPP={jersiPP} hustlePP={hustlePP} onAdd={addItem} />
           )}
           {tab === "pakej" && (
             <Checkout
@@ -380,13 +380,17 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
 /* ───────────────── Konfigurator Jersi Lama ───────────────── */
 function EditionConfig({
   editions,
-  pp,
   jersi,
+  hustle,
+  jersiPP,
+  hustlePP,
   onAdd,
 }: {
   editions: Edition[];
-  pp: PriceProduct;
   jersi?: Product;
+  hustle?: Product;
+  jersiPP: PriceProduct;
+  hustlePP: PriceProduct;
   onAdd: (i: Omit<CartItem, "key">) => void;
 }) {
   const { t } = useLang();
@@ -395,15 +399,19 @@ function EditionConfig({
   const [qty, setQty] = useState(1);
   const [namePrint, setNamePrint] = useState(false);
   const ed = editions.find((x) => x.id === editionId);
+  // Guna tetapan produk ikut jenis edisi (jersi vs hustle gear).
+  const isHustle = ed?.kind === "hustle_gear";
+  const prod = isHustle ? hustle : jersi;
+  const pp = isHustle ? hustlePP : jersiPP;
   const unit = ed && size ? unitPrice(ed.price, size, pp, namePrint) : 0;
 
   if (editions.length === 0)
-    return <p className="font-sans text-sm text-muted">{t("Tiada jersi lama untuk dijual buat masa ini.", "No old jerseys for sale right now.")}</p>;
+    return <p className="font-sans text-sm text-muted">{t("Tiada koleksi lama untuk dijual buat masa ini.", "No past collection for sale right now.")}</p>;
 
   const add = () => {
     if (!ed || !size) return;
     onAdd({
-      category: "jersi_lama",
+      category: isHustle ? "hustle_lama" : "jersi_lama",
       label: `${ed.name}${ed.year ? ` ${ed.year}` : ""}`,
       edition_id: ed.id,
       size,
@@ -425,12 +433,12 @@ function EditionConfig({
           <option value="">{t("Pilih edisi…", "Choose edition…")}</option>
           {editions.map((x) => (
             <option key={x.id} value={x.id}>
-              {x.name} {x.year} — {ringgit(Number(x.price) || 0)}
+              {x.name} {x.year}{x.kind === "hustle_gear" ? " (Hustle Gear)" : ""} — {ringgit(Number(x.price) || 0)}
             </option>
           ))}
         </select>
       </div>
-      <SizeChartViewer charts={jersi?.size_charts} keys={JERSI_CHARTS} />
+      <SizeChartViewer charts={prod?.size_charts} keys={isHustle ? HUSTLE_CHARTS : JERSI_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
@@ -441,10 +449,10 @@ function EditionConfig({
           <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
         </div>
       </div>
-      {jersi?.name_print_enabled && (
+      {prod?.name_print_enabled && (
         <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
           <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
-          {t("Cetak nama & nombor", "Print name & number")} (+{ringgit(Number(jersi.name_print_fee) || 0)})
+          {t("Cetak nama & nombor", "Print name & number")} (+{ringgit(Number(prod.name_print_fee) || 0)})
         </label>
       )}
       <div className="flex items-center justify-between">
