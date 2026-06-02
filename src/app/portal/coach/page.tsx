@@ -203,45 +203,53 @@ export default async function CoachPage() {
   }
 
   type Leader = { name: string; value: string } | null;
-  let mostImproved: Leader = null;
-  let bestAttendance: Leader = null;
-  let topScorer: Leader = null;
-  let bestGK: Leader = null;
-  let topImpDelta = 0;
-  let topAttPct = -1;
-  let topGoals = 0;
-  let topSaves = 0;
+  // Pengira pemenang untuk satu kumpulan pemain (dipanggil per-jantina).
+  const computeLeaders = (players: typeof playerList) => {
+    let mostImproved: Leader = null;
+    let bestAttendance: Leader = null;
+    let topScorer: Leader = null;
+    let bestGK: Leader = null;
+    let topImpDelta = 0;
+    let topAttPct = -1;
+    let topGoals = 0;
+    let topSaves = 0;
+    for (const m of players) {
+      const id = m.clerk_user_id;
+      const arr = skillSeries.get(id);
+      if (arr && arr.length >= 2) {
+        const delta = arr[0] - arr[arr.length - 1];
+        if (delta > 0 && delta > topImpDelta) {
+          topImpDelta = delta;
+          mostImproved = { name: nameOf(id), value: `+${Math.round(delta * 10) / 10}` };
+        }
+      }
+      if (totalSessionsCount > 0) {
+        const pct = Math.round(((presentCount.get(id) ?? 0) / totalSessionsCount) * 100);
+        if (pct > topAttPct) {
+          topAttPct = pct;
+          bestAttendance = { name: nameOf(id), value: `${pct}%` };
+        }
+      }
+      const g = goalsByUser.get(id) ?? 0;
+      if (g > topGoals) {
+        topGoals = g;
+        topScorer = { name: nameOf(id), value: `${g} gol` };
+      }
+      if (m.is_goalkeeper) {
+        const sv = savesByUser.get(id) ?? 0;
+        if (sv > topSaves) {
+          topSaves = sv;
+          bestGK = { name: nameOf(id), value: `${sv} save` };
+        }
+      }
+    }
+    return { mostImproved, bestAttendance, topScorer, bestGK };
+  };
 
-  for (const m of playerList) {
-    const id = m.clerk_user_id;
-    const arr = skillSeries.get(id);
-    if (arr && arr.length >= 2) {
-      const delta = arr[0] - arr[arr.length - 1];
-      if (delta > 0 && delta > topImpDelta) {
-        topImpDelta = delta;
-        mostImproved = { name: nameOf(id), value: `+${Math.round(delta * 10) / 10}` };
-      }
-    }
-    if (totalSessionsCount > 0) {
-      const pct = Math.round(((presentCount.get(id) ?? 0) / totalSessionsCount) * 100);
-      if (pct > topAttPct) {
-        topAttPct = pct;
-        bestAttendance = { name: nameOf(id), value: `${pct}%` };
-      }
-    }
-    const g = goalsByUser.get(id) ?? 0;
-    if (g > topGoals) {
-      topGoals = g;
-      topScorer = { name: nameOf(id), value: `${g} gol` };
-    }
-    if (m.is_goalkeeper) {
-      const sv = savesByUser.get(id) ?? 0;
-      if (sv > topSaves) {
-        topSaves = sv;
-        bestGK = { name: nameOf(id), value: `${sv} save` };
-      }
-    }
-  }
+  const malePlayers = playerList.filter((m) => m.gender === "Lelaki");
+  const femalePlayers = playerList.filter((m) => m.gender === "Perempuan");
+  const leadersMale = computeLeaders(malePlayers);
+  const leadersFemale = computeLeaders(femalePlayers);
 
   // Jumlah statistik perlawanan setiap pemain (untuk laporan ringkas).
   const matchTotalsByUser = new Map<string, Record<string, number>>();
@@ -397,10 +405,10 @@ export default async function CoachPage() {
                 </h2>
                 <CoachSummary
                   totalPlayers={playerList.length}
-                  mostImproved={mostImproved}
-                  bestAttendance={bestAttendance}
-                  topScorer={topScorer}
-                  bestGK={bestGK}
+                  maleCount={malePlayers.length}
+                  femaleCount={femalePlayers.length}
+                  leadersMale={leadersMale}
+                  leadersFemale={leadersFemale}
                   topMale={topMale}
                   topFemale={topFemale}
                   topOther={topOther}
