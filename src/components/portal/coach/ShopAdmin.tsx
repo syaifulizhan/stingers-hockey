@@ -17,6 +17,13 @@ const sectionTitle = "display text-xl text-paper";
 const num = (v: unknown) => Number(v) || 0;
 const ringgit = (n: number) => `RM ${n.toFixed(2)}`;
 
+// Ciri berstruktur jersi (untuk pivot supplier yang kemas).
+const REKA_BENTUK = ["Bulat", "Berkolar", "Muslimah"];
+const LENGAN = ["Pendek", "Panjang"];
+const MATERIAL = ["Biasa", "Lycra"];
+const variantLabel = (v: Variant) =>
+  [v.reka_bentuk, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
+
 type Product = {
   id: string;
   name: string;
@@ -27,7 +34,16 @@ type Product = {
   name_print_enabled: boolean;
   name_print_fee: number | string;
 };
-type Variant = { id: string; product_id: string; label: string; price: number | string; sort_order: number };
+type Variant = {
+  id: string;
+  product_id: string;
+  label: string;
+  price: number | string;
+  sort_order: number;
+  reka_bentuk?: string | null;
+  lengan?: string | null;
+  material?: string | null;
+};
 type Edition = {
   id: string;
   name: string;
@@ -264,20 +280,27 @@ function VariantEditor({
   busy: boolean;
   supabase: SB;
 }) {
-  const [label, setLabel] = useState("");
+  const [rekaBentuk, setRekaBentuk] = useState("");
+  const [lengan, setLengan] = useState("");
+  const [material, setMaterial] = useState("");
   const [price, setPrice] = useState("");
 
   const add = () =>
     run(async () => {
-      if (label.trim() === "") throw new Error("Sila masukkan label variasi.");
+      if (!rekaBentuk || !lengan || !material) throw new Error("Sila pilih Reka Bentuk, Lengan & Material.");
       const { error } = await supabase.from("shop_variants").insert({
         product_id: productId,
-        label: label.trim(),
+        reka_bentuk: rekaBentuk,
+        lengan,
+        material,
+        label: `${rekaBentuk} · ${lengan} · ${material}`,
         price: num(price),
         sort_order: variants.length,
       });
       if (error) throw new Error(error.message);
-      setLabel("");
+      setRekaBentuk("");
+      setLengan("");
+      setMaterial("");
       setPrice("");
     });
 
@@ -289,12 +312,12 @@ function VariantEditor({
 
   return (
     <div className="mt-5 border-t border-line pt-4">
-      <p className={labelCls}>Jenis jersi (variasi) — label + harga penuh</p>
+      <p className={labelCls}>Jenis jersi (variasi) — Reka Bentuk · Lengan · Material + harga</p>
       {variants.length > 0 && (
         <ul className="mb-3 flex flex-col gap-1.5">
           {variants.map((v) => (
             <li key={v.id} className="flex items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
-              <span className="min-w-0 flex-1 truncate font-sans text-sm text-paper">{v.label}</span>
+              <span className="min-w-0 flex-1 truncate font-sans text-sm text-paper">{variantLabel(v)}</span>
               <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(num(v.price))}</span>
               <button type="button" onClick={() => del(v.id)} disabled={busy} aria-label="Padam" className="shrink-0 text-muted hover:text-amber">
                 <Trash2 className="h-4 w-4" />
@@ -303,13 +326,24 @@ function VariantEditor({
           ))}
         </ul>
       )}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <input className={`${inputCls} sm:flex-1`} placeholder="Cth: Berkolar lengan panjang Lycra" value={label} onChange={(e) => setLabel(e.target.value)} />
-        <input type="number" step="0.01" min="0" className={`${inputCls} sm:w-32`} placeholder="Harga" value={price} onChange={(e) => setPrice(e.target.value)} />
-        <button type="button" onClick={add} disabled={busy} className="inline-flex shrink-0 items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
-          <Plus className="h-4 w-4" /> Tambah
-        </button>
+      <div className="grid gap-2 sm:grid-cols-4">
+        <select className={inputCls} value={rekaBentuk} onChange={(e) => setRekaBentuk(e.target.value)}>
+          <option value="">Reka Bentuk…</option>
+          {REKA_BENTUK.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <select className={inputCls} value={lengan} onChange={(e) => setLengan(e.target.value)}>
+          <option value="">Lengan…</option>
+          {LENGAN.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
+          <option value="">Material…</option>
+          {MATERIAL.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+        <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
+      <button type="button" onClick={add} disabled={busy} className="mt-2 inline-flex items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
+        <Plus className="h-4 w-4" /> Tambah variasi
+      </button>
     </div>
   );
 }
