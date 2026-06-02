@@ -27,16 +27,19 @@ export default async function Home() {
   ]);
   const jerseyImage = prods?.find((p) => p.id === "jersi")?.image_url ?? null;
   const hustleImage = prods?.find((p) => p.id === "hustle_gear")?.image_url ?? null;
-  const jerseyItems: Jersey[] = (editions ?? []).map((e) => ({
-    id: e.id,
-    name: e.name,
-    year: e.year ?? "",
-    tournament: e.tournament ?? "",
-    region: e.region ?? "",
-    venue: e.venue ?? "",
-    note: e.note ?? undefined,
-    image: e.image_url ?? "",
-  }));
+  const mapEdition = (e: Record<string, unknown>): Jersey => ({
+    id: e.id as string,
+    name: e.name as string,
+    year: (e.year as string) ?? "",
+    tournament: (e.tournament as string) ?? "",
+    region: (e.region as string) ?? "",
+    venue: (e.venue as string) ?? "",
+    note: (e.note as string) ?? undefined,
+    image: (e.image_url as string) ?? "",
+  });
+  const all = editions ?? [];
+  const jerseyItems: Jersey[] = all.filter((e) => (e.kind ?? "jersi") === "jersi").map(mapEdition);
+  const hustleItems: Jersey[] = all.filter((e) => e.kind === "hustle_gear").map(mapEdition);
 
   return (
     <>
@@ -49,8 +52,9 @@ export default async function Home() {
         <About />
         <Training />
         <LogoStory />
-        <JerseyGallery items={jerseyItems} />
+        <JerseyGallery items={jerseyItems} variant="jersi" />
         <HustleGear jerseyImage={jerseyImage} hustleImage={hustleImage} />
+        <JerseyGallery items={hustleItems} variant="hustle" />
         <Sponsors />
       </main>
       <Footer />

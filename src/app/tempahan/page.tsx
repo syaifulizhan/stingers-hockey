@@ -11,7 +11,7 @@ export default async function TempahanPage() {
   const [pRes, vRes, eRes, sRes] = await Promise.all([
     supabase.from("shop_products").select("*").eq("active", true),
     supabase.from("shop_variants").select("*").eq("active", true).order("sort_order", { ascending: true }),
-    supabase.from("jersey_editions").select("*").eq("for_sale", true).order("sort_order", { ascending: true }),
+    supabase.from("jersey_editions").select("*").eq("for_sale", true).eq("kind", "jersi").order("sort_order", { ascending: true }),
     supabase.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
   ]);
 
