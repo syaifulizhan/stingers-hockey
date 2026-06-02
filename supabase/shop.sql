@@ -109,11 +109,19 @@ drop policy if exists shop_orders_insert on public.shop_orders;
 create policy shop_orders_insert on public.shop_orders for insert to anon, authenticated with check (true);
 drop policy if exists shop_orders_select on public.shop_orders;
 create policy shop_orders_select on public.shop_orders for select to authenticated using (public.is_coach());
+-- Coach/admin sah/tolak (update status) & padam tempahan.
+drop policy if exists shop_orders_update on public.shop_orders;
+create policy shop_orders_update on public.shop_orders for update to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+drop policy if exists shop_orders_delete on public.shop_orders;
+create policy shop_orders_delete on public.shop_orders for delete to authenticated
+  using (public.is_coach());
 
 -- ── Grants (anon perlu baca produk & insert tempahan) ───────────────────────
 grant usage on schema public to anon;
 grant select on public.shop_products, public.shop_variants, public.jersey_editions, public.shop_settings to anon;
 grant insert on public.shop_orders to anon;
+grant update, delete on public.shop_orders to authenticated;
 
 -- ── Seed: produk tetap + tetapan ────────────────────────────────────────────
 insert into public.shop_products (id, name) values
