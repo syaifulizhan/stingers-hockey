@@ -38,6 +38,7 @@ create table if not exists public.shop_variants (
 alter table public.shop_variants add column if not exists reka_bentuk text;
 alter table public.shop_variants add column if not exists lengan text;
 alter table public.shop_variants add column if not exists material text;
+alter table public.shop_variants add column if not exists penutup text;   -- Butang / Zip
 
 -- Edisi jersi (legasi + jualan jersi lama). Dikongsi galeri & tab Jersi Lama.
 create table if not exists public.jersey_editions (

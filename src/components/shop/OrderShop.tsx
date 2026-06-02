@@ -35,6 +35,7 @@ type Variant = {
   label: string;
   price: number | string;
   reka_bentuk: string | null;
+  penutup: string | null;
   lengan: string | null;
   material: string | null;
 };
@@ -50,6 +51,7 @@ type CartItem = {
   category: "jersi" | "hustle_gear" | "jersi_lama";
   label: string;
   reka_bentuk?: string | null;
+  penutup?: string | null;
   lengan?: string | null;
   material?: string | null;
   edition_id?: string;
@@ -66,7 +68,7 @@ const addBtn =
   "inline-flex items-center justify-center gap-1.5 rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep disabled:opacity-50";
 
 const vLabel = (v: Variant) =>
-  [v.reka_bentuk, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
+  [v.reka_bentuk, v.penutup, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
 
 function SizeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useLang();
@@ -279,6 +281,7 @@ function JersiConfig({
       category: "jersi",
       label: vLabel(v),
       reka_bentuk: v.reka_bentuk,
+      penutup: v.penutup,
       lengan: v.lengan,
       material: v.material,
       size,
