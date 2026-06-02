@@ -96,26 +96,26 @@ create policy shop_settings_select on public.shop_settings for select to anon, a
 
 -- Tulis: hanya coach/admin.
 drop policy if exists shop_products_write on public.shop_products;
-create policy shop_products_write on public.shop_products for all to authenticated using (public.is_coach()) with check (public.is_coach());
+create policy shop_products_write on public.shop_products for all to authenticated using (public.is_admin()) with check (public.is_admin());
 drop policy if exists shop_variants_write on public.shop_variants;
-create policy shop_variants_write on public.shop_variants for all to authenticated using (public.is_coach()) with check (public.is_coach());
+create policy shop_variants_write on public.shop_variants for all to authenticated using (public.is_admin()) with check (public.is_admin());
 drop policy if exists jersey_editions_write on public.jersey_editions;
-create policy jersey_editions_write on public.jersey_editions for all to authenticated using (public.is_coach()) with check (public.is_coach());
+create policy jersey_editions_write on public.jersey_editions for all to authenticated using (public.is_admin()) with check (public.is_admin());
 drop policy if exists shop_settings_write on public.shop_settings;
-create policy shop_settings_write on public.shop_settings for all to authenticated using (public.is_coach()) with check (public.is_coach());
+create policy shop_settings_write on public.shop_settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- Tempahan: awam boleh INSERT; coach/admin sahaja SELECT.
 drop policy if exists shop_orders_insert on public.shop_orders;
 create policy shop_orders_insert on public.shop_orders for insert to anon, authenticated with check (true);
 drop policy if exists shop_orders_select on public.shop_orders;
-create policy shop_orders_select on public.shop_orders for select to authenticated using (public.is_coach());
+create policy shop_orders_select on public.shop_orders for select to authenticated using (public.is_admin());
 -- Coach/admin sah/tolak (update status) & padam tempahan.
 drop policy if exists shop_orders_update on public.shop_orders;
 create policy shop_orders_update on public.shop_orders for update to authenticated
-  using (public.is_coach()) with check (public.is_coach());
+  using (public.is_admin()) with check (public.is_admin());
 drop policy if exists shop_orders_delete on public.shop_orders;
 create policy shop_orders_delete on public.shop_orders for delete to authenticated
-  using (public.is_coach());
+  using (public.is_admin());
 
 -- ── Grants (anon perlu baca produk & insert tempahan) ───────────────────────
 grant usage on schema public to anon;
@@ -154,11 +154,11 @@ on conflict (id) do nothing;
 
 drop policy if exists "coach upload shop" on storage.objects;
 create policy "coach upload shop" on storage.objects for insert to authenticated
-  with check (bucket_id = 'shop' and public.is_coach());
+  with check (bucket_id = 'shop' and public.is_admin());
 
 drop policy if exists "coach delete shop" on storage.objects;
 create policy "coach delete shop" on storage.objects for delete to authenticated
-  using (bucket_id = 'shop' and public.is_coach());
+  using (bucket_id = 'shop' and public.is_admin());
 
 -- ============================================================================
 -- FASA 2 — status tempahan, bukti pengesahan, QR DuitNow, notifikasi
@@ -188,7 +188,7 @@ begin
          'order',
          new.id::text
   from public.users u
-  where u.role in ('admin', 'coach');
+  where u.role = 'admin';
   return new;
 end;
 $$;
