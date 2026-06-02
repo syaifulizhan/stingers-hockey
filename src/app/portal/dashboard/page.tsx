@@ -49,7 +49,7 @@ type TaskRow = {
   description: string | null;
   due_date: string | null;
   assigned_to: string | null;
-  replaces_task_id: string | null;
+  exceptions: { uid: string; note: string }[] | null;
 };
 type SubmissionRow = {
   task_id: string;
@@ -107,19 +107,7 @@ export default async function DashboardPage() {
   const role = (profile?.role as string) ?? "member";
   const isCoachOrAdmin = role === "coach" || role === "admin";
   const news = (newsRes.data ?? []) as unknown as NewsRow[];
-  const allTasks = (tasksRes.data ?? []) as unknown as TaskRow[];
-  // Sembunyikan tugasan umum yang DIGANTIKAN oleh tugasan individu ahli ini
-  // (RLS hanya pulangkan tugasan umum + tugasan individu sendiri) — elak hantar
-  // tugasan berganda.
-  const replacedGeneralIds = new Set(
-    allTasks
-      .filter((t) => t.assigned_to && t.replaces_task_id)
-      .map((t) => t.replaces_task_id)
-  );
-  // Coach/admin nampak semua tugasan; pemain sahaja yang dikecualikan.
-  const tasks = isCoachOrAdmin
-    ? allTasks
-    : allTasks.filter((t) => !replacedGeneralIds.has(t.id));
+  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
   const submissions = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const attendance = (attRes.data ?? []) as unknown as AttendanceRow[];
 
@@ -367,7 +355,12 @@ export default async function DashboardPage() {
           <ClipboardList className="h-4 w-4" /> Tugasan Latihan
         </h2>
         <PlayerTaskList
-          items={tasks.map((t) => ({ task: t, submission: subByTask.get(t.id) ?? null }))}
+          items={tasks.map((t) => ({
+            task: t,
+            submission: subByTask.get(t.id) ?? null,
+            // Arahan/limit khas untuk ahli ini (jika dia dalam senarai pengecualian).
+            note: (t.exceptions ?? []).find((e) => e.uid === user!.id)?.note ?? null,
+          }))}
           readOnly={isCoachOrAdmin}
         />
       </section>

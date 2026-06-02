@@ -41,7 +41,7 @@ type TaskRow = {
   description: string | null;
   assigned_to: string | null;
   due_date: string | null;
-  replaces_task_id: string | null;
+  exceptions: { uid: string; note: string }[];
 };
 type SessionRow = { id: string; title: string; date: string | null; type: string };
 type AttendanceRow = { session_id: string; user_id: string; status: string };
@@ -82,7 +82,7 @@ export default async function CoachPage() {
         .select("clerk_user_id, full_name, display_name, year, class, role, banned, is_goalkeeper")
         .order("full_name", { ascending: true }),
       supabase.from("news").select("id, title, body, published_at").order("published_at", { ascending: false }).limit(10),
-      supabase.from("tasks").select("id, title, description, assigned_to, due_date, replaces_task_id").order("created_at", { ascending: false }).limit(20),
+      supabase.from("tasks").select("id, title, description, assigned_to, due_date, exceptions").order("created_at", { ascending: false }).limit(20),
       supabase.from("sessions").select("id, title, date, type").order("created_at", { ascending: false }).limit(30),
       supabase.from("attendance").select("session_id, user_id, status"),
       supabase
@@ -339,23 +339,10 @@ export default async function CoachPage() {
   );
   const memberCount = memberIds.size;
 
-  // Pengecualian: ahli yang ada tugasan INDIVIDU yang "menggantikan" satu
-  // tugasan umum → dikecualikan daripada tugasan umum itu. Peta: id tugasan
-  // umum → set ahli yang dikecualikan.
-  const excusedByTask = new Map<string, Set<string>>();
-  for (const t of tasks) {
-    if (t.assigned_to && t.replaces_task_id && memberIds.has(t.assigned_to)) {
-      const set = excusedByTask.get(t.replaces_task_id) ?? new Set<string>();
-      set.add(t.assigned_to);
-      excusedByTask.set(t.replaces_task_id, set);
-    }
-  }
-
-  // Kiraan setiap task (ahli aktif sahaja, tolak yang dikecualikan).
+  // Kiraan setiap task (ahli aktif sahaja).
   const byTask = new Map<string, { submitted: number; reviewed: number; revise: number; late: number }>();
   for (const s of allSubs) {
     if (!memberIds.has(s.user_id)) continue;
-    if (excusedByTask.get(s.task_id)?.has(s.user_id)) continue; // dikecualikan
     const acc = byTask.get(s.task_id) ?? { submitted: 0, reviewed: 0, revise: 0, late: 0 };
     acc.submitted += 1;
     if (s.status === "reviewed") acc.reviewed += 1;
@@ -364,12 +351,8 @@ export default async function CoachPage() {
     byTask.set(s.task_id, acc);
   }
   const taskSummary = (t: TaskRow) => {
-    // Sasaran: 1 ahli jika ditugaskan khusus; jika tidak, semua ahli aktif
-    // TOLAK ahli yang dikecualikan (ada tugasan individu menggantikan).
-    const excusedCount = excusedByTask.get(t.id)?.size ?? 0;
-    const target = t.assigned_to
-      ? (memberIds.has(t.assigned_to) ? 1 : 0)
-      : Math.max(0, memberCount - excusedCount);
+    // Sasaran: 1 ahli jika ditugaskan khusus; jika tidak, semua ahli aktif.
+    const target = t.assigned_to ? (memberIds.has(t.assigned_to) ? 1 : 0) : memberCount;
     const c = byTask.get(t.id) ?? { submitted: 0, reviewed: 0, revise: 0, late: 0 };
     const pct = target > 0 ? Math.round((c.submitted / target) * 100) : 0;
     // Tidak hantar: ahli yang langsung tak hantar SELEPAS tarikh akhir tamat.
@@ -380,10 +363,6 @@ export default async function CoachPage() {
   const avgSubmissionPct = tasks.length
     ? Math.round(tasks.reduce((sum, t) => sum + taskSummary(t).pct, 0) / tasks.length)
     : 0;
-  // Tugasan umum (untuk pilihan "Gantikan tugasan umum" pada tugasan individu).
-  const generalTasks = tasks
-    .filter((t) => !t.assigned_to)
-    .map((t) => ({ id: t.id, title: t.title }));
 
   const sectionTitle =
     "mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted";
@@ -476,7 +455,6 @@ export default async function CoachPage() {
                 )}
                 <TaskForm
                   members={activeMembers.map((m) => ({ clerk_user_id: m.clerk_user_id, full_name: memberName(m.full_name, m.display_name) }))}
-                  generalTasks={generalTasks}
                 />
                 {tasks.length > 0 ? (
                   <div className="mt-4 flex flex-col gap-2">
@@ -488,13 +466,10 @@ export default async function CoachPage() {
                           clerk_user_id: m.clerk_user_id,
                           full_name: memberName(m.full_name, m.display_name),
                         }))}
-                        generalTasks={generalTasks}
                         assigneeName={
                           t.assigned_to
                             ? nameById.get(t.assigned_to) || "ahli"
-                            : excusedByTask.get(t.id)?.size
-                              ? `Semua ahli (−${excusedByTask.get(t.id)!.size} dikecualikan)`
-                              : "Semua ahli"
+                            : "Semua ahli"
                         }
                         summary={taskSummary(t)}
                         submissions={subsByTask.get(t.id) ?? []}

@@ -79,11 +79,11 @@ create table if not exists public.tasks (
   created_at   timestamptz not null default now()
 );
 
--- Tugasan individu boleh "menggantikan" satu tugasan umum. Ahli yang menerima
--- tugasan individu ini dikecualikan daripada tugasan umum tersebut (elak hantar
--- tugasan berganda). null = tugasan ini tidak menggantikan apa-apa.
-alter table public.tasks add column if not exists replaces_task_id uuid
-  references public.tasks(id) on delete set null;
+-- Pengecualian dalam tugasan umum: senarai ahli yang dapat arahan/limit BERBEZA
+-- (cth "Larian 1KM sahaja" atau "Larian 5KM"). Ahli ini tetap hantar ke tugasan
+-- yang SAMA — cuma keperluan mereka berbeza, jadi tiada tugasan berganda.
+-- Format: [{ "uid": "<clerk_user_id>", "note": "<arahan khas>" }, ...].
+alter table public.tasks add column if not exists exceptions jsonb not null default '[]'::jsonb;
 
 -- ── Jadual: submissions (hantaran tugasan) ──────────────────────────────────
 create table if not exists public.submissions (

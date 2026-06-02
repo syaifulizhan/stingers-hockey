@@ -4,19 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Trash2, ChevronDown } from "lucide-react";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
+import TaskExceptionsEditor, { type TaskException } from "@/components/portal/coach/TaskExceptionsEditor";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
 
 type Member = { clerk_user_id: string; full_name: string | null };
-type GeneralTask = { id: string; title: string };
 type Task = {
   id: string;
   title: string;
   description: string | null;
   due_date: string | null;
   assigned_to: string | null;
-  replaces_task_id: string | null;
+  exceptions: TaskException[];
 };
 type Summary = {
   target: number;
@@ -40,7 +40,6 @@ type Sub = {
 export default function TaskAdminItem({
   task,
   members,
-  generalTasks = [],
   assigneeName,
   summary = null,
   submissions = [],
@@ -49,7 +48,6 @@ export default function TaskAdminItem({
 }: {
   task: Task;
   members: Member[];
-  generalTasks?: GeneralTask[];
   assigneeName: string;
   summary?: Summary | null;
   submissions?: Sub[];
@@ -63,11 +61,8 @@ export default function TaskAdminItem({
   const [description, setDescription] = useState(task.description ?? "");
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [assignedTo, setAssignedTo] = useState(task.assigned_to ?? "");
-  const [replacesTaskId, setReplacesTaskId] = useState(task.replaces_task_id ?? "");
+  const [exceptions, setExceptions] = useState<TaskException[]>(task.exceptions ?? []);
   const [busy, setBusy] = useState(false);
-
-  // Tugasan umum lain (bukan tugasan ini sendiri) yang boleh digantikan.
-  const replaceOptions = generalTasks.filter((g) => g.id !== task.id);
 
   const save = async () => {
     if (title.trim() === "") return;
@@ -82,7 +77,7 @@ export default function TaskAdminItem({
           description,
           dueDate,
           assignedTo,
-          replacesTaskId: assignedTo ? replacesTaskId : "",
+          exceptions: assignedTo ? [] : exceptions,
         }),
       });
       if (!res.ok) throw new Error();
@@ -128,7 +123,7 @@ export default function TaskAdminItem({
             value={assignedTo}
             onChange={(e) => {
               setAssignedTo(e.target.value);
-              if (!e.target.value) setReplacesTaskId("");
+              if (e.target.value) setExceptions([]);
             }}
           >
             <option value="">Semua ahli</option>
@@ -139,24 +134,8 @@ export default function TaskAdminItem({
             ))}
           </select>
         </div>
-        {assignedTo && replaceOptions.length > 0 && (
-          <div>
-            <label className="mb-1 block font-sans text-[0.7rem] text-muted">
-              Gantikan tugasan umum (ahli ini dikecualikan)
-            </label>
-            <select
-              className={inputCls}
-              value={replacesTaskId}
-              onChange={(e) => setReplacesTaskId(e.target.value)}
-            >
-              <option value="">— Tiada —</option>
-              {replaceOptions.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.title}
-                </option>
-              ))}
-            </select>
-          </div>
+        {!assignedTo && (
+          <TaskExceptionsEditor members={members} value={exceptions} onChange={setExceptions} />
         )}
         <div className="flex gap-2">
           <button
@@ -202,6 +181,7 @@ export default function TaskAdminItem({
             {" "}
             → {assigneeName}
             {task.due_date ? ` · akhir ${task.due_date}` : ""}
+            {task.exceptions?.length ? ` · ${task.exceptions.length} pengecualian` : ""}
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-2">
