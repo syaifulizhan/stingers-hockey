@@ -151,3 +151,41 @@ create policy "coach upload shop" on storage.objects for insert to authenticated
 drop policy if exists "coach delete shop" on storage.objects;
 create policy "coach delete shop" on storage.objects for delete to authenticated
   using (bucket_id = 'shop' and public.is_coach());
+
+-- ============================================================================
+-- FASA 2 — status tempahan, bukti pengesahan, QR DuitNow, notifikasi
+-- ============================================================================
+
+-- Status: 'menunggu_semakan' | 'disahkan' | 'ditolak'
+alter table public.shop_orders add column if not exists status text not null default 'menunggu_semakan';
+alter table public.shop_orders add column if not exists proof_url text;
+
+-- Tetapan DuitNow (QR + maklumat akaun) untuk dipapar ke pelanggan.
+alter table public.shop_settings add column if not exists duitnow_qr_url text;
+alter table public.shop_settings add column if not exists info_akaun text;
+
+-- Pelanggan awam (anon) boleh muat naik BUKTI ke folder 'proof/' sahaja.
+drop policy if exists "public upload order proof" on storage.objects;
+create policy "public upload order proof" on storage.objects for insert to anon, authenticated
+  with check (bucket_id = 'shop' and (storage.foldername(name))[1] = 'proof');
+
+-- Notifikasi kepada admin/coach bila tempahan baharu masuk (bypass RLS).
+create or replace function public.notify_admins_new_order()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.notifications (user_id, title, link, ref_type, ref_id)
+  select u.clerk_user_id,
+         'Tempahan baharu: ' || coalesce(new.full_name, 'Pelanggan'),
+         '/portal/coach',
+         'order',
+         new.id::text
+  from public.users u
+  where u.role in ('admin', 'coach');
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_notify_admins_new_order on public.shop_orders;
+create trigger trg_notify_admins_new_order
+  after insert on public.shop_orders
+  for each row execute function public.notify_admins_new_order();
