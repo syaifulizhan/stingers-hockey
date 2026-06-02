@@ -320,7 +320,17 @@ create policy notifications_insert on public.notifications for insert to authent
 
 alter table public.users add column if not exists last_seen_notifications timestamptz;
 
-grant select, insert on public.notifications to authenticated;
+-- Rujukan ke item asal (cth task/news/submission) supaya notifikasi boleh
+-- dipadam automatik bila item itu dipadam.
+alter table public.notifications add column if not exists ref_type text;
+alter table public.notifications add column if not exists ref_id text;
+
+grant select, insert, delete on public.notifications to authenticated;
+
+-- Coach/admin boleh padam notifikasi (cleanup bila task/berita/hantaran dipadam).
+drop policy if exists notifications_delete on public.notifications;
+create policy notifications_delete on public.notifications for delete to authenticated
+  using (public.is_coach());
 
 -- ============================================================================
 -- BAN AHLI + NOTIFIKASI ADMIN

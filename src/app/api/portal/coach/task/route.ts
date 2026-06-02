@@ -41,15 +41,19 @@ export async function POST(request: Request) {
   const d = parsed.data;
 
   const supabase = await createServerSupabase();
-  const { error } = await supabase.from("tasks").insert({
-    title: d.title,
-    description: d.description || null,
-    due_date: d.dueDate || null,
-    assigned_to: d.assignedTo || null,
-    // Pengecualian hanya untuk tugasan umum (Semua ahli).
-    exceptions: d.assignedTo ? [] : d.exceptions ?? [],
-    created_by: userId,
-  });
+  const { data: created, error } = await supabase
+    .from("tasks")
+    .insert({
+      title: d.title,
+      description: d.description || null,
+      due_date: d.dueDate || null,
+      assigned_to: d.assignedTo || null,
+      // Pengecualian hanya untuk tugasan umum (Semua ahli).
+      exceptions: d.assignedTo ? [] : d.exceptions ?? [],
+      created_by: userId,
+    })
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     console.error("[coach/task] gagal:", error.message);
@@ -60,10 +64,13 @@ export async function POST(request: Request) {
   }
 
   // Notifikasi (kepada ahli tertentu, atau broadcast jika "Semua ahli").
+  // ref_* supaya notifikasi turut terpadam bila tugasan dipadam.
   await supabase.from("notifications").insert({
     user_id: d.assignedTo || null,
     title: `Tugasan baharu: ${d.title}`,
     link: "/portal/dashboard",
+    ref_type: "task",
+    ref_id: created?.id ?? null,
   });
 
   return NextResponse.json({ ok: true });
@@ -125,10 +132,23 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+
+  // Hantaran task ini akan terpadam (cascade) — ambil id-nya dulu supaya
+  // notifikasi "disemak/minta ulang" berkaitan turut boleh dipadam.
+  const { data: subs } = await supabase.from("submissions").select("id").eq("task_id", id);
+  const subIds = (subs ?? []).map((s) => s.id as string);
+
   const { error } = await supabase.from("tasks").delete().eq("id", id);
   if (error) {
     console.error("[coach/task] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+
+  // Buang notifikasi berkaitan supaya tak tertinggal di loceng.
+  await supabase.from("notifications").delete().eq("ref_type", "task").eq("ref_id", id);
+  if (subIds.length > 0) {
+    await supabase.from("notifications").delete().eq("ref_type", "submission").in("ref_id", subIds);
+  }
+
   return NextResponse.json({ ok: true });
 }

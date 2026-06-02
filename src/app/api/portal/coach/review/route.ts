@@ -51,6 +51,8 @@ export async function POST(request: Request) {
       user_id: data.user_id,
       title,
       link: "/portal/dashboard",
+      ref_type: "submission",
+      ref_id: parsed.data.submissionId,
     });
     await sendPush(supabase, {
       userIds: [data.user_id],
@@ -87,6 +89,9 @@ export async function DELETE(request: Request) {
     console.error("[coach/review] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+
+  // Buang notifikasi semakan berkaitan hantaran ini.
+  await supabase.from("notifications").delete().eq("ref_type", "submission").eq("ref_id", id);
 
   const mediaUrl = (existing as { media_url: string | null } | null)?.media_url ?? null;
   if (mediaUrl) {
