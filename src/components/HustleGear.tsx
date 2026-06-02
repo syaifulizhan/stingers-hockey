@@ -54,14 +54,9 @@ export default function HustleGear({
               {/* Kanan — visual auto (1 atau 2 gambar) */}
               <div className={imgs.length === 2 ? "grid grid-cols-2 gap-3" : ""}>
                 {imgs.length === 0 ? (
-                  <SmartImage
-                    src="/images/hustle-gear-2026.jpg"
-                    alt="Stingers Hockey"
-                    label="Stingers"
-                    className="aspect-square w-full rounded-xl border border-line"
-                    sizes="(max-width: 1024px) 100vw, 40vw"
-                    fit="contain"
-                  />
+                  <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-line bg-bg-soft">
+                    <span className="display text-3xl text-outline-amber sm:text-4xl">Stingers</span>
+                  </div>
                 ) : (
                   imgs.map((im) => (
                     <SmartImage

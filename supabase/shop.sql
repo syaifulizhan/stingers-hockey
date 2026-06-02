@@ -205,3 +205,13 @@ alter table public.shop_products add column if not exists size_charts jsonb not 
 
 -- Jenis legasi: 'jersi' atau 'hustle_gear' (satu jadual untuk dua legasi).
 alter table public.jersey_editions add column if not exists kind text not null default 'jersi';
+
+-- Penghantaran (Pos) — kadar berasaskan berat, boleh edit admin.
+alter table public.shop_settings add column if not exists pos_enabled boolean not null default false;
+alter table public.shop_settings add column if not exists pos_weight_per_item_g int not null default 250;
+alter table public.shop_settings add column if not exists pos_base numeric(8,2) not null default 8;
+alter table public.shop_settings add column if not exists pos_base_kg numeric(6,2) not null default 1;
+alter table public.shop_settings add column if not exists pos_add_per_kg numeric(8,2) not null default 2;
+alter table public.shop_orders add column if not exists delivery text not null default 'pickup';
+alter table public.shop_orders add column if not exists postage numeric(8,2) not null default 0;
+alter table public.shop_orders add column if not exists address text;
