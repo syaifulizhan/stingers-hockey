@@ -2,13 +2,15 @@
 
 import { useRef } from "react";
 import { motion } from "framer-motion";
-import { jerseys } from "@/lib/jerseys";
+import { jerseys, type Jersey } from "@/lib/jerseys";
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
 import { useLang } from "@/lib/i18n";
 
-export default function JerseyGallery() {
+export default function JerseyGallery({ items }: { items?: Jersey[] }) {
   const { t } = useLang();
+  // Guna data Supabase jika ada; jika tidak, fallback senarai statik.
+  const data = items && items.length > 0 ? items : jerseys;
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
@@ -56,8 +58,8 @@ export default function JerseyGallery() {
           <Reveal delay={0.15}>
             <p className="max-w-sm font-sans text-base text-muted sm:text-right">
               {t(
-                "13 edisi sejak 2022 — setiap satu cerita pasukan.",
-                "13 editions since 2022 — each one a team story."
+                `${data.length} edisi sejak 2022 — setiap satu cerita pasukan.`,
+                `${data.length} editions since 2022 — each one a team story.`
               )}
             </p>
           </Reveal>
@@ -75,7 +77,7 @@ export default function JerseyGallery() {
       >
         {/* spacer untuk align dengan max-w-7xl container */}
         <div className="shrink-0 lg:w-[max(0px,calc((100vw-80rem)/2))]" aria-hidden />
-        {jerseys.map((j) => (
+        {data.map((j) => (
           <motion.article
             key={j.id}
             whileHover={{ y: -8, borderColor: "var(--amber)" }}

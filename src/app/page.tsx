@@ -10,12 +10,32 @@ import Berita from "@/components/Berita";
 import LiveBanner from "@/components/LiveBanner";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
+import { createPublicSupabase } from "@/lib/supabase/public";
+import type { Jersey } from "@/lib/jerseys";
 
 // Render segar setiap permintaan supaya berita terkini sentiasa muncul
 // (elak cache fetch yang degil semasa berita ditambah/dipadam).
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  // Galeri Legasi Jersi dari Supabase (admin boleh edit). Komponen fallback
+  // ke senarai statik jika senarai ini kosong.
+  const supabase = createPublicSupabase();
+  const { data: editions } = await supabase
+    .from("jersey_editions")
+    .select("*")
+    .order("sort_order", { ascending: true });
+  const jerseyItems: Jersey[] = (editions ?? []).map((e) => ({
+    id: e.id,
+    name: e.name,
+    year: e.year ?? "",
+    tournament: e.tournament ?? "",
+    region: e.region ?? "",
+    venue: e.venue ?? "",
+    note: e.note ?? undefined,
+    image: e.image_url ?? "",
+  }));
+
   return (
     <>
       <Navigation />
@@ -27,7 +47,7 @@ export default function Home() {
         <About />
         <Training />
         <LogoStory />
-        <JerseyGallery />
+        <JerseyGallery items={jerseyItems} />
         <HustleGear />
         <Sponsors />
       </main>
