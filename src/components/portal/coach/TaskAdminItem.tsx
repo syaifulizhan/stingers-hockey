@@ -9,12 +9,14 @@ const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
 
 type Member = { clerk_user_id: string; full_name: string | null };
+type GeneralTask = { id: string; title: string };
 type Task = {
   id: string;
   title: string;
   description: string | null;
   due_date: string | null;
   assigned_to: string | null;
+  replaces_task_id: string | null;
 };
 type Summary = {
   target: number;
@@ -38,6 +40,7 @@ type Sub = {
 export default function TaskAdminItem({
   task,
   members,
+  generalTasks = [],
   assigneeName,
   summary = null,
   submissions = [],
@@ -46,6 +49,7 @@ export default function TaskAdminItem({
 }: {
   task: Task;
   members: Member[];
+  generalTasks?: GeneralTask[];
   assigneeName: string;
   summary?: Summary | null;
   submissions?: Sub[];
@@ -59,7 +63,11 @@ export default function TaskAdminItem({
   const [description, setDescription] = useState(task.description ?? "");
   const [dueDate, setDueDate] = useState(task.due_date ?? "");
   const [assignedTo, setAssignedTo] = useState(task.assigned_to ?? "");
+  const [replacesTaskId, setReplacesTaskId] = useState(task.replaces_task_id ?? "");
   const [busy, setBusy] = useState(false);
+
+  // Tugasan umum lain (bukan tugasan ini sendiri) yang boleh digantikan.
+  const replaceOptions = generalTasks.filter((g) => g.id !== task.id);
 
   const save = async () => {
     if (title.trim() === "") return;
@@ -68,7 +76,14 @@ export default function TaskAdminItem({
       const res = await fetch("/api/portal/coach/task", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: task.id, title, description, dueDate, assignedTo }),
+        body: JSON.stringify({
+          id: task.id,
+          title,
+          description,
+          dueDate,
+          assignedTo,
+          replacesTaskId: assignedTo ? replacesTaskId : "",
+        }),
       });
       if (!res.ok) throw new Error();
     } catch {
@@ -108,7 +123,14 @@ export default function TaskAdminItem({
         />
         <div className="grid gap-2 sm:grid-cols-2">
           <input type="date" className={inputCls} value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-          <select className={inputCls} value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+          <select
+            className={inputCls}
+            value={assignedTo}
+            onChange={(e) => {
+              setAssignedTo(e.target.value);
+              if (!e.target.value) setReplacesTaskId("");
+            }}
+          >
             <option value="">Semua ahli</option>
             {members.map((m) => (
               <option key={m.clerk_user_id} value={m.clerk_user_id}>
@@ -117,6 +139,25 @@ export default function TaskAdminItem({
             ))}
           </select>
         </div>
+        {assignedTo && replaceOptions.length > 0 && (
+          <div>
+            <label className="mb-1 block font-sans text-[0.7rem] text-muted">
+              Gantikan tugasan umum (ahli ini dikecualikan)
+            </label>
+            <select
+              className={inputCls}
+              value={replacesTaskId}
+              onChange={(e) => setReplacesTaskId(e.target.value)}
+            >
+              <option value="">— Tiada —</option>
+              {replaceOptions.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.title}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="flex gap-2">
           <button
             type="button"
