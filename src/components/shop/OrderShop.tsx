@@ -184,7 +184,7 @@ export default function OrderShop({
   const total = subtotal - discount;
 
   return (
-    <section className="bg-ink py-20 sm:py-28">
+    <section className="bg-ink pt-32 pb-20 sm:pt-40 sm:pb-28">
       <div className="mx-auto max-w-3xl px-6">
         <div className="text-center">
           <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
