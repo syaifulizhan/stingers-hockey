@@ -2,6 +2,12 @@ import { Users, TrendingUp, CalendarCheck, Goal, Hand, Trophy } from "lucide-rea
 
 type Leader = { name: string; value: string } | null;
 type Ranked = { name: string; score: number };
+type Leaders = {
+  mostImproved: Leader;
+  bestAttendance: Leader;
+  topScorer: Leader;
+  bestGK: Leader;
+};
 
 // Gaya warna lembut ikut jantina (biru = lelaki, pink = perempuan) — sengaja
 // tanpa perkataan, lembut untuk mata jurulatih.
@@ -29,13 +35,24 @@ const accents = {
   },
 } as const;
 
-function GenderTop({
-  players,
-  accent,
-}: {
-  players: Ranked[];
-  accent: keyof typeof accents;
-}) {
+// Satu baris pemenang (warna mengikut jantina, tanpa perkataan).
+function WinnerRow({ data, accent }: { data: Leader; accent: "blue" | "pink" }) {
+  const a = accents[accent];
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${a.dot}`} />
+      {data ? (
+        <span className="min-w-0 truncate font-sans text-sm text-paper">
+          {data.name} <span className={`font-semibold ${a.score}`}>({data.value})</span>
+        </span>
+      ) : (
+        <span className="font-sans text-sm text-muted">— Belum ada</span>
+      )}
+    </div>
+  );
+}
+
+function GenderTop({ players, accent }: { players: Ranked[]; accent: keyof typeof accents }) {
   const a = accents[accent];
   return (
     <div className={`rounded-xl border p-4 ${a.box}`}>
@@ -71,51 +88,63 @@ function GenderTop({
 
 export default function CoachSummary({
   totalPlayers,
-  mostImproved,
-  bestAttendance,
-  topScorer,
-  bestGK,
+  maleCount,
+  femaleCount,
+  leadersMale,
+  leadersFemale,
   topMale,
   topFemale,
   topOther,
 }: {
   totalPlayers: number;
-  mostImproved: Leader;
-  bestAttendance: Leader;
-  topScorer: Leader;
-  bestGK: Leader;
+  maleCount: number;
+  femaleCount: number;
+  leadersMale: Leaders;
+  leadersFemale: Leaders;
   topMale: Ranked[];
   topFemale: Ranked[];
   topOther: Ranked[];
 }) {
-  const cards = [
-    { Icon: Users, label: "Jumlah Pemain", value: String(totalPlayers), sub: "berdaftar" },
-    { Icon: TrendingUp, label: "Paling Meningkat", data: mostImproved },
-    { Icon: CalendarCheck, label: "Paling Rajin Hadir", data: bestAttendance },
-    { Icon: Goal, label: "Penjaring Terbanyak", data: topScorer },
-    { Icon: Hand, label: "Goalkeeper Terbaik", data: bestGK },
+  // Kad pemenang — setiap satu papar pemenang lelaki (biru) & perempuan (pink).
+  const awards = [
+    { Icon: TrendingUp, label: "Paling Meningkat", male: leadersMale.mostImproved, female: leadersFemale.mostImproved },
+    { Icon: CalendarCheck, label: "Paling Rajin Hadir", male: leadersMale.bestAttendance, female: leadersFemale.bestAttendance },
+    { Icon: Goal, label: "Penjaring Terbanyak", male: leadersMale.topScorer, female: leadersFemale.topScorer },
+    { Icon: Hand, label: "Goalkeeper Terbaik", male: leadersMale.bestGK, female: leadersFemale.bestGK },
   ];
 
   return (
     <div className="flex flex-col gap-6">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((c, i) => (
+        {/* Jumlah pemain + pecahan jantina (warna sahaja) */}
+        <div className="rounded-2xl border border-line bg-bg-soft/50 p-5">
+          <div className="mb-2 flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            <Users className="h-4 w-4 text-amber" /> Jumlah Pemain
+          </div>
+          <p className="display text-3xl text-amber">
+            {totalPlayers} <span className="font-sans text-sm text-muted">berdaftar</span>
+          </p>
+          <div className="mt-2 flex items-center gap-4 font-sans text-sm">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-sky-400/80" />
+              <span className="font-semibold text-sky-300 tabular-nums">{maleCount}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-pink-400/80" />
+              <span className="font-semibold text-pink-300 tabular-nums">{femaleCount}</span>
+            </span>
+          </div>
+        </div>
+
+        {awards.map((c, i) => (
           <div key={i} className="rounded-2xl border border-line bg-bg-soft/50 p-5">
-            <div className="mb-2 flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            <div className="mb-3 flex items-center gap-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
               <c.Icon className="h-4 w-4 text-amber" /> {c.label}
             </div>
-            {"value" in c && c.value !== undefined ? (
-              <p className="display text-3xl text-amber">
-                {c.value} <span className="font-sans text-sm text-muted">{c.sub}</span>
-              </p>
-            ) : c.data ? (
-              <p className="font-sans text-base font-semibold text-paper">
-                {c.data.name}{" "}
-                <span className="font-normal text-amber">({c.data.value})</span>
-              </p>
-            ) : (
-              <p className="font-sans text-sm text-muted">— Belum ada data</p>
-            )}
+            <div className="flex flex-col gap-2">
+              <WinnerRow data={c.male} accent="blue" />
+              <WinnerRow data={c.female} accent="pink" />
+            </div>
           </div>
         ))}
       </div>
