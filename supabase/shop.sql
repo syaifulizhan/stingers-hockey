@@ -197,3 +197,7 @@ drop trigger if exists trg_notify_admins_new_order on public.shop_orders;
 create trigger trg_notify_admins_new_order
   after insert on public.shop_orders
   for each row execute function public.notify_admins_new_order();
+
+-- Carta saiz (gambar) setiap produk. Jersi: { lengan_pendek, lengan_panjang,
+-- muslimah }. Hustle Gear: { standard }. URL gambar dalam bucket 'shop'.
+alter table public.shop_products add column if not exists size_charts jsonb not null default '{}'::jsonb;
