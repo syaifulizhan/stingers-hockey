@@ -23,10 +23,9 @@ const sponsors: Sponsor[] = [
     image: "/images/sponsors/pibg.png",
   },
   {
-    kind: "text",
+    kind: "logo",
     name: "Tunas Jaya Resources",
-    highlight: "Tunas Jaya",
-    small: "Resources",
+    image: "/images/sponsors/tunas-jaya-resources.png",
   },
   // NDA Apparel — kad terakhir.
   {

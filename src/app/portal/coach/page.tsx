@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, ShoppingBag } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
-import { memberName } from "@/lib/names";
+import { memberName, preferredName } from "@/lib/names";
 import { assessmentAverage } from "@/lib/assessments";
 import { generateReport } from "@/lib/report";
 import PortalNav from "@/components/portal/PortalNav";
@@ -123,6 +123,10 @@ export default async function CoachPage() {
   const nameById = new Map(
     members.map((m) => [m.clerk_user_id, memberName(m.full_name, m.display_name)])
   );
+  // Nama bersih (pilihan coach, tanpa kurungan) — untuk Ringkasan & Laporan.
+  const cleanNameById = new Map(
+    members.map((m) => [m.clerk_user_id, preferredName(m.full_name, m.display_name)])
+  );
 
   // Skor penilaian TERKINI ikut `${userId}:${type}` (untuk pra-isi borang).
   const assessmentRows = (assessmentsRes.data ?? []) as unknown as {
@@ -178,7 +182,7 @@ export default async function CoachPage() {
 
   // ── Fasa 7: Ringkasan jurulatih ──
   const playerList = members.filter((m) => m.role === "member" && !m.banned);
-  const nameOf = (id: string) => nameById.get(id) || "Ahli";
+  const nameOf = (id: string) => cleanNameById.get(id) || "Ahli";
 
   const totalSessionsCount = sessions.length;
   const presentCount = new Map<string, number>();
