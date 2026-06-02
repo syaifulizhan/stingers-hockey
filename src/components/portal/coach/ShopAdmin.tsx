@@ -61,6 +61,7 @@ type Edition = {
   price: number | string;
   for_sale: boolean;
   sort_order: number;
+  kind?: string | null;
 };
 type Settings = {
   pakej_discount_percent: number;
@@ -158,6 +159,19 @@ export default function ShopAdmin({
 
       <EditionsEditor
         editions={editions}
+        kind="jersi"
+        title="Legasi Jersi (Jersi Lama)"
+        subtitle="Set harga & tanda &ldquo;boleh beli&rdquo; untuk edisi cetak semula. Jersi semasa yang diarkib turun ke sini."
+        uploadImage={uploadImage}
+        run={run}
+        busy={busy}
+        supabase={supabase}
+      />
+      <EditionsEditor
+        editions={editions}
+        kind="hustle_gear"
+        title="Legasi Hustle Gear"
+        subtitle="Hustle Gear lama yang diarkib. Tanda &ldquo;boleh beli&rdquo; jika nak dijual."
         uploadImage={uploadImage}
         run={run}
         busy={busy}
@@ -272,6 +286,9 @@ function ProductSettings({
   const [kidDiscount, setKidDiscount] = useState(String(num(product.kid_discount)));
   const [namePrint, setNamePrint] = useState(product.name_print_enabled);
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
+  const [arkibOpen, setArkibOpen] = useState(false);
+  const [arkibName, setArkibName] = useState("");
+  const [arkibYear, setArkibYear] = useState("");
 
   const save = () =>
     run(async () => {
@@ -310,6 +327,27 @@ function ProductSettings({
     });
   };
 
+  // Arkib gambar semasa → legasi, kosongkan slot (variasi/harga kekal).
+  const arkib = () =>
+    run(async () => {
+      if (!product.image_url) return;
+      if (arkibName.trim() === "") throw new Error("Sila masukkan nama untuk legasi.");
+      const { error: insErr } = await supabase.from("jersey_editions").insert({
+        id: `${product.id}-${Date.now()}`,
+        kind: product.id,
+        name: arkibName.trim(),
+        year: arkibYear.trim() || null,
+        image_url: product.image_url,
+        sort_order: 0,
+      });
+      if (insErr) throw new Error(insErr.message);
+      const { error: upErr } = await supabase.from("shop_products").update({ image_url: null }).eq("id", product.id);
+      if (upErr) throw new Error(upErr.message);
+      setArkibOpen(false);
+      setArkibName("");
+      setArkibYear("");
+    });
+
   return (
     <div className={cardCls}>
       <h3 className={`${sectionTitle} mb-4`}>{title}</h3>
@@ -328,6 +366,28 @@ function ProductSettings({
             Tukar gambar
             <input type="file" accept="image/*" onChange={onImage} className="hidden" />
           </label>
+          {product.image_url && (
+            <div className="mt-2">
+              {!arkibOpen ? (
+                <button type="button" onClick={() => setArkibOpen(true)} className="block w-full text-center font-sans text-[0.7rem] font-semibold text-muted hover:text-amber">
+                  Arkib ke legasi →
+                </button>
+              ) : (
+                <div className="flex flex-col gap-1.5 rounded-lg border border-line bg-ink/40 p-2">
+                  <input className={`${inputCls} text-xs`} placeholder="Nama (cth Ventralis ed.)" value={arkibName} onChange={(e) => setArkibName(e.target.value)} />
+                  <input className={`${inputCls} text-xs`} placeholder="Tahun (cth 2025)" value={arkibYear} onChange={(e) => setArkibYear(e.target.value)} />
+                  <div className="flex gap-1.5">
+                    <button type="button" onClick={arkib} disabled={busy} className="flex-1 rounded-full bg-amber px-2 py-1 font-sans text-[0.7rem] font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
+                      Arkib
+                    </button>
+                    <button type="button" onClick={() => setArkibOpen(false)} className="rounded-full border border-line px-2 py-1 font-sans text-[0.7rem] text-paper">
+                      Batal
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Tetapan harga */}
@@ -481,28 +541,37 @@ function VariantEditor({
 /* ───────────────────────── Jersi Lama (edisi) ───────────────────────── */
 function EditionsEditor({
   editions,
+  kind,
+  title,
+  subtitle,
   uploadImage,
   run,
   busy,
   supabase,
 }: {
   editions: Edition[];
+  kind: string;
+  title: string;
+  subtitle: string;
   uploadImage: (f: File) => Promise<string>;
   run: Run;
   busy: boolean;
   supabase: SB;
 }) {
+  const items = editions.filter((e) => (e.kind ?? "jersi") === kind);
   return (
     <div className={cardCls}>
-      <h3 className={`${sectionTitle} mb-1`}>Jersi Lama (Edisi Legasi)</h3>
-      <p className="mb-4 font-sans text-xs text-muted">
-        Set harga & tanda &ldquo;boleh beli&rdquo; untuk edisi yang ditawarkan cetak semula.
-      </p>
-      <div className="flex flex-col gap-2">
-        {editions.map((ed) => (
-          <EditionRow key={ed.id} edition={ed} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
-        ))}
-      </div>
+      <h3 className={`${sectionTitle} mb-1`}>{title}</h3>
+      <p className="mb-4 font-sans text-xs text-muted">{subtitle}</p>
+      {items.length === 0 ? (
+        <p className="font-sans text-sm text-muted">Belum ada edisi di sini.</p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {items.map((ed) => (
+            <EditionRow key={ed.id} edition={ed} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -542,6 +611,18 @@ function EditionRow({
     });
   };
 
+  const del = () => {
+    if (!window.confirm(`Padam "${edition.name}" dari legasi?`)) return;
+    run(async () => {
+      if (edition.image_url) {
+        const i = edition.image_url.indexOf("/shop/");
+        if (i !== -1) await supabase.storage.from("shop").remove([edition.image_url.slice(i + 6)]);
+      }
+      const { error } = await supabase.from("jersey_editions").delete().eq("id", edition.id);
+      if (error) throw new Error(error.message);
+    });
+  };
+
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
       {edition.image_url ? (
@@ -564,6 +645,9 @@ function EditionRow({
       </label>
       <button type="button" onClick={save} disabled={busy} className="rounded-full bg-amber px-3 py-1.5 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
         Simpan
+      </button>
+      <button type="button" onClick={del} disabled={busy} aria-label="Padam" className="text-muted hover:text-amber disabled:opacity-50">
+        <Trash2 className="h-4 w-4" />
       </button>
     </div>
   );

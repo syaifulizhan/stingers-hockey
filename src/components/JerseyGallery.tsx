@@ -7,10 +7,17 @@ import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
 import { useLang } from "@/lib/i18n";
 
-export default function JerseyGallery({ items }: { items?: Jersey[] }) {
+export default function JerseyGallery({
+  items,
+  variant = "jersi",
+}: {
+  items?: Jersey[];
+  variant?: "jersi" | "hustle";
+}) {
   const { t } = useLang();
-  // Guna data Supabase jika ada; jika tidak, fallback senarai statik.
-  const data = items && items.length > 0 ? items : jerseys;
+  // Jersi: fallback ke senarai statik jika kosong. Hustle: tiada fallback.
+  const data =
+    variant === "hustle" ? items ?? [] : items && items.length > 0 ? items : jerseys;
   const trackRef = useRef<HTMLDivElement>(null);
   const drag = useRef({ active: false, startX: 0, scrollLeft: 0, moved: false });
 
@@ -38,8 +45,11 @@ export default function JerseyGallery({ items }: { items?: Jersey[] }) {
     trackRef.current?.releasePointerCapture(e.pointerId);
   };
 
+  // Sembunyi seksyen Hustle Gear legasi jika belum ada arkib.
+  if (variant === "hustle" && data.length === 0) return null;
+
   return (
-    <section id="jersi" className="py-24 sm:py-32">
+    <section id={variant === "hustle" ? "hustle-legasi" : "jersi"} className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
@@ -51,16 +61,23 @@ export default function JerseyGallery({ items }: { items?: Jersey[] }) {
             </Reveal>
             <Reveal delay={0.1}>
               <h2 className="display mt-5 text-5xl text-paper sm:text-6xl lg:text-7xl">
-                {t("Legasi Jersi", "Jersey Legacy")}
+                {variant === "hustle"
+                  ? t("Legasi Hustle Gear", "Hustle Gear Legacy")
+                  : t("Legasi Jersi", "Jersey Legacy")}
               </h2>
             </Reveal>
           </div>
           <Reveal delay={0.15}>
             <p className="max-w-sm font-sans text-base text-muted sm:text-right">
-              {t(
-                `${data.length} edisi sejak 2022 — setiap satu cerita pasukan.`,
-                `${data.length} editions since 2022 — each one a team story.`
-              )}
+              {variant === "hustle"
+                ? t(
+                    `${data.length} edisi training kit — sejarah di setiap sesi.`,
+                    `${data.length} training kit editions — history in every session.`
+                  )
+                : t(
+                    `${data.length} edisi sejak 2022 — setiap satu cerita pasukan.`,
+                    `${data.length} editions since 2022 — each one a team story.`
+                  )}
             </p>
           </Reveal>
         </div>

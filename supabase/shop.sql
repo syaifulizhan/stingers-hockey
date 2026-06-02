@@ -201,3 +201,6 @@ create trigger trg_notify_admins_new_order
 -- Carta saiz (gambar) setiap produk. Jersi: { lengan_pendek, lengan_panjang,
 -- muslimah }. Hustle Gear: { standard }. URL gambar dalam bucket 'shop'.
 alter table public.shop_products add column if not exists size_charts jsonb not null default '{}'::jsonb;
+
+-- Jenis legasi: 'jersi' atau 'hustle_gear' (satu jadual untuk dua legasi).
+alter table public.jersey_editions add column if not exists kind text not null default 'jersi';
