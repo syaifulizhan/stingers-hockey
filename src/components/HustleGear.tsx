@@ -34,7 +34,7 @@ export default function HustleGear() {
                   )}
                 </p>
                 <div className="mt-8">
-                  <Button href="/hustle-gear">
+                  <Button href="/tempahan">
                     {t("Buat Tempahan →", "Place Order →")}
                   </Button>
                 </div>
