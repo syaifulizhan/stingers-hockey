@@ -614,12 +614,12 @@ export default async function CoachPage() {
           ...(admin
             ? [
                 {
-                  id: "kedai",
-                  label: "Kedai",
+                  id: "tempahan",
+                  label: "Tempahan",
                   content: (
                     <section>
                       <h2 className={sectionTitle}>
-                        <ShoppingBag className="h-4 w-4" /> Urus Kedai (Tempahan)
+                        <ShoppingBag className="h-4 w-4" /> Urus Tempahan Pasukan
                       </h2>
                       <ShopAdmin
                         products={shopProducts as never}
