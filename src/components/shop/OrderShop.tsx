@@ -159,13 +159,18 @@ export default function OrderShop({
   const jersiPP: PriceProduct = jersi ?? { big_size_surcharge: 0, kid_discount: 0 };
   const hustlePP: PriceProduct = hustle ?? { big_size_surcharge: 0, kid_discount: 0 };
 
+  // Hanya tunjuk tab produk yang benar-benar disediakan oleh admin.
+  const hasJersi = variants.length > 0;
+  const hasHustle = !!hustle && Number(hustle.base_price) > 0;
+  const hasLama = editions.length > 0;
+  const noProducts = !hasJersi && !hasHustle && !hasLama;
   const tabs = [
-    { id: "jersi", label: t("Jersi", "Jersey") },
-    { id: "hustle_gear", label: "Hustle Gear" },
-    { id: "jersi_lama", label: t("Koleksi Lama", "Past Collection") },
+    ...(hasJersi ? [{ id: "jersi", label: t("Jersi", "Jersey") }] : []),
+    ...(hasHustle ? [{ id: "hustle_gear", label: "Hustle Gear" }] : []),
+    ...(hasLama ? [{ id: "jersi_lama", label: t("Koleksi Lama", "Past Collection") }] : []),
     { id: "pakej", label: t("Pakej Jimat", "Bundle") },
   ];
-  const [tab, setTab] = useState("jersi");
+  const [tab, setTab] = useState(tabs[0]?.id ?? "pakej");
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const addItem = (it: Omit<CartItem, "key">) =>
@@ -196,6 +201,12 @@ export default function OrderShop({
           </p>
         </div>
 
+        {noProducts ? (
+          <p className="mt-10 rounded-2xl bg-bg-soft/50 p-10 text-center font-sans text-base text-muted">
+            {t("Kedai belum dibuka buat masa ini. Sila kembali lagi nanti.", "The shop isn't open yet. Please check back later.")}
+          </p>
+        ) : (
+          <>
         {/* Tab (atas) */}
         <div className="mt-10 flex flex-wrap gap-2">
           {tabs.map((tb) => (
@@ -252,6 +263,8 @@ export default function OrderShop({
               {t("Sahkan →", "Confirm →")}
             </span>
           </button>
+        )}
+          </>
         )}
       </div>
     </section>
