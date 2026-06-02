@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CheckCircle2, Trash2, Plus, Paperclip, X } from "lucide-react";
+import { CheckCircle2, Trash2, Plus, Paperclip, X, Ruler } from "lucide-react";
 import { createPublicSupabase } from "@/lib/supabase/public";
 import { compressImage } from "@/lib/image-compress";
 import { useLang } from "@/lib/i18n";
@@ -21,7 +21,15 @@ type Product = {
   kid_discount: number | string;
   name_print_enabled: boolean;
   name_print_fee: number | string;
+  size_charts?: Record<string, string> | null;
 };
+
+const JERSI_CHARTS = [
+  { key: "lengan_pendek", label: "Lengan Pendek" },
+  { key: "lengan_panjang", label: "Lengan Panjang" },
+  { key: "muslimah", label: "Muslimah" },
+];
+const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz" }];
 type Variant = {
   id: string;
   label: string;
@@ -72,6 +80,56 @@ function SizeSelect({ value, onChange }: { value: string; onChange: (v: string) 
         {ADULT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
       </optgroup>
     </select>
+  );
+}
+
+function SizeChartViewer({
+  charts,
+  keys,
+}: {
+  charts?: Record<string, string> | null;
+  keys: { key: string; label: string }[];
+}) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const [sel, setSel] = useState(0);
+  const avail = keys.filter((k) => charts?.[k.key]);
+  if (avail.length === 0) return null;
+  const cur = avail[Math.min(sel, avail.length - 1)];
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold text-amber transition-colors hover:text-amber-deep"
+      >
+        <Ruler className="h-4 w-4" /> {t("Carta Saiz", "Size Chart")}
+      </button>
+      {open && (
+        <div className="mt-2 rounded-lg border border-line bg-ink/40 p-3">
+          {avail.length > 1 && (
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {avail.map((k, i) => (
+                <button
+                  key={k.key}
+                  type="button"
+                  onClick={() => setSel(i)}
+                  className={`rounded-full px-3 py-1 font-sans text-xs font-semibold ${
+                    i === sel ? "bg-amber text-ink" : "border border-line text-paper"
+                  }`}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+          )}
+          <a href={charts![cur.key]} target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element -- carta dari Storage */}
+            <img src={charts![cur.key]} alt={cur.label} className="max-h-[70vh] w-full rounded-md bg-paper object-contain" />
+          </a>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -247,6 +305,7 @@ function JersiConfig({
           ))}
         </select>
       </div>
+      <SizeChartViewer charts={jersi?.size_charts} keys={JERSI_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
@@ -292,6 +351,7 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
 
   return (
     <div className="flex flex-col gap-4">
+      <SizeChartViewer charts={hustle?.size_charts} keys={HUSTLE_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
@@ -367,6 +427,7 @@ function EditionConfig({
           ))}
         </select>
       </div>
+      <SizeChartViewer charts={jersi?.size_charts} keys={JERSI_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>

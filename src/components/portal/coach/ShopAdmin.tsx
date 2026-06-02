@@ -21,6 +21,14 @@ const ringgit = (n: number) => `RM ${n.toFixed(2)}`;
 const REKA_BENTUK = ["Bulat", "Berkolar", "Muslimah"];
 const LENGAN = ["Pendek", "Panjang"];
 const MATERIAL = ["Biasa", "Lycra"];
+
+// Carta saiz: kunci + label paparan.
+const JERSI_CHARTS = [
+  { key: "lengan_pendek", label: "Lengan Pendek" },
+  { key: "lengan_panjang", label: "Lengan Panjang" },
+  { key: "muslimah", label: "Muslimah" },
+];
+const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz" }];
 const variantLabel = (v: Variant) =>
   [v.reka_bentuk, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
 
@@ -33,6 +41,7 @@ type Product = {
   kid_discount: number | string;
   name_print_enabled: boolean;
   name_print_fee: number | string;
+  size_charts?: Record<string, string> | null;
 };
 type Variant = {
   id: string;
@@ -118,6 +127,7 @@ export default function ShopAdmin({
           title="Jersi"
           product={jersi}
           showBasePrice={false}
+          chartKeys={JERSI_CHARTS}
           uploadImage={uploadImage}
           run={run}
           busy={busy}
@@ -138,6 +148,7 @@ export default function ShopAdmin({
           title="Hustle Gear"
           product={hustle}
           showBasePrice
+          chartKeys={HUSTLE_CHARTS}
           uploadImage={uploadImage}
           run={run}
           busy={busy}
@@ -239,6 +250,7 @@ function ProductSettings({
   title,
   product,
   showBasePrice,
+  chartKeys = [],
   uploadImage,
   run,
   busy,
@@ -248,6 +260,7 @@ function ProductSettings({
   title: string;
   product: Product;
   showBasePrice: boolean;
+  chartKeys?: { key: string; label: string }[];
   uploadImage: (f: File) => Promise<string>;
   run: Run;
   busy: boolean;
@@ -282,6 +295,17 @@ function ProductSettings({
     run(async () => {
       const url = await uploadImage(f);
       const { error } = await supabase.from("shop_products").update({ image_url: url }).eq("id", product.id);
+      if (error) throw new Error(error.message);
+    });
+  };
+
+  const onChart = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    run(async () => {
+      const url = await uploadImage(f);
+      const charts = { ...(product.size_charts ?? {}), [key]: url };
+      const { error } = await supabase.from("shop_products").update({ size_charts: charts }).eq("id", product.id);
       if (error) throw new Error(error.message);
     });
   };
@@ -334,6 +358,34 @@ function ProductSettings({
           )}
         </div>
       </div>
+
+      {/* Carta saiz */}
+      {chartKeys.length > 0 && (
+        <div className="mt-5 border-t border-line pt-4">
+          <p className={labelCls}>Carta Saiz (gambar)</p>
+          <div className="flex flex-wrap gap-3">
+            {chartKeys.map((ck) => {
+              const url = product.size_charts?.[ck.key];
+              return (
+                <div key={ck.key} className="w-28">
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- carta dari Storage
+                    <img src={url} alt={ck.label} className="aspect-[3/4] w-full rounded-lg border border-line object-cover" />
+                  ) : (
+                    <div className="flex aspect-[3/4] w-full items-center justify-center rounded-lg border border-dashed border-line text-muted">
+                      <ImagePlus className="h-5 w-5" />
+                    </div>
+                  )}
+                  <label className="mt-1 block cursor-pointer text-center font-sans text-[0.7rem] font-semibold text-amber hover:text-amber-deep">
+                    {ck.label}
+                    <input type="file" accept="image/*" onChange={onChart(ck.key)} className="hidden" />
+                  </label>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {children}
 
