@@ -21,16 +21,23 @@ create table if not exists public.shop_products (
   updated_at          timestamptz not null default now()
 );
 
--- Variasi jersi (jenis: kolar/bulat/lycra/muslimah/lengan…) — label + harga.
+-- Variasi jersi (berstruktur: Reka Bentuk · Lengan · Material) — untuk pivot
+-- supplier yang kemas. label = paparan auto.
 create table if not exists public.shop_variants (
   id          uuid primary key default gen_random_uuid(),
   product_id  text not null references public.shop_products(id) on delete cascade,
   label       text not null,
+  reka_bentuk text,
+  lengan      text,
+  material    text,
   price       numeric(8,2) not null default 0,
   active      boolean not null default true,
   sort_order  int not null default 0,
   created_at  timestamptz not null default now()
 );
+alter table public.shop_variants add column if not exists reka_bentuk text;
+alter table public.shop_variants add column if not exists lengan text;
+alter table public.shop_variants add column if not exists material text;
 
 -- Edisi jersi (legasi + jualan jersi lama). Dikongsi galeri & tab Jersi Lama.
 create table if not exists public.jersey_editions (
