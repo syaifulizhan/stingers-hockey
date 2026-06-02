@@ -33,6 +33,7 @@ type Member = {
   role: string;
   banned: boolean;
   is_goalkeeper: boolean;
+  gender: string | null;
 };
 type NewsRow = { id: string; title: string; body: string | null; published_at: string };
 type TaskRow = {
@@ -79,7 +80,7 @@ export default async function CoachPage() {
     await Promise.all([
       supabase
         .from("users")
-        .select("clerk_user_id, full_name, display_name, year, class, role, banned, is_goalkeeper")
+        .select("clerk_user_id, full_name, display_name, year, class, role, banned, is_goalkeeper, gender")
         .order("full_name", { ascending: true }),
       supabase.from("news").select("id, title, body, published_at").order("published_at", { ascending: false }).limit(10),
       supabase.from("tasks").select("id, title, description, assigned_to, due_date, exceptions").order("created_at", { ascending: false }).limit(20),
@@ -267,8 +268,9 @@ export default async function CoachPage() {
     return { id, name: nameOf(id), report };
   });
 
-  // Top 10 — purata gabungan kemahiran + penilaian jurulatih + kehadiran (skala 10).
-  const top10 = playerList
+  // Top pemain — purata gabungan kemahiran + penilaian jurulatih + kehadiran
+  // (skala 10). Diasingkan ikut jantina supaya adil (tak didominasi satu pihak).
+  const scoredPlayers = playerList
     .map((m) => {
       const id = m.clerk_user_id;
       const parts: number[] = [];
@@ -278,10 +280,15 @@ export default async function CoachPage() {
       if (ce) parts.push(assessmentAverage("coach_eval", ce));
       if (totalSessionsCount > 0) parts.push(((presentCount.get(id) ?? 0) / totalSessionsCount) * 10);
       const score = parts.length ? parts.reduce((a, b) => a + b, 0) / parts.length : 0;
-      return { name: nameOf(id), score: Math.round(score * 10) / 10 };
+      return { name: nameOf(id), score: Math.round(score * 10) / 10, gender: m.gender };
     })
     .filter((x) => x.score > 0)
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => b.score - a.score);
+
+  const topMale = scoredPlayers.filter((p) => p.gender === "Lelaki").slice(0, 10);
+  const topFemale = scoredPlayers.filter((p) => p.gender === "Perempuan").slice(0, 10);
+  const topOther = scoredPlayers
+    .filter((p) => p.gender !== "Lelaki" && p.gender !== "Perempuan")
     .slice(0, 10);
 
   // Ahli aktif (bukan diban) — untuk semua senarai tindakan (task, kehadiran).
@@ -394,7 +401,9 @@ export default async function CoachPage() {
                   bestAttendance={bestAttendance}
                   topScorer={topScorer}
                   bestGK={bestGK}
-                  top10={top10}
+                  topMale={topMale}
+                  topFemale={topFemale}
+                  topOther={topOther}
                 />
               </section>
             ),
