@@ -21,10 +21,12 @@ export default async function Home() {
   // Galeri Legasi Jersi dari Supabase (admin boleh edit). Komponen fallback
   // ke senarai statik jika senarai ini kosong.
   const supabase = createPublicSupabase();
-  const { data: editions } = await supabase
-    .from("jersey_editions")
-    .select("*")
-    .order("sort_order", { ascending: true });
+  const [{ data: editions }, { data: prods }] = await Promise.all([
+    supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
+    supabase.from("shop_products").select("id, image_url"),
+  ]);
+  const jerseyImage = prods?.find((p) => p.id === "jersi")?.image_url ?? null;
+  const hustleImage = prods?.find((p) => p.id === "hustle_gear")?.image_url ?? null;
   const jerseyItems: Jersey[] = (editions ?? []).map((e) => ({
     id: e.id,
     name: e.name,
@@ -48,7 +50,7 @@ export default async function Home() {
         <Training />
         <LogoStory />
         <JerseyGallery items={jerseyItems} />
-        <HustleGear />
+        <HustleGear jerseyImage={jerseyImage} hustleImage={hustleImage} />
         <Sponsors />
       </main>
       <Footer />

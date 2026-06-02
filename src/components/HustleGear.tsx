@@ -5,8 +5,21 @@ import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
 import { useLang } from "@/lib/i18n";
 
-export default function HustleGear() {
+export default function HustleGear({
+  jerseyImage,
+  hustleImage,
+}: {
+  jerseyImage?: string | null;
+  hustleImage?: string | null;
+}) {
   const { t } = useLang();
+
+  // Gambar auto: jersi terkini + hustle gear. 1 atau 2 ikut yang di-upload.
+  const imgs = [
+    jerseyImage ? { src: jerseyImage, label: t("Jersi", "Jersey") } : null,
+    hustleImage ? { src: hustleImage, label: "Hustle Gear" } : null,
+  ].filter((x): x is { src: string; label: string } => x !== null);
+
   return (
     <section className="py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
@@ -20,35 +33,49 @@ export default function HustleGear() {
               {/* Kiri — teks */}
               <div>
                 <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-                  Training Kit 2026
+                  {t("Tempahan 2026", "Order 2026")}
                 </span>
                 <h2 className="display mt-5 text-5xl text-paper sm:text-6xl">
-                  Hustle Gear
+                  {t("Jersi & Hustle Gear", "Jersey & Hustle Gear")}
                   <br />
-                  <span className="text-amber">{t("Kini Kembali", "Is Back")}</span>
+                  <span className="text-amber">{t("Kini Dibuka", "Now Open")}</span>
                 </h2>
                 <p className="mt-6 max-w-lg font-sans text-base leading-relaxed text-muted">
                   {t(
-                    "Pakaian rasmi sesi latihan pasukan — direka khas untuk keselesaan dan identiti pemain Stingers Hockey di padang. Lebih sporty, lebih eksklusif. Simbol semangat satu pasukan.",
-                    "The official team training kit — designed for the comfort and identity of Stingers Hockey players on the field. Sportier, more exclusive. A symbol of one team's spirit."
+                    "Dari jersi rasmi padang ke training kit Hustle Gear — lengkapkan identiti skuad Stingers Hockey. Pilih reka bentuk, material, saiz, dan cetak nama anda sendiri. Tempah sekarang sebelum kutipan ditutup.",
+                    "From the official match jersey to the Hustle Gear training kit — complete your Stingers Hockey squad identity. Pick your design, material, size, and personal name print. Order now before the collection closes."
                   )}
                 </p>
                 <div className="mt-8">
-                  <Button href="/tempahan">
-                    {t("Buat Tempahan →", "Place Order →")}
-                  </Button>
+                  <Button href="/tempahan">{t("Buat Tempahan →", "Place Order →")}</Button>
                 </div>
               </div>
 
-              {/* Kanan — visual */}
-              <SmartImage
-                src="/images/hustle-gear-2026.jpg"
-                alt="Hustle Gear training kit Stingers Hockey 2026"
-                label="Hustle Gear"
-                className="aspect-square w-full rounded-xl border border-line"
-                sizes="(max-width: 1024px) 100vw, 40vw"
-                fit="contain"
-              />
+              {/* Kanan — visual auto (1 atau 2 gambar) */}
+              <div className={imgs.length === 2 ? "grid grid-cols-2 gap-3" : ""}>
+                {imgs.length === 0 ? (
+                  <SmartImage
+                    src="/images/hustle-gear-2026.jpg"
+                    alt="Stingers Hockey"
+                    label="Stingers"
+                    className="aspect-square w-full rounded-xl border border-line"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                    fit="contain"
+                  />
+                ) : (
+                  imgs.map((im) => (
+                    <SmartImage
+                      key={im.label}
+                      src={im.src}
+                      alt={`${im.label} Stingers Hockey`}
+                      label={im.label}
+                      className="aspect-square w-full rounded-xl border border-line"
+                      sizes="(max-width: 1024px) 50vw, 20vw"
+                      fit="contain"
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </Reveal>
