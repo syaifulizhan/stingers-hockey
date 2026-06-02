@@ -43,7 +43,14 @@ function filledCount(row: Record<string, unknown> | null) {
 }
 
 type NewsRow = { id: string; title: string; body: string | null; image_url: string | null; published_at: string };
-type TaskRow = { id: string; title: string; description: string | null; due_date: string | null };
+type TaskRow = {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  assigned_to: string | null;
+  replaces_task_id: string | null;
+};
 type SubmissionRow = {
   task_id: string;
   content: string | null;
@@ -97,8 +104,22 @@ export default async function DashboardPage() {
     ]);
 
   const profile = (profileRes.data ?? null) as Record<string, unknown> | null;
+  const role = (profile?.role as string) ?? "member";
+  const isCoachOrAdmin = role === "coach" || role === "admin";
   const news = (newsRes.data ?? []) as unknown as NewsRow[];
-  const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+  const allTasks = (tasksRes.data ?? []) as unknown as TaskRow[];
+  // Sembunyikan tugasan umum yang DIGANTIKAN oleh tugasan individu ahli ini
+  // (RLS hanya pulangkan tugasan umum + tugasan individu sendiri) — elak hantar
+  // tugasan berganda.
+  const replacedGeneralIds = new Set(
+    allTasks
+      .filter((t) => t.assigned_to && t.replaces_task_id)
+      .map((t) => t.replaces_task_id)
+  );
+  // Coach/admin nampak semua tugasan; pemain sahaja yang dikecualikan.
+  const tasks = isCoachOrAdmin
+    ? allTasks
+    : allTasks.filter((t) => !replacedGeneralIds.has(t.id));
   const submissions = (subsRes.data ?? []) as unknown as SubmissionRow[];
   const attendance = (attRes.data ?? []) as unknown as AttendanceRow[];
 
@@ -166,8 +187,6 @@ export default async function DashboardPage() {
   const baseName =
     (profile?.full_name as string) || user?.firstName || user?.username || "Ahli";
   const name = memberName(baseName, (profile?.display_name as string) ?? null);
-  const role = (profile?.role as string) ?? "member";
-  const isCoachOrAdmin = role === "coach" || role === "admin";
   // Jurulatih: ringkasan semua ahli (untuk dropdown "Ringkasan Pemain").
   const playerSummaries = isCoachOrAdmin ? await buildPlayerSummaries(supabase) : [];
   const percent = profile

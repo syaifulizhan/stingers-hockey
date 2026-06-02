@@ -79,6 +79,12 @@ create table if not exists public.tasks (
   created_at   timestamptz not null default now()
 );
 
+-- Tugasan individu boleh "menggantikan" satu tugasan umum. Ahli yang menerima
+-- tugasan individu ini dikecualikan daripada tugasan umum tersebut (elak hantar
+-- tugasan berganda). null = tugasan ini tidak menggantikan apa-apa.
+alter table public.tasks add column if not exists replaces_task_id uuid
+  references public.tasks(id) on delete set null;
+
 -- ── Jadual: submissions (hantaran tugasan) ──────────────────────────────────
 create table if not exists public.submissions (
   id           uuid primary key default gen_random_uuid(),

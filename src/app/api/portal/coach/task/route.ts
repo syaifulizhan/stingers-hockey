@@ -9,6 +9,8 @@ const schema = z.object({
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
   assignedTo: z.string().optional().or(z.literal("")),
+  // Tugasan individu boleh gantikan satu tugasan umum (id tugasan umum).
+  replacesTaskId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export async function POST(request: Request) {
@@ -39,6 +41,8 @@ export async function POST(request: Request) {
     description: d.description || null,
     due_date: d.dueDate || null,
     assigned_to: d.assignedTo || null,
+    // "Gantikan tugasan umum" hanya sah untuk tugasan individu.
+    replaces_task_id: d.assignedTo && d.replacesTaskId ? d.replacesTaskId : null,
     created_by: userId,
   });
 
@@ -67,6 +71,7 @@ const editSchema = z.object({
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
   assignedTo: z.string().optional().or(z.literal("")),
+  replacesTaskId: z.string().uuid().optional().or(z.literal("")),
 });
 
 export async function PATCH(request: Request) {
@@ -93,6 +98,7 @@ export async function PATCH(request: Request) {
       description: d.description || null,
       due_date: d.dueDate || null,
       assigned_to: d.assignedTo || null,
+      replaces_task_id: d.assignedTo && d.replacesTaskId ? d.replacesTaskId : null,
     })
     .eq("id", d.id);
   if (error) {
