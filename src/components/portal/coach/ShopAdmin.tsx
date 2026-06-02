@@ -53,7 +53,12 @@ type Edition = {
   for_sale: boolean;
   sort_order: number;
 };
-type Settings = { pakej_discount_percent: number; pakej_min_items: number };
+type Settings = {
+  pakej_discount_percent: number;
+  pakej_min_items: number;
+  duitnow_qr_url?: string | null;
+  info_akaun?: string | null;
+};
 
 export default function ShopAdmin({
   products,
@@ -148,7 +153,80 @@ export default function ShopAdmin({
         supabase={supabase}
       />
 
+      <DuitNowSettings settings={settings} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
+
       <PakejSettings settings={settings} run={run} busy={busy} supabase={supabase} />
+    </div>
+  );
+}
+
+/* ───────────────────────── DuitNow (QR + akaun) ───────────────────────── */
+function DuitNowSettings({
+  settings,
+  uploadImage,
+  run,
+  busy,
+  supabase,
+}: {
+  settings: Settings;
+  uploadImage: (f: File) => Promise<string>;
+  run: Run;
+  busy: boolean;
+  supabase: SB;
+}) {
+  const [info, setInfo] = useState(settings.info_akaun ?? "");
+
+  const saveInfo = () =>
+    run(async () => {
+      const { error } = await supabase.from("shop_settings").update({ info_akaun: info }).eq("id", 1);
+      if (error) throw new Error(error.message);
+    });
+
+  const onQr = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    run(async () => {
+      const url = await uploadImage(f);
+      const { error } = await supabase.from("shop_settings").update({ duitnow_qr_url: url }).eq("id", 1);
+      if (error) throw new Error(error.message);
+    });
+  };
+
+  return (
+    <div className={cardCls}>
+      <h3 className={`${sectionTitle} mb-1`}>DuitNow & Pengesahan</h3>
+      <p className="mb-4 font-sans text-xs text-muted">
+        Kod QR & maklumat akaun ini dipapar kepada pelanggan untuk pindahan.
+      </p>
+      <div className="flex flex-col gap-4 sm:flex-row">
+        <div className="sm:w-40">
+          {settings.duitnow_qr_url ? (
+            // eslint-disable-next-line @next/next/no-img-element -- QR dari Storage
+            <img src={settings.duitnow_qr_url} alt="QR DuitNow" className="aspect-square w-full rounded-lg border border-line object-contain bg-paper p-2" />
+          ) : (
+            <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-dashed border-line text-muted">
+              <ImagePlus className="h-6 w-6" />
+            </div>
+          )}
+          <label className="mt-2 block cursor-pointer text-center font-sans text-xs font-semibold text-amber hover:text-amber-deep">
+            Muat naik QR
+            <input type="file" accept="image/*" onChange={onQr} className="hidden" />
+          </label>
+        </div>
+        <div className="flex-1">
+          <label className={labelCls}>Maklumat akaun (dipapar kepada pelanggan)</label>
+          <textarea
+            rows={4}
+            className={`${inputCls} resize-y`}
+            placeholder={"Cth:\nNama: Tabung Hoki Stingers\nBank: Maybank 1234 5678 90\nRujukan: Nama penuh anda"}
+            value={info}
+            onChange={(e) => setInfo(e.target.value)}
+          />
+          <button type="button" onClick={saveInfo} disabled={busy} className={`${btnCls} mt-3`}>
+            Simpan Maklumat
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
