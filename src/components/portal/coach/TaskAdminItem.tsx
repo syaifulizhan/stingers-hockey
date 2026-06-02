@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Pencil, Trash2, ChevronDown } from "lucide-react";
 import SubmissionsReview from "@/components/portal/coach/SubmissionsReview";
 import TaskExceptionsEditor, { type TaskException } from "@/components/portal/coach/TaskExceptionsEditor";
+import TaskExceptionsView from "@/components/portal/coach/TaskExceptionsView";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper outline-none focus:border-amber";
@@ -216,6 +217,20 @@ export default function TaskAdminItem({
           )}
           {task.description && (
             <p className="mb-3 font-sans text-xs text-muted">{task.description}</p>
+          )}
+
+          {/* Arahan khas (pengecualian) — jurulatih nampak semua */}
+          {task.exceptions?.length > 0 && (
+            <div className="mb-3">
+              <TaskExceptionsView
+                exceptions={task.exceptions.map((e) => ({
+                  name:
+                    members.find((m) => m.clerk_user_id === e.uid)?.full_name ||
+                    "(tanpa nama)",
+                  note: e.note,
+                }))}
+              />
+            </div>
           )}
 
           {/* Hantaran lama dikuncup bersama task (selepas tarikh akhir) */}

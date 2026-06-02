@@ -177,6 +177,8 @@ export default async function DashboardPage() {
   const name = memberName(baseName, (profile?.display_name as string) ?? null);
   // Jurulatih: ringkasan semua ahli (untuk dropdown "Ringkasan Pemain").
   const playerSummaries = isCoachOrAdmin ? await buildPlayerSummaries(supabase) : [];
+  // Peta nama ahli (untuk jurulatih lihat nama dalam arahan khas/pengecualian).
+  const nameMap = new Map(playerSummaries.map((s) => [s.id, s.name]));
   const percent = profile
     ? Math.round((filledCount(profile) / PROFILE_COLS.length) * 100)
     : 0;
@@ -360,8 +362,17 @@ export default async function DashboardPage() {
             // hantar tugasan asas sahaja supaya nota ahli lain tak terdedah.
             task: { id: t.id, title: t.title, description: t.description, due_date: t.due_date },
             submission: subByTask.get(t.id) ?? null,
-            // Arahan/limit khas untuk ahli ini sahaja (jika dia dalam pengecualian).
-            note: (t.exceptions ?? []).find((e) => e.uid === user!.id)?.note ?? null,
+            // Pemain: arahan khas untuk DIA sahaja (jika dalam pengecualian).
+            note: isCoachOrAdmin
+              ? null
+              : (t.exceptions ?? []).find((e) => e.uid === user!.id)?.note ?? null,
+            // Jurulatih: nampak SEMUA arahan khas (nama + nota).
+            exceptions: isCoachOrAdmin
+              ? (t.exceptions ?? []).map((e) => ({
+                  name: nameMap.get(e.uid) || "(tanpa nama)",
+                  note: e.note,
+                }))
+              : undefined,
           }))}
           readOnly={isCoachOrAdmin}
         />

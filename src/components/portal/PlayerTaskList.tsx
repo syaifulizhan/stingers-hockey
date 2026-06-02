@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import TaskCard from "@/components/portal/TaskCard";
+import TaskExceptionsView from "@/components/portal/coach/TaskExceptionsView";
 
 type Task = {
   id: string;
@@ -16,7 +17,13 @@ type Submission = {
   media_url: string | null;
   late?: boolean;
 } | null;
-type Item = { task: Task; submission: Submission; note?: string | null };
+type Item = {
+  task: Task;
+  submission: Submission;
+  note?: string | null;
+  // Jurulatih sahaja: semua arahan khas (nama + nota) untuk tugasan ini.
+  exceptions?: { name: string; note: string }[];
+};
 
 // Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
 const isPastDue = (due: string | null) =>
@@ -58,7 +65,7 @@ export default function PlayerTaskList({
 
   return (
     <div className="flex flex-col gap-2">
-      {items.map(({ task, submission, note }) => {
+      {items.map(({ task, submission, note, exceptions }) => {
         const open = openIds.has(task.id);
         const past = isPastDue(task.due_date);
         const st = statusOf(submission);
@@ -87,6 +94,11 @@ export default function PlayerTaskList({
                     Khas
                   </span>
                 )}
+                {exceptions && exceptions.length > 0 && (
+                  <span className="rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
+                    {exceptions.length} khas
+                  </span>
+                )}
                 {!readOnly && submission?.late && (
                   <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-orange-400">
                     Lewat
@@ -109,6 +121,12 @@ export default function PlayerTaskList({
                       Khas untuk anda
                     </p>
                     <p className="mt-0.5 font-sans text-sm text-paper/90">{note}</p>
+                  </div>
+                )}
+                {/* Jurulatih: semua arahan khas (seorang → terus, ramai → dropdown) */}
+                {exceptions && exceptions.length > 0 && (
+                  <div className="mb-3">
+                    <TaskExceptionsView exceptions={exceptions} />
                   </div>
                 )}
                 {task.description && (
