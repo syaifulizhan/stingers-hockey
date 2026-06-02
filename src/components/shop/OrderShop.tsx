@@ -10,6 +10,7 @@ import {
   ADULT_SIZES,
   unitPrice,
   ringgit,
+  computePostage,
   type PriceProduct,
 } from "@/lib/shop";
 
@@ -45,6 +46,11 @@ type Settings = {
   pakej_min_items: number;
   duitnow_qr_url: string | null;
   info_akaun: string | null;
+  pos_enabled?: boolean;
+  pos_weight_per_item_g?: number | string;
+  pos_base?: number | string;
+  pos_base_kg?: number | string;
+  pos_add_per_kg?: number | string;
 };
 type CartItem = {
   key: string;
@@ -500,6 +506,11 @@ function Checkout({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [delivery, setDelivery] = useState<"pickup" | "pos">("pickup");
+  const [address, setAddress] = useState("");
+  const posOn = !!settings.pos_enabled;
+  const postage = posOn && delivery === "pos" ? computePostage(totalQty, settings) : 0;
+  const grand = total + postage;
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -518,6 +529,8 @@ function Checkout({
     if (cart.length === 0) return setError(t("Senarai kosong.", "Your list is empty."));
     if (fullName.trim().length < 3) return setError(t("Sila masukkan nama penuh.", "Please enter your full name."));
     if (phone.trim().length < 9) return setError(t("Sila masukkan no. telefon sah.", "Please enter a valid phone."));
+    if (posOn && delivery === "pos" && address.trim().length < 5)
+      return setError(t("Sila masukkan alamat penghantaran.", "Please enter your delivery address."));
     if (!file) return setError(t("Sila muat naik bukti pindahan.", "Please upload your transfer proof."));
     setSaving(true);
     try {
@@ -540,6 +553,9 @@ function Checkout({
         subtotal,
         discount,
         total,
+        delivery: posOn ? delivery : "pickup",
+        postage,
+        address: posOn && delivery === "pos" ? address.trim() : null,
         proof_url: proofUrl,
       });
       if (insErr) throw new Error(insErr.message);
@@ -592,6 +608,41 @@ function Checkout({
         ))}
       </ul>
 
+      {/* Cara terima (Pos / Ambil sendiri) */}
+      {posOn && (
+        <div className="rounded-xl border border-line bg-ink/40 p-4">
+          <p className={labelCls}>{t("Cara terima", "Delivery")}</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setDelivery("pickup")}
+              className={`rounded-full px-4 py-1.5 font-sans text-sm font-semibold ${delivery === "pickup" ? "bg-amber text-ink" : "border border-line text-paper"}`}
+            >
+              {t("Ambil sendiri", "Self-pickup")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setDelivery("pos")}
+              className={`rounded-full px-4 py-1.5 font-sans text-sm font-semibold ${delivery === "pos" ? "bg-amber text-ink" : "border border-line text-paper"}`}
+            >
+              {t("Pos", "Postage")}
+            </button>
+          </div>
+          {delivery === "pos" && (
+            <div className="mt-3">
+              <label className={labelCls}>{t("Alamat penghantaran *", "Delivery address *")}</label>
+              <textarea
+                rows={3}
+                className={`${inputCls} resize-y`}
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={t("Alamat penuh + poskod", "Full address + postcode")}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Jumlah */}
       <div className="rounded-xl border border-amber/40 bg-amber/10 px-5 py-4">
         <div className="flex justify-between font-sans text-sm text-paper/90">
@@ -612,9 +663,15 @@ function Checkout({
             )}
           </p>
         )}
+        {posOn && delivery === "pos" && (
+          <div className="mt-1 flex justify-between font-sans text-sm text-paper/90">
+            <span>{t("Penghantaran (Pos)", "Postage")}</span>
+            <span>+ {ringgit(postage)}</span>
+          </div>
+        )}
         <div className="mt-2 flex items-center justify-between border-t border-amber/30 pt-2">
           <span className="font-sans text-sm font-semibold text-paper">{t("Jumlah", "Total")}</span>
-          <span className="display text-2xl text-amber">{ringgit(total)}</span>
+          <span className="display text-2xl text-amber">{ringgit(grand)}</span>
         </div>
       </div>
 

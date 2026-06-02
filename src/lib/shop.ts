@@ -36,3 +36,22 @@ export function unitPrice(
 
 export const ringgit = (v: number) =>
   `RM ${v.toLocaleString("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Postage berasaskan berat. Sampai pos_base_kg = pos_base; lebih → +per kg.
+// Jadi beberapa helai yang masih dalam berat asas = sama harga dengan sehelai.
+export type PostageSettings = {
+  pos_enabled?: boolean;
+  pos_weight_per_item_g?: number | string;
+  pos_base?: number | string;
+  pos_base_kg?: number | string;
+  pos_add_per_kg?: number | string;
+};
+export function computePostage(itemCount: number, s: PostageSettings): number {
+  const perItem = n(s.pos_weight_per_item_g) || 250;
+  const base = n(s.pos_base);
+  const baseKg = n(s.pos_base_kg) || 1;
+  const addPerKg = n(s.pos_add_per_kg);
+  const totalKg = (itemCount * perItem) / 1000;
+  if (totalKg <= baseKg) return base;
+  return base + Math.ceil(totalKg - baseKg) * addPerKg;
+}

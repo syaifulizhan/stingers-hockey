@@ -40,6 +40,9 @@ type Order = {
   subtotal: number | string;
   discount: number | string;
   total: number | string;
+  delivery?: string | null;
+  postage?: number | string;
+  address?: string | null;
   proof_url: string | null;
   status: string;
   created_at: string;
@@ -174,10 +177,17 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
 
                 <div className="mt-2 flex items-center justify-between font-sans text-sm">
                   <span className="text-muted">
-                    {Number(o.discount) > 0 ? `Diskaun −${ringgit(Number(o.discount))} · ` : ""}Jumlah
+                    {Number(o.discount) > 0 ? `Diskaun −${ringgit(Number(o.discount))} · ` : ""}
+                    {Number(o.postage) > 0 ? `Pos +${ringgit(Number(o.postage))} · ` : ""}Jumlah
                   </span>
-                  <span className="font-bold text-amber">{ringgit(Number(o.total) || 0)}</span>
+                  <span className="font-bold text-amber">
+                    {ringgit((Number(o.total) || 0) + (Number(o.postage) || 0))}
+                  </span>
                 </div>
+                <p className="mt-1 font-sans text-xs text-muted">
+                  {o.delivery === "pos" ? "📦 Pos" : "🤝 Ambil sendiri"}
+                  {o.delivery === "pos" && o.address ? ` — ${o.address}` : ""}
+                </p>
 
                 {o.proof_url && (
                   <a href={o.proof_url} target="_blank" rel="noopener noreferrer" className="mt-3 block">

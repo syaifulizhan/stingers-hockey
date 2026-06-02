@@ -72,6 +72,11 @@ type Settings = {
   pakej_min_items: number;
   duitnow_qr_url?: string | null;
   info_akaun?: string | null;
+  pos_enabled?: boolean;
+  pos_weight_per_item_g?: number | string;
+  pos_base?: number | string;
+  pos_base_kg?: number | string;
+  pos_add_per_kg?: number | string;
 };
 
 export default function ShopAdmin({
@@ -184,7 +189,67 @@ export default function ShopAdmin({
 
       <DuitNowSettings settings={settings} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
 
+      <PostageSettings settings={settings} run={run} busy={busy} supabase={supabase} />
+
       <PakejSettings settings={settings} run={run} busy={busy} supabase={supabase} />
+    </div>
+  );
+}
+
+/* ───────────────────────── Penghantaran (Pos) ───────────────────────── */
+function PostageSettings({ settings, run, busy, supabase }: { settings: Settings; run: Run; busy: boolean; supabase: SB }) {
+  const [enabled, setEnabled] = useState(settings.pos_enabled ?? false);
+  const [weight, setWeight] = useState(String(num(settings.pos_weight_per_item_g ?? 250)));
+  const [base, setBase] = useState(String(num(settings.pos_base ?? 8)));
+  const [baseKg, setBaseKg] = useState(String(num(settings.pos_base_kg ?? 1)));
+  const [addPerKg, setAddPerKg] = useState(String(num(settings.pos_add_per_kg ?? 2)));
+
+  const save = () =>
+    run(async () => {
+      const { error } = await supabase
+        .from("shop_settings")
+        .update({
+          pos_enabled: enabled,
+          pos_weight_per_item_g: num(weight),
+          pos_base: num(base),
+          pos_base_kg: num(baseKg),
+          pos_add_per_kg: num(addPerKg),
+        })
+        .eq("id", 1);
+      if (error) throw new Error(error.message);
+    });
+
+  return (
+    <div className={cardCls}>
+      <h3 className={`${sectionTitle} mb-1`}>Penghantaran (Pos)</h3>
+      <p className="mb-4 font-sans text-xs text-muted">
+        Kadar ikut berat. Sampai berat asas = harga asas; lebih → +per kg.
+      </p>
+      <label className="mb-4 flex items-center gap-2 font-sans text-sm text-paper/90">
+        <input type="checkbox" className="h-4 w-4 accent-amber" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
+        Tawarkan pilihan Pos kepada pelanggan
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className={labelCls}>Berat seunit (gram)</label>
+          <input type="number" min="0" className={inputCls} value={weight} onChange={(e) => setWeight(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelCls}>Harga asas (RM)</label>
+          <input type="number" step="0.01" min="0" className={inputCls} value={base} onChange={(e) => setBase(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelCls}>Berat asas (kg)</label>
+          <input type="number" step="0.1" min="0" className={inputCls} value={baseKg} onChange={(e) => setBaseKg(e.target.value)} />
+        </div>
+        <div>
+          <label className={labelCls}>Tambahan setiap kg (RM)</label>
+          <input type="number" step="0.01" min="0" className={inputCls} value={addPerKg} onChange={(e) => setAddPerKg(e.target.value)} />
+        </div>
+      </div>
+      <button type="button" onClick={save} disabled={busy} className={`${btnCls} mt-4`}>
+        Simpan Penghantaran
+      </button>
     </div>
   );
 }
