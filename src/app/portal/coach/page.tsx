@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, ShoppingBag } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName } from "@/lib/names";
@@ -21,6 +21,7 @@ import FitnessPanel from "@/components/portal/coach/FitnessPanel";
 import MatchPanel from "@/components/portal/coach/MatchPanel";
 import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachSummary from "@/components/portal/coach/CoachSummary";
+import ShopAdmin from "@/components/portal/coach/ShopAdmin";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 
@@ -379,6 +380,24 @@ export default async function CoachPage() {
     ? Math.round(tasks.reduce((sum, t) => sum + taskSummary(t).pct, 0) / tasks.length)
     : 0;
 
+  // ── Kedai (admin sahaja) — produk, variasi, edisi, tetapan ──
+  let shopProducts: Record<string, unknown>[] = [];
+  let shopVariants: Record<string, unknown>[] = [];
+  let shopEditions: Record<string, unknown>[] = [];
+  let shopSettings = { pakej_discount_percent: 0, pakej_min_items: 2 };
+  if (admin) {
+    const [pRes, vRes, eRes, sRes] = await Promise.all([
+      supabase.from("shop_products").select("*"),
+      supabase.from("shop_variants").select("*").order("sort_order", { ascending: true }),
+      supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
+      supabase.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
+    ]);
+    shopProducts = (pRes.data ?? []) as Record<string, unknown>[];
+    shopVariants = (vRes.data ?? []) as Record<string, unknown>[];
+    shopEditions = (eRes.data ?? []) as Record<string, unknown>[];
+    if (sRes.data) shopSettings = sRes.data as typeof shopSettings;
+  }
+
   const sectionTitle =
     "mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted";
 
@@ -592,6 +611,27 @@ export default async function CoachPage() {
               </section>
             ),
           },
+          ...(admin
+            ? [
+                {
+                  id: "kedai",
+                  label: "Kedai",
+                  content: (
+                    <section>
+                      <h2 className={sectionTitle}>
+                        <ShoppingBag className="h-4 w-4" /> Urus Kedai (Tempahan)
+                      </h2>
+                      <ShopAdmin
+                        products={shopProducts as never}
+                        variants={shopVariants as never}
+                        editions={shopEditions as never}
+                        settings={shopSettings}
+                      />
+                    </section>
+                  ),
+                },
+              ]
+            : []),
         ]}
       />
     </div>
