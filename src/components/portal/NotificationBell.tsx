@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
 
@@ -16,6 +16,22 @@ export default function NotificationBell() {
   const [items, setItems] = useState<Notif[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // Kedudukan popup dikira (fixed) supaya sentiasa muat dalam skrin walau loceng
+  // berada di kiri atau kanan (bergantung pada susunan nav yang wrap).
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const place = () => {
+    const el = btnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const width = Math.min(320, vw - 16); // w-80, atau muat skrin (margin 8px)
+    // Jajar tepi kanan popup dengan tepi kanan loceng, kemudian kepit dalam skrin.
+    let left = r.right - width;
+    left = Math.max(8, Math.min(left, vw - width - 8));
+    setCoords({ top: r.bottom + 8, left, width });
+  };
 
   const load = async () => {
     try {
@@ -59,13 +75,27 @@ export default function NotificationBell() {
 
   const toggle = () => {
     const next = !open;
+    if (next) place(); // kira kedudukan sebelum buka
     setOpen(next);
     if (next) markAllRead(); // mark as read bila dibuka
   };
 
+  // Kekal jajar bila skrin diubah saiz / di-scroll semasa popup terbuka.
+  useEffect(() => {
+    if (!open) return;
+    const onMove = () => place();
+    window.addEventListener("resize", onMove);
+    window.addEventListener("scroll", onMove, true);
+    return () => {
+      window.removeEventListener("resize", onMove);
+      window.removeEventListener("scroll", onMove, true);
+    };
+  }, [open]);
+
   return (
     <div className="relative">
       <button
+        ref={btnRef}
         type="button"
         onClick={toggle}
         aria-label="Notifikasi"
@@ -79,10 +109,13 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
+      {open && coords && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-80 max-w-[85vw] overflow-hidden rounded-xl border border-line bg-bg-soft shadow-xl">
+          <div
+            className="fixed z-50 overflow-hidden rounded-xl border border-line bg-bg-soft shadow-xl"
+            style={{ top: coords.top, left: coords.left, width: coords.width }}
+          >
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <span className="font-sans text-sm font-semibold text-paper">
                 Notifikasi
