@@ -4,13 +4,18 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 // Coach cipta tugasan. assignedTo kosong = semua ahli.
+// Pengecualian dalam tugasan umum: ahli + arahan/limit khas.
+const exceptionSchema = z
+  .array(z.object({ uid: z.string().min(1), note: z.string().trim().min(1).max(500) }))
+  .max(50)
+  .optional();
+
 const schema = z.object({
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
   assignedTo: z.string().optional().or(z.literal("")),
-  // Tugasan individu boleh gantikan satu tugasan umum (id tugasan umum).
-  replacesTaskId: z.string().uuid().optional().or(z.literal("")),
+  exceptions: exceptionSchema,
 });
 
 export async function POST(request: Request) {
@@ -41,8 +46,8 @@ export async function POST(request: Request) {
     description: d.description || null,
     due_date: d.dueDate || null,
     assigned_to: d.assignedTo || null,
-    // "Gantikan tugasan umum" hanya sah untuk tugasan individu.
-    replaces_task_id: d.assignedTo && d.replacesTaskId ? d.replacesTaskId : null,
+    // Pengecualian hanya untuk tugasan umum (Semua ahli).
+    exceptions: d.assignedTo ? [] : d.exceptions ?? [],
     created_by: userId,
   });
 
@@ -71,7 +76,7 @@ const editSchema = z.object({
   description: z.string().trim().max(2000).optional().or(z.literal("")),
   dueDate: z.string().optional().or(z.literal("")),
   assignedTo: z.string().optional().or(z.literal("")),
-  replacesTaskId: z.string().uuid().optional().or(z.literal("")),
+  exceptions: exceptionSchema,
 });
 
 export async function PATCH(request: Request) {
@@ -98,7 +103,7 @@ export async function PATCH(request: Request) {
       description: d.description || null,
       due_date: d.dueDate || null,
       assigned_to: d.assignedTo || null,
-      replaces_task_id: d.assignedTo && d.replacesTaskId ? d.replacesTaskId : null,
+      exceptions: d.assignedTo ? [] : d.exceptions ?? [],
     })
     .eq("id", d.id);
   if (error) {

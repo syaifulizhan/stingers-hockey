@@ -16,7 +16,7 @@ type Submission = {
   media_url: string | null;
   late?: boolean;
 } | null;
-type Item = { task: Task; submission: Submission };
+type Item = { task: Task; submission: Submission; note?: string | null };
 
 // Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
 const isPastDue = (due: string | null) =>
@@ -58,7 +58,7 @@ export default function PlayerTaskList({
 
   return (
     <div className="flex flex-col gap-2">
-      {items.map(({ task, submission }) => {
+      {items.map(({ task, submission, note }) => {
         const open = openIds.has(task.id);
         const past = isPastDue(task.due_date);
         const st = statusOf(submission);
@@ -82,6 +82,11 @@ export default function PlayerTaskList({
                     Baru
                   </span>
                 )}
+                {note && (
+                  <span className="rounded-full bg-amber px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-ink">
+                    Khas
+                  </span>
+                )}
                 {!readOnly && submission?.late && (
                   <span className="rounded-full bg-orange-500/20 px-2 py-0.5 font-sans text-[0.6rem] font-semibold uppercase text-orange-400">
                     Lewat
@@ -97,6 +102,15 @@ export default function PlayerTaskList({
             </button>
             {open && (
               <div className="border-t border-line px-4 py-4">
+                {/* Arahan/limit khas untuk ahli ini (pengecualian) */}
+                {note && (
+                  <div className="mb-3 rounded-lg border border-amber/40 bg-amber/10 px-3 py-2">
+                    <p className="font-sans text-[0.7rem] font-bold uppercase tracking-wide text-amber">
+                      Khas untuk anda
+                    </p>
+                    <p className="mt-0.5 font-sans text-sm text-paper/90">{note}</p>
+                  </div>
+                )}
                 {task.description && (
                   <p className="mb-2 font-sans text-sm text-muted">{task.description}</p>
                 )}

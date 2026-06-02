@@ -2,26 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import TaskExceptionsEditor, { type TaskException } from "@/components/portal/coach/TaskExceptionsEditor";
 
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none focus:border-amber";
 
 type Member = { clerk_user_id: string; full_name: string | null };
-type GeneralTask = { id: string; title: string };
 
-export default function TaskForm({
-  members,
-  generalTasks,
-}: {
-  members: Member[];
-  generalTasks: GeneralTask[];
-}) {
+export default function TaskForm({ members }: { members: Member[] }) {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
-  const [replacesTaskId, setReplacesTaskId] = useState("");
+  const [exceptions, setExceptions] = useState<TaskException[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,7 +36,8 @@ export default function TaskForm({
           description,
           dueDate,
           assignedTo,
-          replacesTaskId: assignedTo ? replacesTaskId : "",
+          // Pengecualian hanya untuk tugasan umum (Semua ahli).
+          exceptions: assignedTo ? [] : exceptions,
         }),
       });
       if (!res.ok) {
@@ -58,7 +53,7 @@ export default function TaskForm({
     setDescription("");
     setDueDate("");
     setAssignedTo("");
-    setReplacesTaskId("");
+    setExceptions([]);
     setSaving(false);
     router.refresh();
   };
@@ -95,7 +90,7 @@ export default function TaskForm({
             value={assignedTo}
             onChange={(e) => {
               setAssignedTo(e.target.value);
-              if (!e.target.value) setReplacesTaskId(""); // "Semua ahli" tak boleh ganti
+              if (e.target.value) setExceptions([]); // tugasan individu: tiada pengecualian
             }}
           >
             <option value="">Semua ahli</option>
@@ -108,29 +103,9 @@ export default function TaskForm({
         </div>
       </div>
 
-      {/* Tugasan individu boleh menggantikan satu tugasan umum (pengecualian). */}
-      {assignedTo && generalTasks.length > 0 && (
-        <div>
-          <label className="mb-1.5 block font-sans text-xs text-muted">
-            Gantikan tugasan umum (pilihan)
-          </label>
-          <select
-            className={inputCls}
-            value={replacesTaskId}
-            onChange={(e) => setReplacesTaskId(e.target.value)}
-          >
-            <option value="">— Tiada (tugasan tambahan) —</option>
-            {generalTasks.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.title}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1.5 font-sans text-[0.7rem] text-muted">
-            Ahli ini akan dikecualikan daripada tugasan umum yang dipilih — tak
-            perlu hantar dua kali.
-          </p>
-        </div>
+      {/* Pengecualian dalam tugasan umum (ahli dengan arahan/limit berbeza). */}
+      {!assignedTo && (
+        <TaskExceptionsEditor members={members} value={exceptions} onChange={setExceptions} />
       )}
 
       {error && <p className="font-sans text-xs text-amber">{error}</p>}
