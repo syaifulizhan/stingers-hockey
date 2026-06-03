@@ -314,6 +314,43 @@ function Pivot({ orders }: { orders: Order[] }) {
     downloadCsvFile(lines, `pivot-hustle-${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
+  // Koleksi lama (jersi_lama + hustle_lama) — kumpul IKUT EDISI (artwork beda),
+  // kemudian reka bentuk/penutup/lengan/material × saiz.
+  const edName = (label: string) => label.split(" · ")[0] || label;
+  const lamaRows = new Map<string, { edisi: string; reka: string; penutup: string; lengan: string; material: string; sizes: Record<string, number>; total: number }>();
+  const lamaSizeSet = new Set<string>();
+  let lamaNamePrint = 0;
+  let lamaNumberPrint = 0;
+  for (const o of confirmed) {
+    for (const it of o.items ?? []) {
+      if (it.category !== "jersi_lama" && it.category !== "hustle_lama") continue;
+      const edisi = edName(it.label);
+      const k = `${edisi}|${it.reka_bentuk}|${it.penutup}|${it.lengan}|${it.material}`;
+      const row = lamaRows.get(k) ?? { edisi, reka: it.reka_bentuk ?? "", penutup: it.penutup ?? "", lengan: it.lengan ?? "", material: it.material ?? "", sizes: {}, total: 0 };
+      row.sizes[it.size] = (row.sizes[it.size] ?? 0) + it.qty;
+      row.total += it.qty;
+      lamaRows.set(k, row);
+      lamaSizeSet.add(it.size);
+      if (it.print_name) lamaNamePrint += it.qty;
+      if (it.print_number) lamaNumberPrint += it.qty;
+    }
+  }
+  const lamaSizes = SIZE_ORDER.filter((s) => lamaSizeSet.has(s));
+  const lamaList = [...lamaRows.values()].sort((a, b) => a.edisi.localeCompare(b.edisi));
+  const lamaGrand = lamaList.reduce((s, r) => s + r.total, 0);
+  const downloadLamaCsv = () => {
+    const head = ["Edisi", "Reka Bentuk", "Penutup", "Lengan", "Material", ...lamaSizes, "Jumlah"];
+    const lines = [head.map(csv).join(",")];
+    for (const r of lamaList) {
+      lines.push([r.edisi, r.reka, r.penutup, r.lengan, r.material, ...lamaSizes.map((s) => r.sizes[s] ?? 0), r.total].map(csv).join(","));
+    }
+    lines.push(["GRAND TOTAL", "", "", "", "", ...lamaSizes.map(() => ""), lamaGrand].map(csv).join(","));
+    lines.push("");
+    lines.push(`Cetak nama: ${lamaNamePrint}`);
+    lines.push(`Cetak nombor: ${lamaNumberPrint}`);
+    downloadCsvFile(lines, `pivot-koleksi-lama-${new Date().toISOString().slice(0, 10)}.csv`);
+  };
+
   return (
     <div className="mb-4 overflow-hidden rounded-xl border border-amber/40 bg-ink/40 p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
@@ -401,6 +438,65 @@ function Pivot({ orders }: { orders: Order[] }) {
                 </tr>
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+
+      {/* Pivot Koleksi Lama (ikut edisi — artwork beda dari jersi terkini) */}
+      <div className="mt-5 border-t border-amber/30 pt-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
+            Pivot Koleksi Lama (ikut edisi)
+          </p>
+          {lamaList.length > 0 && (
+            <button type="button" onClick={downloadLamaCsv} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber">
+              <Download className="h-3.5 w-3.5" /> CSV
+            </button>
+          )}
+        </div>
+        {lamaList.length === 0 ? (
+          <p className="font-sans text-sm text-muted">Tiada tempahan koleksi lama disahkan lagi.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse font-sans text-xs">
+              <thead>
+                <tr className="text-muted">
+                  <th className="px-2 py-1 text-left">Edisi</th>
+                  <th className="px-2 py-1 text-left">Reka Bentuk</th>
+                  <th className="px-2 py-1 text-left">Penutup</th>
+                  <th className="px-2 py-1 text-left">Lengan</th>
+                  <th className="px-2 py-1 text-left">Material</th>
+                  {lamaSizes.map((s) => <th key={s} className="px-2 py-1 text-center">{s}</th>)}
+                  <th className="px-2 py-1 text-center font-bold text-amber">Jumlah</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lamaList.map((r, i) => (
+                  <tr key={i} className="border-t border-line text-paper">
+                    <td className="px-2 py-1">{r.edisi}</td>
+                    <td className="px-2 py-1">{r.reka || "–"}</td>
+                    <td className="px-2 py-1">{r.penutup || "–"}</td>
+                    <td className="px-2 py-1">{r.lengan || "–"}</td>
+                    <td className="px-2 py-1">{r.material || "–"}</td>
+                    {lamaSizes.map((s) => <td key={s} className="px-2 py-1 text-center tabular-nums">{r.sizes[s] ?? "–"}</td>)}
+                    <td className="px-2 py-1 text-center font-bold tabular-nums text-amber">{r.total}</td>
+                  </tr>
+                ))}
+                <tr className="border-t-2 border-amber/40 font-bold text-amber">
+                  <td className="px-2 py-1" colSpan={5}>GRAND TOTAL</td>
+                  {lamaSizes.map((s) => (
+                    <td key={s} className="px-2 py-1 text-center tabular-nums">
+                      {lamaList.reduce((sum, r) => sum + (r.sizes[s] ?? 0), 0)}
+                    </td>
+                  ))}
+                  <td className="px-2 py-1 text-center tabular-nums">{lamaGrand}</td>
+                </tr>
+              </tbody>
+            </table>
+            <p className="mt-2 font-sans text-xs text-muted">
+              Cetak nama: <span className="text-paper">{lamaNamePrint}</span> · Cetak nombor:{" "}
+              <span className="text-paper">{lamaNumberPrint}</span>
+            </p>
           </div>
         )}
       </div>
