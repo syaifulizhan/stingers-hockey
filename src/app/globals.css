@@ -154,6 +154,20 @@ body::before {
 .splash {
   animation: splash-fade 2s ease forwards;
 }
+
+/* Status simpan per-baris (panel admin) — kekal sekejap, kemudian pudar. */
+@keyframes row-status-fade {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.row-status-fade {
+  animation: row-status-fade 2.6s ease forwards;
+}
 .splash-logo {
   animation: splash-pop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
