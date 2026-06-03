@@ -23,7 +23,6 @@ const PENUTUP = ["Butang", "Zip", "Biasa"];
 // Reka bentuk yang ada bukaan kolar (boleh Butang/Zip). Lain → tiada penutup.
 const CLOSURE_REKA = ["Bulat", "Berkolar Mandarin", "Berkolar Biasa"];
 const LENGAN = ["Pendek", "Panjang"];
-const MATERIAL = ["Biasa", "Lycra"];
 
 // Carta saiz: kunci + label paparan.
 const JERSI_CHARTS = [
@@ -33,7 +32,7 @@ const JERSI_CHARTS = [
 ];
 const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz" }];
 const variantLabel = (v: Variant) =>
-  [v.reka_bentuk, v.penutup, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
+  [v.reka_bentuk, v.penutup, v.lengan].filter(Boolean).join(" · ") || v.label;
 
 type Product = {
   id: string;
@@ -46,6 +45,7 @@ type Product = {
   name_print_fee: number | string;
   number_print_enabled?: boolean;
   number_print_fee?: number | string;
+  lycra_surcharge?: number | string;
   size_charts?: Record<string, string> | null;
   active?: boolean;
 };
@@ -142,6 +142,7 @@ export default function ShopAdmin({
           showBasePrice={false}
           chartKeys={JERSI_CHARTS}
           allowNumber
+          allowLycra
           uploadImage={uploadImage}
           run={run}
           busy={busy}
@@ -339,6 +340,7 @@ function ProductSettings({
   showBasePrice,
   chartKeys = [],
   allowNumber = false,
+  allowLycra = false,
   uploadImage,
   run,
   busy,
@@ -350,6 +352,7 @@ function ProductSettings({
   showBasePrice: boolean;
   chartKeys?: { key: string; label: string }[];
   allowNumber?: boolean;
+  allowLycra?: boolean;
   uploadImage: (f: File) => Promise<string>;
   run: Run;
   busy: boolean;
@@ -363,6 +366,7 @@ function ProductSettings({
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
   const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
   const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
+  const [lycra, setLycra] = useState(String(num(product.lycra_surcharge ?? 0)));
   const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
   const [arkibName, setArkibName] = useState("");
@@ -388,6 +392,7 @@ function ProductSettings({
           name_print_fee: num(nameFee),
           number_print_enabled: allowNumber ? numberPrint : false,
           number_print_fee: allowNumber ? num(numberFee) : 0,
+          lycra_surcharge: allowLycra ? num(lycra) : 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -506,6 +511,12 @@ function ProductSettings({
             <label className={labelCls}>Potongan kanak (−RM)</label>
             <input type="number" step="0.01" min="0" className={inputCls} value={kidDiscount} onChange={(e) => setKidDiscount(e.target.value)} />
           </div>
+          {allowLycra && (
+            <div>
+              <label className={labelCls}>Caj material Lycra (+RM)</label>
+              <input type="number" step="0.01" min="0" className={inputCls} value={lycra} onChange={(e) => setLycra(e.target.value)} />
+            </div>
+          )}
           <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
             <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
             Tawar cetak nama
@@ -585,22 +596,21 @@ function VariantEditor({
   const [rekaBentuk, setRekaBentuk] = useState("");
   const [penutup, setPenutup] = useState("");
   const [lengan, setLengan] = useState("");
-  const [material, setMaterial] = useState("");
   const [price, setPrice] = useState("");
   const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const add = () =>
     run(async () => {
-      if (!rekaBentuk || !lengan || !material) throw new Error("Sila pilih Reka Bentuk, Lengan & Material.");
+      if (!rekaBentuk || !lengan) throw new Error("Sila pilih Reka Bentuk & Lengan.");
       if (hasClosure && !penutup) throw new Error("Sila pilih Penutup (Butang/Zip).");
       const pen = hasClosure ? penutup : null;
-      const label = [rekaBentuk, pen, lengan, material].filter(Boolean).join(" · ");
+      const label = [rekaBentuk, pen, lengan].filter(Boolean).join(" · ");
       const { error } = await supabase.from("shop_variants").insert({
         product_id: productId,
         reka_bentuk: rekaBentuk,
         penutup: pen,
         lengan,
-        material,
+        material: null,
         label,
         price: num(price),
         sort_order: variants.length,
@@ -609,7 +619,6 @@ function VariantEditor({
       setRekaBentuk("");
       setPenutup("");
       setLengan("");
-      setMaterial("");
       setPrice("");
     });
 
@@ -621,7 +630,7 @@ function VariantEditor({
 
   return (
     <div className="mt-5 border-t border-line pt-4">
-      <p className={labelCls}>Jenis jersi (variasi) — Reka Bentuk · Lengan · Material + harga</p>
+      <p className={labelCls}>Jenis jersi (variasi) — Reka Bentuk · Lengan + harga asas (material dipilih customer)</p>
       {variants.length > 0 && (
         <ul className="mb-3 flex flex-col gap-1.5">
           {variants.map((v) => (
@@ -635,7 +644,7 @@ function VariantEditor({
           ))}
         </ul>
       )}
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <select
           className={inputCls}
           value={rekaBentuk}
@@ -657,11 +666,7 @@ function VariantEditor({
           <option value="">Lengan…</option>
           {LENGAN.map((x) => <option key={x} value={x}>{x}</option>)}
         </select>
-        <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
-          <option value="">Material…</option>
-          {MATERIAL.map((x) => <option key={x} value={x}>{x}</option>)}
-        </select>
-        <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga asas (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
       <button type="button" onClick={add} disabled={busy} className="mt-2 inline-flex items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
         <Plus className="h-4 w-4" /> Tambah variasi
