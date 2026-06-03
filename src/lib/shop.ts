@@ -59,3 +59,65 @@ export function computePostage(itemCount: number, s: PostageSettings): number {
   if (totalKg <= baseKg) return base;
   return base + Math.ceil(totalKg - baseKg) * addPerKg;
 }
+
+// ── Diskaun pelbagai (kombinasi kategori) ──────────────────────────────────
+// Setiap peraturan tetap kuantiti minimum PER kategori (cth { jersi:2 } atau
+// { jersi:1, hustle_gear:1 }) dan peratus atas subtotal. Bila beberapa layak,
+// ambil yang beri potongan terbesar.
+export const DISCOUNT_CATEGORIES = [
+  { id: "jersi", label: "Jersi" },
+  { id: "hustle_gear", label: "Hustle Gear" },
+  { id: "jersi_lama", label: "Jersi Lama" },
+  { id: "hustle_lama", label: "Hustle Gear Lama" },
+] as const;
+
+export type DiscountRule = {
+  id: string;
+  label: string;
+  requirements: Record<string, number | string> | null;
+  percent: number | string;
+  active?: boolean;
+};
+
+// Peraturan sah untuk dipaparkan/digunakan (aktif, ada %, ada syarat).
+export function validDiscountRules(rules: DiscountRule[]): DiscountRule[] {
+  return rules.filter(
+    (r) =>
+      r.active !== false &&
+      n(r.percent) > 0 &&
+      r.requirements != null &&
+      Object.values(r.requirements).some((q) => n(q) > 0)
+  );
+}
+
+// Adakah troli (kiraan kuantiti ikut kategori) memenuhi syarat peraturan?
+export function ruleQualifies(counts: Record<string, number>, rule: DiscountRule): boolean {
+  const reqs = rule.requirements ?? {};
+  const keys = Object.keys(reqs).filter((k) => n(reqs[k]) > 0);
+  if (keys.length === 0) return false;
+  return keys.every((cat) => (counts[cat] ?? 0) >= n(reqs[cat]));
+}
+
+// Diskaun terbaik untuk troli: pulang peraturan + jumlah potongan (RM).
+export function bestDiscount(
+  counts: Record<string, number>,
+  subtotal: number,
+  rules: DiscountRule[]
+): { rule: DiscountRule; amount: number } | null {
+  let best: { rule: DiscountRule; amount: number } | null = null;
+  for (const r of validDiscountRules(rules)) {
+    if (!ruleQualifies(counts, r)) continue;
+    const amount = (subtotal * n(r.percent)) / 100;
+    if (amount > 0 && (!best || amount > best.amount)) best = { rule: r, amount };
+  }
+  return best;
+}
+
+// Huraian syarat untuk paparan, cth "2 × Jersi" atau "Jersi + Hustle Gear".
+export function describeRequirements(reqs: Record<string, number | string> | null): string {
+  const labels = Object.fromEntries(DISCOUNT_CATEGORIES.map((c) => [c.id, c.label]));
+  return Object.entries(reqs ?? {})
+    .filter(([, q]) => n(q) > 0)
+    .map(([c, q]) => (n(q) > 1 ? `${n(q)} × ` : "") + (labels[c] ?? c))
+    .join(" + ");
+}

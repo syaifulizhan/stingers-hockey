@@ -12,7 +12,11 @@ import {
   unitPrice,
   ringgit,
   computePostage,
+  bestDiscount,
+  validDiscountRules,
+  describeRequirements,
   type PriceProduct,
+  type DiscountRule,
 } from "@/lib/shop";
 
 type Product = {
@@ -233,11 +237,13 @@ export default function OrderShop({
   variants,
   editions,
   settings,
+  discounts,
 }: {
   products: Product[];
   variants: Variant[];
   editions: Edition[];
   settings: Settings;
+  discounts: DiscountRule[];
 }) {
   const { t } = useLang();
   const supabase = useMemo(() => createPublicSupabase(), []);
@@ -270,8 +276,14 @@ export default function OrderShop({
 
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const subtotal = cart.reduce((s, i) => s + i.unit * i.qty, 0);
-  const discountOn = settings.pakej_discount_percent > 0 && totalQty >= settings.pakej_min_items;
-  const discount = discountOn ? (subtotal * settings.pakej_discount_percent) / 100 : 0;
+  // Kiraan kuantiti ikut kategori untuk enjin diskaun kombinasi.
+  const catCounts = cart.reduce<Record<string, number>>((m, i) => {
+    m[i.category] = (m[i.category] ?? 0) + i.qty;
+    return m;
+  }, {});
+  const matched = bestDiscount(catCounts, subtotal, discounts);
+  const discount = matched?.amount ?? 0;
+  const discountOn = discount > 0;
   const total = subtotal - discount;
 
   return (
@@ -332,6 +344,9 @@ export default function OrderShop({
               subtotal={subtotal}
               discount={discount}
               discountOn={discountOn}
+              discountLabel={matched?.rule.label ?? null}
+              discountPercent={Number(matched?.rule.percent) || 0}
+              rules={discounts}
               total={total}
               totalQty={totalQty}
               settings={settings}
@@ -679,6 +694,9 @@ function Checkout({
   subtotal,
   discount,
   discountOn,
+  discountLabel,
+  discountPercent,
+  rules,
   total,
   totalQty,
   settings,
@@ -690,6 +708,9 @@ function Checkout({
   subtotal: number;
   discount: number;
   discountOn: boolean;
+  discountLabel: string | null;
+  discountPercent: number;
+  rules: DiscountRule[];
   total: number;
   totalQty: number;
   settings: Settings;
@@ -850,17 +871,21 @@ function Checkout({
         </div>
         {discountOn && (
           <div className="mt-1 flex justify-between font-sans text-sm text-paper/90">
-            <span>{t("Diskaun", "Discount")} ({settings.pakej_discount_percent}%)</span>
+            <span>
+              {t("Diskaun", "Discount")}
+              {discountLabel ? ` · ${discountLabel}` : ""} ({discountPercent}%)
+            </span>
             <span>− {ringgit(discount)}</span>
           </div>
         )}
-        {!discountOn && settings.pakej_discount_percent > 0 && (
-          <p className="mt-1 font-sans text-xs text-muted">
-            {t(
-              `Diskaun ${settings.pakej_discount_percent}% untuk pembelian minimum ${settings.pakej_min_items} item.`,
-              `${settings.pakej_discount_percent}% off for a minimum of ${settings.pakej_min_items} items.`
-            )}
-          </p>
+        {!discountOn && validDiscountRules(rules).length > 0 && (
+          <div className="mt-1.5 flex flex-col gap-0.5">
+            {validDiscountRules(rules).map((r) => (
+              <p key={r.id} className="font-sans text-xs text-muted">
+                {t("Diskaun", "Save")} {Number(r.percent)}% — {describeRequirements(r.requirements)}
+              </p>
+            ))}
+          </div>
         )}
         {posOn && delivery === "pos" && (
           <div className="mt-1 flex justify-between font-sans text-sm text-paper/90">
