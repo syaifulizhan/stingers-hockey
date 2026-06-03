@@ -45,6 +45,7 @@ type Order = {
   postage?: number | string;
   address?: string | null;
   proof_url: string | null;
+  proof_drive_url: string | null;
   status: string;
   created_at: string;
 };
@@ -215,6 +216,17 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                   <a href={o.proof_url} target="_blank" rel="noopener noreferrer" className="mt-3 block">
                     {/* eslint-disable-next-line @next/next/no-img-element -- bukti dari Storage */}
                     <img src={o.proof_url} alt="Bukti pindahan" className="max-h-44 rounded-lg border border-line object-contain" />
+                  </a>
+                )}
+
+                {!o.proof_url && o.proof_drive_url && (
+                  <a
+                    href={o.proof_drive_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
+                  >
+                    <Download className="h-3.5 w-3.5" /> Bukti di Drive
                   </a>
                 )}
 
