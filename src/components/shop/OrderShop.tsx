@@ -17,6 +17,7 @@ import {
 type Product = {
   id: string;
   name: string;
+  image_url?: string | null;
   base_price: number | string;
   big_size_surcharge: number | string;
   kid_discount: number | string;
@@ -42,7 +43,7 @@ type Variant = {
   lengan: string | null;
   material: string | null;
 };
-type Edition = { id: string; name: string; year: string | null; price: number | string; kind: string | null };
+type Edition = { id: string; name: string; year: string | null; price: number | string; kind: string | null; image_url?: string | null };
 type Settings = {
   pakej_discount_percent: number;
   pakej_min_items: number;
@@ -144,6 +145,14 @@ function SizeChartViewer({
   );
 }
 
+function ProductImage({ src }: { src?: string | null }) {
+  if (!src) return null;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- gambar produk dari Storage
+    <img src={src} alt="" className="max-h-72 w-full rounded-xl border border-line bg-bg-soft object-contain" />
+  );
+}
+
 // Input cetak nama / nombor — tulis teks; isi = nak cetak (+fi).
 function PrintInputs({
   prod,
@@ -219,7 +228,10 @@ export default function OrderShop({
     ...(hasJersi ? [{ id: "jersi", label: t("Jersi", "Jersey") }] : []),
     ...(hasHustle ? [{ id: "hustle_gear", label: "Hustle Gear" }] : []),
     ...(hasLama ? [{ id: "jersi_lama", label: t("Koleksi Lama", "Past Collection") }] : []),
-    { id: "pakej", label: t("Pakej Jimat", "Bundle") },
+    {
+      id: "pakej",
+      label: settings.pakej_discount_percent > 0 ? t("Pakej Jimat", "Bundle") : t("Troli", "Cart"),
+    },
   ];
   const [tab, setTab] = useState(tabs[0]?.id ?? "pakej");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -337,7 +349,8 @@ function JersiConfig({
   const { t } = useLang();
   const [variantId, setVariantId] = useState("");
   const [size, setSize] = useState("");
-  const [qty, setQty] = useState(1);
+  const [qtyStr, setQtyStr] = useState("1");
+  const qty = Math.max(1, Number(qtyStr) || 1);
   const [printName, setPrintName] = useState("");
   const [printNumber, setPrintNumber] = useState("");
   const v = variants.find((x) => x.id === variantId);
@@ -365,13 +378,14 @@ function JersiConfig({
     });
     setVariantId("");
     setSize("");
-    setQty(1);
+    setQtyStr("1");
     setPrintName("");
     setPrintNumber("");
   };
 
   return (
     <div className="flex flex-col gap-4">
+      <ProductImage src={jersi?.image_url} />
       <div>
         <label className={labelCls}>{t("Jenis jersi", "Jersey type")}</label>
         <select className={inputCls} value={variantId} onChange={(e) => setVariantId(e.target.value)}>
@@ -391,7 +405,7 @@ function JersiConfig({
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
-          <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
+          <input type="number" min={1} max={100} className={inputCls} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
         </div>
       </div>
       <PrintInputs prod={jersi} name={printName} setName={setPrintName} number={printNumber} setNumber={setPrintNumber} />
@@ -411,7 +425,8 @@ function JersiConfig({
 function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Product; onAdd: (i: Omit<CartItem, "key">) => void }) {
   const { t } = useLang();
   const [size, setSize] = useState("");
-  const [qty, setQty] = useState(1);
+  const [qtyStr, setQtyStr] = useState("1");
+  const qty = Math.max(1, Number(qtyStr) || 1);
   const [printName, setPrintName] = useState("");
   const base = hustle?.base_price ?? 0;
   const unit = size ? unitPrice(base, size, pp, printName.trim() !== "") : 0;
@@ -420,12 +435,13 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
     if (!size) return;
     onAdd({ category: "hustle_gear", label: "Hustle Gear", size, qty, print_name: printName.trim() || null, print_number: null, unit });
     setSize("");
-    setQty(1);
+    setQtyStr("1");
     setPrintName("");
   };
 
   return (
     <div className="flex flex-col gap-4">
+      <ProductImage src={hustle?.image_url} />
       <SizeChartViewer charts={hustle?.size_charts} keys={HUSTLE_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -434,7 +450,7 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
-          <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
+          <input type="number" min={1} max={100} className={inputCls} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
         </div>
       </div>
       <PrintInputs prod={hustle} name={printName} setName={setPrintName} number="" setNumber={() => {}} />
@@ -469,7 +485,8 @@ function EditionConfig({
   const { t } = useLang();
   const [editionId, setEditionId] = useState("");
   const [size, setSize] = useState("");
-  const [qty, setQty] = useState(1);
+  const [qtyStr, setQtyStr] = useState("1");
+  const qty = Math.max(1, Number(qtyStr) || 1);
   const [printName, setPrintName] = useState("");
   const [printNumber, setPrintNumber] = useState("");
   const ed = editions.find((x) => x.id === editionId);
@@ -498,13 +515,14 @@ function EditionConfig({
     });
     setEditionId("");
     setSize("");
-    setQty(1);
+    setQtyStr("1");
     setPrintName("");
     setPrintNumber("");
   };
 
   return (
     <div className="flex flex-col gap-4">
+      <ProductImage src={ed?.image_url} />
       <div>
         <label className={labelCls}>{t("Edisi", "Edition")}</label>
         <select className={inputCls} value={editionId} onChange={(e) => setEditionId(e.target.value)}>
@@ -524,7 +542,7 @@ function EditionConfig({
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
-          <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
+          <input type="number" min={1} max={100} className={inputCls} value={qtyStr} onChange={(e) => setQtyStr(e.target.value)} />
         </div>
       </div>
       <PrintInputs prod={prod} name={printName} setName={setPrintName} number={printNumber} setNumber={setPrintNumber} />
