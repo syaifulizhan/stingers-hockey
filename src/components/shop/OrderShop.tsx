@@ -28,6 +28,8 @@ type Product = {
   number_print_fee?: number | string;
   lycra_enabled?: boolean;
   lycra_surcharge?: number | string;
+  reka_surcharges?: Record<string, number | string> | null;
+  penutup_surcharges?: Record<string, number | string> | null;
   size_charts?: Record<string, string> | null;
 };
 
@@ -384,7 +386,12 @@ function JersiConfig({
   const numberOn = printNumber.trim() !== "";
   const lycraOn = !!v?.lycra_available;
   const lycraFee = Number(jersi?.lycra_surcharge) || 0;
-  const base = v ? Number(v.price) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
+  // Harga asas variasi + caj reka bentuk + caj penutup (cth Mandarin +2, Zip +3).
+  const variantBase = (vv: Variant) =>
+    Number(vv.price) +
+    (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
+    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0);
+  const base = v ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
   if (variants.length === 0)
@@ -422,7 +429,7 @@ function JersiConfig({
           <option value="">{t("Pilih jenis…", "Choose type…")}</option>
           {variants.map((x) => (
             <option key={x.id} value={x.id}>
-              {vLabel(x)} — {ringgit(Number(x.price) || 0)}
+              {vLabel(x)} — {ringgit(variantBase(x))}
             </option>
           ))}
         </select>
