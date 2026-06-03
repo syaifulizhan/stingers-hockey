@@ -93,6 +93,9 @@ const addBtn =
 const vLabel = (v: Variant) =>
   [v.reka_bentuk, v.penutup, v.lengan].filter(Boolean).join(" · ") || v.label;
 
+// Muslimah sememangnya lengan panjang → kira caj lengan sebagai "Panjang".
+const lenganKey = (v: Variant) => (v.reka_bentuk === "Muslimah" ? "Panjang" : v.lengan ?? "");
+
 function SizeSelect({
   value,
   onChange,
@@ -408,7 +411,7 @@ function JersiConfig({
     Number(vv.price) +
     (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
     (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
-    (Number(jersi?.lengan_surcharges?.[vv.lengan ?? ""]) || 0);
+    (Number(jersi?.lengan_surcharges?.[lenganKey(vv)]) || 0);
   const base = v ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
@@ -580,7 +583,7 @@ function EditionConfig({
     edBase +
     (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
     (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
-    (Number(jersi?.lengan_surcharges?.[vv.lengan ?? ""]) || 0);
+    (Number(jersi?.lengan_surcharges?.[lenganKey(vv)]) || 0);
   const base = useVariants
     ? v
       ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0)
