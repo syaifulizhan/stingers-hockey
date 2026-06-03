@@ -258,7 +258,7 @@ export default function OrderShop({
     ...(hasLama ? [{ id: "jersi_lama", label: t("Koleksi Lama", "Past Collection") }] : []),
     {
       id: "pakej",
-      label: settings.pakej_discount_percent > 0 ? t("Pakej Jimat", "Bundle") : t("Troli", "Cart"),
+      label: t("Troli", "Cart"),
     },
   ];
   const [tab, setTab] = useState(tabs[0]?.id ?? "pakej");
@@ -850,15 +850,15 @@ function Checkout({
         </div>
         {discountOn && (
           <div className="mt-1 flex justify-between font-sans text-sm text-paper/90">
-            <span>{t("Diskaun Pakej Jimat", "Bundle discount")} ({settings.pakej_discount_percent}%)</span>
+            <span>{t("Diskaun", "Discount")} ({settings.pakej_discount_percent}%)</span>
             <span>− {ringgit(discount)}</span>
           </div>
         )}
         {!discountOn && settings.pakej_discount_percent > 0 && (
           <p className="mt-1 font-sans text-xs text-muted">
             {t(
-              `Tambah ${Math.max(0, settings.pakej_min_items - totalQty)} item lagi untuk diskaun ${settings.pakej_discount_percent}%.`,
-              `Add ${Math.max(0, settings.pakej_min_items - totalQty)} more for ${settings.pakej_discount_percent}% off.`
+              `Diskaun ${settings.pakej_discount_percent}% untuk pembelian minimum ${settings.pakej_min_items} item.`,
+              `${settings.pakej_discount_percent}% off for a minimum of ${settings.pakej_min_items} items.`
             )}
           </p>
         )}

@@ -936,7 +936,7 @@ function PakejSettings({ settings, run, busy, supabase }: { settings: Settings; 
 
   return (
     <div className={cardCls}>
-      <h3 className={`${sectionTitle} mb-4`}>Pakej Jimat</h3>
+      <h3 className={`${sectionTitle} mb-4`}>Diskaun Pukal</h3>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label className={labelCls}>Diskaun (%)</label>
@@ -948,7 +948,7 @@ function PakejSettings({ settings, run, busy, supabase }: { settings: Settings; 
         </div>
       </div>
       <button type="button" onClick={save} disabled={busy} className={`${btnCls} mt-4`}>
-        Simpan Pakej Jimat
+        Simpan Diskaun
       </button>
     </div>
   );
