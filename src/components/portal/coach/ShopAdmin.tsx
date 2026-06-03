@@ -47,6 +47,8 @@ type Product = {
   number_print_fee?: number | string;
   lycra_enabled?: boolean;
   lycra_surcharge?: number | string;
+  reka_surcharges?: Record<string, number | string> | null;
+  penutup_surcharges?: Record<string, number | string> | null;
   size_charts?: Record<string, string> | null;
   active?: boolean;
 };
@@ -336,6 +338,47 @@ function DuitNowSettings({
 type SB = ReturnType<typeof useSupabase>;
 type Run = (fn: () => Promise<void>) => Promise<void>;
 
+// Peta caj ↔ string (untuk input). Hanya nilai > 0 disimpan.
+const mapToStr = (m?: Record<string, number | string> | null) =>
+  Object.fromEntries(Object.entries(m ?? {}).map(([k, v]) => [k, String(num(v))]));
+const strToNum = (m: Record<string, string>) =>
+  Object.fromEntries(Object.entries(m).filter(([, v]) => num(v) > 0).map(([k, v]) => [k, num(v)]));
+
+// Editor caj per-nilai (Reka Bentuk / Penutup).
+function SurchargeEditor({
+  title,
+  values,
+  map,
+  setMap,
+}: {
+  title: string;
+  values: string[];
+  map: Record<string, string>;
+  setMap: (m: Record<string, string>) => void;
+}) {
+  return (
+    <div className="sm:col-span-2">
+      <label className={labelCls}>{title}</label>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {values.map((val) => (
+          <div key={val}>
+            <span className="mb-0.5 block font-sans text-[0.65rem] text-muted">{val}</span>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              className={inputCls}
+              placeholder="+RM"
+              value={map[val] ?? ""}
+              onChange={(e) => setMap({ ...map, [val]: e.target.value })}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function ProductSettings({
   title,
   product,
@@ -369,6 +412,8 @@ function ProductSettings({
   const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
   const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
   const [lycra, setLycra] = useState(String(num(product.lycra_surcharge ?? 0)));
+  const [rekaS, setRekaS] = useState<Record<string, string>>(mapToStr(product.reka_surcharges));
+  const [penutupS, setPenutupS] = useState<Record<string, string>>(mapToStr(product.penutup_surcharges));
   const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
   const [arkibName, setArkibName] = useState("");
@@ -395,6 +440,8 @@ function ProductSettings({
           number_print_enabled: allowNumber ? numberPrint : false,
           number_print_fee: allowNumber ? num(numberFee) : 0,
           lycra_surcharge: allowLycra ? num(lycra) : 0,
+          reka_surcharges: allowLycra ? strToNum(rekaS) : {},
+          penutup_surcharges: allowLycra ? strToNum(penutupS) : {},
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -520,6 +567,8 @@ function ProductSettings({
               <p className="mt-1 font-sans text-[0.7rem] text-muted">Tick &ldquo;Lycra&rdquo; pada variasi yang menawarkannya.</p>
             </div>
           )}
+          {allowLycra && <SurchargeEditor title="Caj Reka Bentuk (+RM)" values={REKA_BENTUK} map={rekaS} setMap={setRekaS} />}
+          {allowLycra && <SurchargeEditor title="Caj Penutup (+RM)" values={PENUTUP} map={penutupS} setMap={setPenutupS} />}
           <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
             <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
             Tawar cetak nama
@@ -630,7 +679,7 @@ function VariantEditor({
 
   return (
     <div className="mt-5 border-t border-line pt-4">
-      <p className={labelCls}>Jenis jersi (variasi) — Reka Bentuk · Lengan + harga asas (material dipilih customer)</p>
+      <p className={labelCls}>Jenis jersi (variasi) — harga asas SAHAJA (caj Mandarin/Zip/Lycra ditambah automatik)</p>
       {variants.length > 0 && (
         <ul className="mb-3 flex flex-col gap-1.5">
           {variants.map((v) => (
