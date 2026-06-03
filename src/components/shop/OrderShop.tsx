@@ -246,8 +246,9 @@ export default function OrderShop({
   const jersiPP: PriceProduct = jersi ?? { big_size_surcharge: 0, kid_discount: 0 };
   const hustlePP: PriceProduct = hustle ?? { big_size_surcharge: 0, kid_discount: 0 };
 
-  // Hanya tunjuk tab produk yang benar-benar disediakan oleh admin.
-  const hasJersi = variants.length > 0;
+  // Hanya tunjuk tab produk yang benar-benar disediakan & TIDAK disembunyikan.
+  // (jersi/hustle undefined jika produk active=false — page tapis active.)
+  const hasJersi = !!jersi && variants.length > 0;
   const hasHustle = !!hustle && Number(hustle.base_price) > 0;
   const hasLama = editions.length > 0;
   const noProducts = !hasJersi && !hasHustle && !hasLama;
