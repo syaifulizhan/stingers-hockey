@@ -219,6 +219,8 @@ alter table public.shop_products add column if not exists lycra_surcharge numeri
 -- Harga variasi = harga asas + caj reka bentuk + caj penutup + (Lycra?) + saiz + cetak.
 alter table public.shop_products add column if not exists reka_surcharges jsonb not null default '{}'::jsonb;
 alter table public.shop_products add column if not exists penutup_surcharges jsonb not null default '{}'::jsonb;
+-- Caj ikut lengan (cth Lengan Panjang +4). { "Pendek":0, "Panjang":4 }
+alter table public.shop_products add column if not exists lengan_surcharges jsonb not null default '{}'::jsonb;
 
 -- Jenis legasi: 'jersi' atau 'hustle_gear' (satu jadual untuk dua legasi).
 alter table public.jersey_editions add column if not exists kind text not null default 'jersi';
