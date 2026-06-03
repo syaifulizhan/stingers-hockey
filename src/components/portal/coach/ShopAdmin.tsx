@@ -60,6 +60,7 @@ type Variant = {
   lengan?: string | null;
   material?: string | null;
   penutup?: string | null;
+  lycra_available?: boolean;
 };
 type Edition = {
   id: string;
@@ -367,7 +368,6 @@ function ProductSettings({
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
   const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
   const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
-  const [lycraOn, setLycraOn] = useState(product.lycra_enabled ?? false);
   const [lycra, setLycra] = useState(String(num(product.lycra_surcharge ?? 0)));
   const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
@@ -394,8 +394,7 @@ function ProductSettings({
           name_print_fee: num(nameFee),
           number_print_enabled: allowNumber ? numberPrint : false,
           number_print_fee: allowNumber ? num(numberFee) : 0,
-          lycra_enabled: allowLycra ? lycraOn : false,
-          lycra_surcharge: allowLycra && lycraOn ? num(lycra) : 0,
+          lycra_surcharge: allowLycra ? num(lycra) : 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -515,15 +514,10 @@ function ProductSettings({
             <input type="number" step="0.01" min="0" className={inputCls} value={kidDiscount} onChange={(e) => setKidDiscount(e.target.value)} />
           </div>
           {allowLycra && (
-            <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
-              <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraOn} onChange={(e) => setLycraOn(e.target.checked)} />
-              Tawar material Lycra
-            </label>
-          )}
-          {allowLycra && lycraOn && (
             <div>
               <label className={labelCls}>Caj material Lycra (+RM)</label>
               <input type="number" step="0.01" min="0" className={inputCls} value={lycra} onChange={(e) => setLycra(e.target.value)} />
+              <p className="mt-1 font-sans text-[0.7rem] text-muted">Tick &ldquo;Lycra&rdquo; pada variasi yang menawarkannya.</p>
             </div>
           )}
           <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
@@ -606,6 +600,7 @@ function VariantEditor({
   const [penutup, setPenutup] = useState("");
   const [lengan, setLengan] = useState("");
   const [price, setPrice] = useState("");
+  const [lycraAvail, setLycraAvail] = useState(false);
   const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const add = () =>
@@ -622,6 +617,7 @@ function VariantEditor({
         material: null,
         label,
         price: num(price),
+        lycra_available: lycraAvail,
         sort_order: variants.length,
       });
       if (error) throw new Error(error.message);
@@ -629,6 +625,7 @@ function VariantEditor({
       setPenutup("");
       setLengan("");
       setPrice("");
+      setLycraAvail(false);
     });
 
   return (
@@ -665,6 +662,10 @@ function VariantEditor({
         </select>
         <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga asas (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
       </div>
+      <label className="mt-2 flex items-center gap-2 font-sans text-sm text-paper/90">
+        <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraAvail} onChange={(e) => setLycraAvail(e.target.checked)} />
+        Tawar Lycra untuk variasi ini
+      </label>
       <button type="button" onClick={add} disabled={busy} className="mt-2 inline-flex items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
         <Plus className="h-4 w-4" /> Tambah variasi
       </button>
@@ -679,6 +680,7 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
   const [penutup, setPenutup] = useState(v.penutup ?? "");
   const [lengan, setLengan] = useState(v.lengan ?? "");
   const [price, setPrice] = useState(String(num(v.price)));
+  const [lycraAvail, setLycraAvail] = useState(v.lycra_available ?? false);
   const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const save = () =>
@@ -689,7 +691,7 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
       const label = [rekaBentuk, pen, lengan].filter(Boolean).join(" · ");
       const { error } = await supabase
         .from("shop_variants")
-        .update({ reka_bentuk: rekaBentuk, penutup: pen, lengan, label, price: num(price) })
+        .update({ reka_bentuk: rekaBentuk, penutup: pen, lengan, label, price: num(price), lycra_available: lycraAvail })
         .eq("id", v.id);
       if (error) throw new Error(error.message);
       setEditing(false);
@@ -721,6 +723,10 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
           </select>
           <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga asas (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
         </div>
+        <label className="flex items-center gap-2 font-sans text-xs text-paper/90">
+          <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraAvail} onChange={(e) => setLycraAvail(e.target.checked)} />
+          Tawar Lycra untuk variasi ini
+        </label>
         <div className="flex gap-2">
           <button type="button" onClick={save} disabled={busy} className="rounded-full bg-amber px-4 py-1 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
             Simpan
@@ -736,6 +742,9 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
   return (
     <li className="flex items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
       <span className="min-w-0 flex-1 truncate font-sans text-sm text-paper">{variantLabel(v)}</span>
+      {v.lycra_available && (
+        <span className="shrink-0 rounded-full bg-amber/20 px-1.5 py-0.5 font-sans text-[0.6rem] font-bold uppercase text-amber">Lycra</span>
+      )}
       <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(num(v.price))}</span>
       <button type="button" onClick={() => setEditing(true)} disabled={busy} aria-label="Edit" className="shrink-0 text-muted hover:text-amber">
         <Pencil className="h-4 w-4" />

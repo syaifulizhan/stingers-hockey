@@ -23,10 +23,11 @@ export default async function Home() {
   const supabase = createPublicSupabase();
   const [{ data: editions }, { data: prods }] = await Promise.all([
     supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
-    supabase.from("shop_products").select("id, image_url"),
+    supabase.from("shop_products").select("id, image_url, active"),
   ]);
-  const jerseyImage = prods?.find((p) => p.id === "jersi")?.image_url ?? null;
-  const hustleImage = prods?.find((p) => p.id === "hustle_gear")?.image_url ?? null;
+  // Produk yang disembunyikan (active=false) tak dipapar di laman utama.
+  const jerseyImage = prods?.find((p) => p.id === "jersi" && p.active)?.image_url ?? null;
+  const hustleImage = prods?.find((p) => p.id === "hustle_gear" && p.active)?.image_url ?? null;
   const mapEdition = (e: Record<string, unknown>): Jersey => ({
     id: e.id as string,
     name: e.name as string,
