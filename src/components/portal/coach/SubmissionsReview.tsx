@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Download } from "lucide-react";
+import { Trash2, Download, UploadCloud } from "lucide-react";
 
 // Pautan muat turun (Supabase Storage: ?download paksa simpan fail).
 const downloadUrl = (u: string) => u + (u.includes("?") ? "&" : "?") + "download";
@@ -37,6 +37,29 @@ export default function SubmissionsReview({
   const [statusMap, setStatusMap] = useState<Record<string, string>>(
     Object.fromEntries(submissions.map((s) => [s.id, s.status]))
   );
+  const [backfilling, setBackfilling] = useState(false);
+
+  // Pindah SEMUA bukti hantaran yang sudah "Disemak" ke Google Drive sekali gus,
+  // kemudian clear dari Supabase (jimat storan). Data hantaran kekal.
+  const backfillToDrive = async () => {
+    if (!window.confirm("Pindah semua bukti hantaran yang sudah DISEMAK ke Google Drive dan clear dari storan? Data hantaran kekal.")) return;
+    setBackfilling(true);
+    try {
+      const res = await fetch("/api/portal/coach/backfill-drive", { method: "POST" });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || "Gagal.");
+      window.alert(
+        `Selesai. ${json.moved} bukti dipindah ke Drive.` +
+          (json.failed ? ` ${json.failed} gagal:\n${(json.errors ?? []).join("\n")}` : "")
+      );
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Gagal pindah ke Drive.");
+      setBackfilling(false);
+      return;
+    }
+    setBackfilling(false);
+    router.refresh();
+  };
 
   const del = async (id: string, who: string) => {
     if (!window.confirm(`Padam hantaran daripada ${who}?`)) return;
@@ -69,16 +92,32 @@ export default function SubmissionsReview({
     }
   };
 
+  const backfillBtn = (
+    <button
+      type="button"
+      onClick={backfillToDrive}
+      disabled={backfilling}
+      className="inline-flex items-center gap-1.5 rounded-full border border-amber/50 px-3 py-1 font-sans text-xs font-semibold text-amber transition-colors hover:bg-amber/10 disabled:opacity-50"
+    >
+      <UploadCloud className="h-3.5 w-3.5" />
+      {backfilling ? "Memindah…" : "Pindah bukti disemak → Drive"}
+    </button>
+  );
+
   if (submissions.length === 0) {
     return (
-      <p className="font-sans text-sm text-muted">
-        Belum ada hantaran daripada ahli.
-      </p>
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-end">{backfillBtn}</div>
+        <p className="font-sans text-sm text-muted">
+          Belum ada hantaran daripada ahli.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex justify-end">{backfillBtn}</div>
       {submissions.map((s) => {
         const status = statusMap[s.id];
         return (

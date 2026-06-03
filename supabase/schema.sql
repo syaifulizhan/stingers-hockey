@@ -288,6 +288,11 @@ drop policy if exists "members delete own task proof" on storage.objects;
 create policy "members delete own task proof" on storage.objects for delete to authenticated
   using (bucket_id = 'task-proof' and (storage.foldername(name))[1] = auth.jwt()->>'sub');
 
+-- Coach boleh padam mana-mana fail bukti (untuk clear selepas "Disemak" → Drive).
+drop policy if exists "coach delete task proof" on storage.objects;
+create policy "coach delete task proof" on storage.objects for delete to authenticated
+  using (bucket_id = 'task-proof' and public.is_coach());
+
 -- ============================================================================
 -- PADAM HANTARAN — ahli boleh padam hantaran sendiri; coach boleh padam apa saja
 -- ============================================================================

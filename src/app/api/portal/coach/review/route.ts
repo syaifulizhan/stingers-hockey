@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { sendPush } from "@/lib/push";
+import { pushImageToDrive, todayMY } from "@/lib/drive";
+import { preferredName } from "@/lib/names";
 
 // Coach kemas kini status hantaran ahli (semak / minta ulang).
 const schema = z.object({
@@ -29,9 +31,50 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+
+  // Ambil hantaran dulu — perlukan media & pemilik untuk pindah ke Drive.
+  const { data: sub, error: subErr } = await supabase
+    .from("submissions")
+    .select("user_id, media_url")
+    .eq("id", parsed.data.submissionId)
+    .maybeSingle();
+  if (subErr || !sub) {
+    return NextResponse.json({ ok: false, error: "Hantaran tidak dijumpai." }, { status: 404 });
+  }
+  const userId2 = (sub as { user_id: string }).user_id;
+  const mediaUrl = (sub as { media_url: string | null }).media_url;
+
+  // "Disemak" + ada media → pindah ke Google Drive, kemudian clear storan.
+  // Nama fail = nama yang coach beri kepada pemain (display_name) + tarikh.
+  let clearMedia = false;
+  if (parsed.data.status === "reviewed" && mediaUrl) {
+    const { data: who } = await supabase
+      .from("users")
+      .select("full_name, display_name")
+      .eq("clerk_user_id", userId2)
+      .maybeSingle();
+    const playerName = preferredName(
+      (who as { full_name: string | null } | null)?.full_name,
+      (who as { display_name: string | null } | null)?.display_name
+    );
+    const drive = await pushImageToDrive({
+      target: "tugasan",
+      imageUrl: mediaUrl,
+      fileName: `${playerName} - ${todayMY()}`,
+    });
+    if (!drive.ok) {
+      console.error("[coach/review] Drive gagal:", drive.error);
+      return NextResponse.json(
+        { ok: false, error: "Gagal simpan gambar ke Drive. Status tidak diubah." },
+        { status: 502 }
+      );
+    }
+    clearMedia = true;
+  }
+
   const { data, error } = await supabase
     .from("submissions")
-    .update({ status: parsed.data.status })
+    .update({ status: parsed.data.status, ...(clearMedia ? { media_url: null } : {}) })
     .eq("id", parsed.data.submissionId)
     .select("user_id")
     .maybeSingle();
@@ -39,6 +82,17 @@ export async function POST(request: Request) {
   if (error) {
     console.error("[coach/review] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini." }, { status: 403 });
+  }
+
+  // Buang fail media dari storan selepas berjaya pindah ke Drive.
+  if (clearMedia && mediaUrl) {
+    const marker = "/task-proof/";
+    const i = mediaUrl.indexOf(marker);
+    if (i !== -1) {
+      await supabase.storage
+        .from("task-proof")
+        .remove([decodeURIComponent(mediaUrl.slice(i + marker.length))]);
+    }
   }
 
   // Notifikasi kepada ahli yang menghantar.

@@ -71,6 +71,26 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
     router.refresh();
   };
 
+  // "Sah" → pindah bukti ke Google Drive & clear storan (data tempahan kekal).
+  const confirmOrder = async (id: string) => {
+    setBusy(true);
+    try {
+      const res = await fetch("/api/portal/order/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || "Gagal sah tempahan.");
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Gagal sah tempahan.");
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    router.refresh();
+  };
+
   const del = async (o: Order) => {
     if (!window.confirm(`Padam tempahan ${o.full_name}?`)) return;
     setBusy(true);
@@ -199,7 +219,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                 )}
 
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-                  <button type="button" disabled={busy} onClick={() => setStatus(o.id, "disahkan")} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
+                  <button type="button" disabled={busy} onClick={() => confirmOrder(o.id)} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
                     <Check className="h-3.5 w-3.5" /> Sah
                   </button>
                   <button type="button" disabled={busy} onClick={() => setStatus(o.id, "ditolak")} className="inline-flex items-center gap-1 rounded-full border border-red-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50">
