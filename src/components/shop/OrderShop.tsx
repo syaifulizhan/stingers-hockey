@@ -25,8 +25,11 @@ type Product = {
   name_print_fee: number | string;
   number_print_enabled?: boolean;
   number_print_fee?: number | string;
+  lycra_surcharge?: number | string;
   size_charts?: Record<string, string> | null;
 };
+
+const MATERIAL = ["Biasa", "Lycra"];
 
 const JERSI_CHARTS = [
   { key: "lengan_pendek", label: "Lengan Pendek" },
@@ -78,7 +81,7 @@ const addBtn =
   "inline-flex items-center justify-center gap-1.5 rounded-full bg-amber px-5 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider text-ink transition-colors hover:bg-amber-deep disabled:opacity-50";
 
 const vLabel = (v: Variant) =>
-  [v.reka_bentuk, v.penutup, v.lengan, v.material].filter(Boolean).join(" · ") || v.label;
+  [v.reka_bentuk, v.penutup, v.lengan].filter(Boolean).join(" · ") || v.label;
 
 function SizeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { t } = useLang();
@@ -348,6 +351,7 @@ function JersiConfig({
 }) {
   const { t } = useLang();
   const [variantId, setVariantId] = useState("");
+  const [material, setMaterial] = useState("Biasa");
   const [size, setSize] = useState("");
   const [qtyStr, setQtyStr] = useState("1");
   const qty = Math.max(1, Number(qtyStr) || 1);
@@ -356,7 +360,9 @@ function JersiConfig({
   const v = variants.find((x) => x.id === variantId);
   const nameOn = printName.trim() !== "";
   const numberOn = printNumber.trim() !== "";
-  const unit = v && size ? unitPrice(v.price, size, pp, nameOn, numberOn) : 0;
+  const lycraFee = Number(jersi?.lycra_surcharge) || 0;
+  const base = v ? Number(v.price) + (material === "Lycra" ? lycraFee : 0) : 0;
+  const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
   if (variants.length === 0)
     return <p className="font-sans text-sm text-muted">{t("Belum ada jersi ditawarkan.", "No jerseys available yet.")}</p>;
@@ -365,11 +371,11 @@ function JersiConfig({
     if (!v || !size) return;
     onAdd({
       category: "jersi",
-      label: vLabel(v),
+      label: `${vLabel(v)} · ${material}`,
       reka_bentuk: v.reka_bentuk,
       penutup: v.penutup,
       lengan: v.lengan,
-      material: v.material,
+      material,
       size,
       qty,
       print_name: printName.trim() || null,
@@ -377,6 +383,7 @@ function JersiConfig({
       unit,
     });
     setVariantId("");
+    setMaterial("Biasa");
     setSize("");
     setQtyStr("1");
     setPrintName("");
@@ -393,6 +400,17 @@ function JersiConfig({
           {variants.map((x) => (
             <option key={x.id} value={x.id}>
               {vLabel(x)} — {ringgit(Number(x.price) || 0)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className={labelCls}>{t("Material", "Material")}</label>
+        <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
+          {MATERIAL.map((m) => (
+            <option key={m} value={m}>
+              {m}
+              {m === "Lycra" && lycraFee > 0 ? ` (+${ringgit(lycraFee)})` : ""}
             </option>
           ))}
         </select>
