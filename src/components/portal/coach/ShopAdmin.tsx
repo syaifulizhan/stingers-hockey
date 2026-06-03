@@ -86,16 +86,27 @@ type Settings = {
   pos_add_per_kg?: number | string;
 };
 
+type Discount = {
+  id: string;
+  label: string;
+  requirements: Record<string, number | string> | null;
+  percent: number | string;
+  active: boolean;
+  sort_order: number;
+};
+
 export default function ShopAdmin({
   products,
   variants,
   editions,
   settings,
+  discounts,
 }: {
   products: Product[];
   variants: Variant[];
   editions: Edition[];
   settings: Settings;
+  discounts: Discount[];
 }) {
   const router = useRouter();
   const supabase = useSupabase();
@@ -200,7 +211,7 @@ export default function ShopAdmin({
 
       <PostageSettings settings={settings} run={run} busy={busy} supabase={supabase} />
 
-      <PakejSettings settings={settings} run={run} busy={busy} supabase={supabase} />
+      <DiscountsEditor discounts={discounts} run={run} busy={busy} supabase={supabase} />
     </div>
   );
 }
@@ -920,36 +931,169 @@ function EditionRow({
   );
 }
 
-/* ───────────────────────── Pakej Jimat ───────────────────────── */
-function PakejSettings({ settings, run, busy, supabase }: { settings: Settings; run: Run; busy: boolean; supabase: SB }) {
-  const [percent, setPercent] = useState(String(settings.pakej_discount_percent));
-  const [minItems, setMinItems] = useState(String(settings.pakej_min_items));
+/* ───────────────────────── Diskaun pelbagai (kombinasi) ───────────────────────── */
+const DISCOUNT_CATS = [
+  { id: "jersi", label: "Jersi" },
+  { id: "hustle_gear", label: "Hustle Gear" },
+  { id: "jersi_lama", label: "Jersi Lama" },
+  { id: "hustle_lama", label: "Hustle Gear Lama" },
+];
 
-  const save = () =>
+type DiscountRow = {
+  id: string;
+  label: string;
+  requirements: Record<string, number | string> | null;
+  percent: number | string;
+  active: boolean;
+  sort_order: number;
+};
+
+const reqText = (reqs: Record<string, number | string> | null) => {
+  const labels = Object.fromEntries(DISCOUNT_CATS.map((c) => [c.id, c.label]));
+  return (
+    Object.entries(reqs ?? {})
+      .filter(([, q]) => num(q) > 0)
+      .map(([c, q]) => (num(q) > 1 ? `${num(q)} × ` : "") + (labels[c] ?? c))
+      .join(" + ") || "—"
+  );
+};
+
+function DiscountsEditor({
+  discounts,
+  run,
+  busy,
+  supabase,
+}: {
+  discounts: DiscountRow[];
+  run: Run;
+  busy: boolean;
+  supabase: SB;
+}) {
+  // Borang tambah peraturan baharu.
+  const [label, setLabel] = useState("");
+  const [percent, setPercent] = useState("");
+  const [reqs, setReqs] = useState<Record<string, string>>({});
+
+  const setReq = (cat: string, val: string) => setReqs((m) => ({ ...m, [cat]: val }));
+
+  const cleanReqs = (m: Record<string, string | number>) => {
+    const out: Record<string, number> = {};
+    for (const c of DISCOUNT_CATS) {
+      const q = num(m[c.id]);
+      if (q > 0) out[c.id] = q;
+    }
+    return out;
+  };
+
+  const add = () =>
     run(async () => {
-      const { error } = await supabase
-        .from("shop_settings")
-        .update({ pakej_discount_percent: num(percent), pakej_min_items: num(minItems) })
-        .eq("id", 1);
+      const requirements = cleanReqs(reqs);
+      if (!label.trim() || num(percent) <= 0 || Object.keys(requirements).length === 0) {
+        throw new Error("Isi nama, peratus, dan sekurang-kurangnya satu kategori (kuantiti > 0).");
+      }
+      const { error } = await supabase.from("shop_discounts").insert({
+        label: label.trim(),
+        percent: num(percent),
+        requirements,
+        sort_order: discounts.length,
+      });
+      if (error) throw new Error(error.message);
+      setLabel("");
+      setPercent("");
+      setReqs({});
+    });
+
+  const toggle = (d: DiscountRow) =>
+    run(async () => {
+      const { error } = await supabase.from("shop_discounts").update({ active: !d.active }).eq("id", d.id);
+      if (error) throw new Error(error.message);
+    });
+
+  const del = (d: DiscountRow) =>
+    run(async () => {
+      if (!window.confirm(`Padam diskaun "${d.label}"?`)) return;
+      const { error } = await supabase.from("shop_discounts").delete().eq("id", d.id);
       if (error) throw new Error(error.message);
     });
 
   return (
     <div className={cardCls}>
-      <h3 className={`${sectionTitle} mb-4`}>Diskaun Pukal</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={labelCls}>Diskaun (%)</label>
-          <input type="number" min="0" max="100" className={inputCls} value={percent} onChange={(e) => setPercent(e.target.value)} />
+      <h3 className={`${sectionTitle} mb-1`}>Diskaun Pelbagai</h3>
+      <p className="mb-4 font-sans text-xs text-muted">
+        Tetapkan kuantiti minimum bagi setiap kategori. Cth: Jersi 2 = beli 2 jersi; Jersi 1 + Hustle Gear 1 = satu daripada
+        setiap jenis. Bila beberapa diskaun layak, sistem ambil yang paling besar (atas subtotal).
+      </p>
+
+      {/* Senarai peraturan sedia ada */}
+      {discounts.length > 0 && (
+        <div className="mb-4 flex flex-col gap-2">
+          {discounts.map((d) => (
+            <div
+              key={d.id}
+              className={`flex items-center justify-between gap-3 rounded-lg border border-line px-3 py-2 ${d.active ? "" : "opacity-50"}`}
+            >
+              <div className="min-w-0">
+                <p className="font-sans text-sm font-semibold text-paper">
+                  {d.label} <span className="text-amber">−{num(d.percent)}%</span>
+                </p>
+                <p className="font-sans text-xs text-muted">{reqText(d.requirements)}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => toggle(d)}
+                  disabled={busy}
+                  className="rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50"
+                >
+                  {d.active ? "Aktif" : "Off"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => del(d)}
+                  disabled={busy}
+                  className="rounded-full border border-line p-1.5 text-muted hover:border-red-500/50 hover:text-red-400 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
-        <div>
-          <label className={labelCls}>Minimum item untuk diskaun</label>
-          <input type="number" min="1" className={inputCls} value={minItems} onChange={(e) => setMinItems(e.target.value)} />
+      )}
+
+      {/* Borang tambah */}
+      <div className="rounded-lg border border-dashed border-line p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className={labelCls}>Nama diskaun</label>
+            <input className={inputCls} value={label} onChange={(e) => setLabel(e.target.value)} placeholder="cth: Jersi + Hustle Gear" />
+          </div>
+          <div>
+            <label className={labelCls}>Diskaun (%)</label>
+            <input type="number" min="0" max="100" className={inputCls} value={percent} onChange={(e) => setPercent(e.target.value)} />
+          </div>
         </div>
+        <label className={`${labelCls} mt-3`}>Kuantiti minimum per kategori (0 = tak perlu)</label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {DISCOUNT_CATS.map((c) => (
+            <div key={c.id} className="flex items-center gap-2">
+              <span className="flex-1 font-sans text-sm text-paper">{c.label}</span>
+              <input
+                type="number"
+                min="0"
+                className={`${inputCls} w-20`}
+                value={reqs[c.id] ?? ""}
+                onChange={(e) => setReq(c.id, e.target.value)}
+                placeholder="0"
+              />
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={add} disabled={busy} className={`${btnCls} mt-4 inline-flex items-center gap-1.5`}>
+          <Plus className="h-3.5 w-3.5" /> Tambah Diskaun
+        </button>
       </div>
-      <button type="button" onClick={save} disabled={busy} className={`${btnCls} mt-4`}>
-        Simpan Diskaun
-      </button>
     </div>
   );
 }
+

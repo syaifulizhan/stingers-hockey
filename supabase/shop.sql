@@ -232,3 +232,27 @@ alter table public.shop_settings add column if not exists pos_add_per_kg numeric
 alter table public.shop_orders add column if not exists delivery text not null default 'pickup';
 alter table public.shop_orders add column if not exists postage numeric(8,2) not null default 0;
 alter table public.shop_orders add column if not exists address text;
+
+-- ============================================================================
+-- DISKAUN PELBAGAI (kombinasi) — ganti "Pakej Jimat" satu peraturan.
+-- Setiap peraturan: kuantiti minimum per kategori + peratus atas subtotal.
+--   requirements jsonb cth: {"jersi":2} atau {"jersi":1,"hustle_gear":1}
+--   Kategori sah: jersi | hustle_gear | jersi_lama | hustle_lama
+--   Bila beberapa peraturan layak, enjin ambil yang beri potongan terbesar.
+-- ============================================================================
+create table if not exists public.shop_discounts (
+  id           uuid primary key default gen_random_uuid(),
+  label        text not null,
+  requirements jsonb not null default '{}'::jsonb,
+  percent      numeric(5,2) not null default 0,
+  active       boolean not null default true,
+  sort_order   int not null default 0,
+  created_at   timestamptz not null default now()
+);
+alter table public.shop_discounts enable row level security;
+drop policy if exists shop_discounts_select on public.shop_discounts;
+create policy shop_discounts_select on public.shop_discounts for select to anon, authenticated using (true);
+drop policy if exists shop_discounts_write on public.shop_discounts;
+create policy shop_discounts_write on public.shop_discounts for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select on public.shop_discounts to anon;

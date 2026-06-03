@@ -390,19 +390,22 @@ export default async function CoachPage() {
   let shopVariants: Record<string, unknown>[] = [];
   let shopEditions: Record<string, unknown>[] = [];
   let shopOrders: Record<string, unknown>[] = [];
+  let shopDiscounts: Record<string, unknown>[] = [];
   let shopSettings = { pakej_discount_percent: 0, pakej_min_items: 2 };
   if (admin) {
-    const [pRes, vRes, eRes, sRes, oRes] = await Promise.all([
+    const [pRes, vRes, eRes, sRes, oRes, dRes] = await Promise.all([
       supabase.from("shop_products").select("*"),
       supabase.from("shop_variants").select("*").order("sort_order", { ascending: true }),
       supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
       supabase.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
       supabase.from("shop_orders").select("*").order("created_at", { ascending: false }),
+      supabase.from("shop_discounts").select("*").order("sort_order", { ascending: true }),
     ]);
     shopProducts = (pRes.data ?? []) as Record<string, unknown>[];
     shopVariants = (vRes.data ?? []) as Record<string, unknown>[];
     shopEditions = (eRes.data ?? []) as Record<string, unknown>[];
     shopOrders = (oRes.data ?? []) as Record<string, unknown>[];
+    shopDiscounts = (dRes.data ?? []) as Record<string, unknown>[];
     if (sRes.data) shopSettings = sRes.data as typeof shopSettings;
   }
 
@@ -635,6 +638,7 @@ export default async function CoachPage() {
                         variants={shopVariants as never}
                         editions={shopEditions as never}
                         settings={shopSettings}
+                        discounts={shopDiscounts as never}
                       />
                     </section>
                   ),
