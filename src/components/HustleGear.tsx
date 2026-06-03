@@ -29,7 +29,7 @@ export default function HustleGear({
             <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-amber/25 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 left-1/3 h-64 w-64 rounded-full bg-amber-deep/15 blur-3xl" />
 
-            <div className="relative grid gap-10 p-8 sm:p-12 lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12">
+            <div className={`relative grid gap-10 p-8 sm:p-12 ${imgs.length > 0 ? "lg:grid-cols-[1.4fr_1fr] lg:items-center lg:gap-12" : ""}`}>
               {/* Kiri — teks */}
               <div>
                 <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
@@ -51,14 +51,10 @@ export default function HustleGear({
                 </div>
               </div>
 
-              {/* Kanan — visual auto (1 atau 2 gambar) */}
-              <div className={imgs.length === 2 ? "grid grid-cols-2 gap-3" : ""}>
-                {imgs.length === 0 ? (
-                  <div className="flex aspect-square w-full items-center justify-center rounded-xl border border-dashed border-line bg-bg-soft">
-                    <span className="display text-3xl text-outline-amber sm:text-4xl">Stingers</span>
-                  </div>
-                ) : (
-                  imgs.map((im) => (
+              {/* Kanan — visual auto (sembunyi jika tiada gambar) */}
+              {imgs.length > 0 && (
+                <div className={imgs.length === 2 ? "grid grid-cols-2 gap-3" : ""}>
+                  {imgs.map((im) => (
                     <SmartImage
                       key={im.label}
                       src={im.src}
@@ -68,9 +64,9 @@ export default function HustleGear({
                       sizes="(max-width: 1024px) 50vw, 20vw"
                       fit="contain"
                     />
-                  ))
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </Reveal>
