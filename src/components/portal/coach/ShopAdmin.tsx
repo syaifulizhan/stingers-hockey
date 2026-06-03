@@ -44,6 +44,8 @@ type Product = {
   kid_discount: number | string;
   name_print_enabled: boolean;
   name_print_fee: number | string;
+  number_print_enabled?: boolean;
+  number_print_fee?: number | string;
   size_charts?: Record<string, string> | null;
 };
 type Variant = {
@@ -138,6 +140,7 @@ export default function ShopAdmin({
           product={jersi}
           showBasePrice={false}
           chartKeys={JERSI_CHARTS}
+          allowNumber
           uploadImage={uploadImage}
           run={run}
           busy={busy}
@@ -334,6 +337,7 @@ function ProductSettings({
   product,
   showBasePrice,
   chartKeys = [],
+  allowNumber = false,
   uploadImage,
   run,
   busy,
@@ -344,6 +348,7 @@ function ProductSettings({
   product: Product;
   showBasePrice: boolean;
   chartKeys?: { key: string; label: string }[];
+  allowNumber?: boolean;
   uploadImage: (f: File) => Promise<string>;
   run: Run;
   busy: boolean;
@@ -355,6 +360,8 @@ function ProductSettings({
   const [kidDiscount, setKidDiscount] = useState(String(num(product.kid_discount)));
   const [namePrint, setNamePrint] = useState(product.name_print_enabled);
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
+  const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
+  const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
   const [arkibOpen, setArkibOpen] = useState(false);
   const [arkibName, setArkibName] = useState("");
   const [arkibYear, setArkibYear] = useState("");
@@ -369,6 +376,8 @@ function ProductSettings({
           kid_discount: num(kidDiscount),
           name_print_enabled: namePrint,
           name_print_fee: num(nameFee),
+          number_print_enabled: allowNumber ? numberPrint : false,
+          number_print_fee: allowNumber ? num(numberFee) : 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -483,6 +492,18 @@ function ProductSettings({
             <div>
               <label className={labelCls}>Fi cetak nama (+RM)</label>
               <input type="number" step="0.01" min="0" className={inputCls} value={nameFee} onChange={(e) => setNameFee(e.target.value)} />
+            </div>
+          )}
+          {allowNumber && (
+            <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
+              <input type="checkbox" className="h-4 w-4 accent-amber" checked={numberPrint} onChange={(e) => setNumberPrint(e.target.checked)} />
+              Tawar cetak nombor
+            </label>
+          )}
+          {allowNumber && numberPrint && (
+            <div>
+              <label className={labelCls}>Fi cetak nombor (+RM)</label>
+              <input type="number" step="0.01" min="0" className={inputCls} value={numberFee} onChange={(e) => setNumberFee(e.target.value)} />
             </div>
           )}
         </div>

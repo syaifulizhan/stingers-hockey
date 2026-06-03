@@ -22,6 +22,8 @@ type Product = {
   kid_discount: number | string;
   name_print_enabled: boolean;
   name_print_fee: number | string;
+  number_print_enabled?: boolean;
+  number_print_fee?: number | string;
   size_charts?: Record<string, string> | null;
 };
 
@@ -63,7 +65,8 @@ type CartItem = {
   edition_id?: string;
   size: string;
   qty: number;
-  name_print: boolean;
+  print_name?: string | null;
+  print_number?: string | null;
   unit: number;
 };
 
@@ -138,6 +141,54 @@ function SizeChartViewer({
         </div>
       )}
     </div>
+  );
+}
+
+// Input cetak nama / nombor — tulis teks; isi = nak cetak (+fi).
+function PrintInputs({
+  prod,
+  name,
+  setName,
+  number,
+  setNumber,
+}: {
+  prod?: Product;
+  name: string;
+  setName: (v: string) => void;
+  number: string;
+  setNumber: (v: string) => void;
+}) {
+  const { t } = useLang();
+  return (
+    <>
+      {prod?.name_print_enabled && (
+        <div>
+          <label className={labelCls}>
+            {t("Cetak nama", "Print name")} (+{ringgit(Number(prod.name_print_fee) || 0)})
+          </label>
+          <input
+            className={`${inputCls} uppercase`}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t("Nama untuk dicetak (kosongkan jika tak nak)", "Name to print (blank to skip)")}
+          />
+        </div>
+      )}
+      {prod?.number_print_enabled && (
+        <div>
+          <label className={labelCls}>
+            {t("Cetak nombor", "Print number")} (+{ringgit(Number(prod.number_print_fee) || 0)})
+          </label>
+          <input
+            className={inputCls}
+            inputMode="numeric"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            placeholder={t("Nombor (kosongkan jika tak nak)", "Number (blank to skip)")}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -287,9 +338,12 @@ function JersiConfig({
   const [variantId, setVariantId] = useState("");
   const [size, setSize] = useState("");
   const [qty, setQty] = useState(1);
-  const [namePrint, setNamePrint] = useState(false);
+  const [printName, setPrintName] = useState("");
+  const [printNumber, setPrintNumber] = useState("");
   const v = variants.find((x) => x.id === variantId);
-  const unit = v && size ? unitPrice(v.price, size, pp, namePrint) : 0;
+  const nameOn = printName.trim() !== "";
+  const numberOn = printNumber.trim() !== "";
+  const unit = v && size ? unitPrice(v.price, size, pp, nameOn, numberOn) : 0;
 
   if (variants.length === 0)
     return <p className="font-sans text-sm text-muted">{t("Belum ada jersi ditawarkan.", "No jerseys available yet.")}</p>;
@@ -305,13 +359,15 @@ function JersiConfig({
       material: v.material,
       size,
       qty,
-      name_print: namePrint,
+      print_name: printName.trim() || null,
+      print_number: printNumber.trim() || null,
       unit,
     });
     setVariantId("");
     setSize("");
     setQty(1);
-    setNamePrint(false);
+    setPrintName("");
+    setPrintNumber("");
   };
 
   return (
@@ -338,12 +394,7 @@ function JersiConfig({
           <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
         </div>
       </div>
-      {jersi?.name_print_enabled && (
-        <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
-          <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
-          {t("Cetak nama & nombor", "Print name & number")} (+{ringgit(Number(jersi.name_print_fee) || 0)})
-        </label>
-      )}
+      <PrintInputs prod={jersi} name={printName} setName={setPrintName} number={printNumber} setNumber={setPrintNumber} />
       <div className="flex items-center justify-between">
         <span className="font-sans text-sm text-muted">
           {t("Seunit", "Unit")}: <span className="font-semibold text-amber">{ringgit(unit)}</span>
@@ -361,14 +412,16 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
   const { t } = useLang();
   const [size, setSize] = useState("");
   const [qty, setQty] = useState(1);
+  const [printName, setPrintName] = useState("");
   const base = hustle?.base_price ?? 0;
-  const unit = size ? unitPrice(base, size, pp, false) : 0;
+  const unit = size ? unitPrice(base, size, pp, printName.trim() !== "") : 0;
 
   const add = () => {
     if (!size) return;
-    onAdd({ category: "hustle_gear", label: "Hustle Gear", size, qty, name_print: false, unit });
+    onAdd({ category: "hustle_gear", label: "Hustle Gear", size, qty, print_name: printName.trim() || null, print_number: null, unit });
     setSize("");
     setQty(1);
+    setPrintName("");
   };
 
   return (
@@ -384,6 +437,7 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
           <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
         </div>
       </div>
+      <PrintInputs prod={hustle} name={printName} setName={setPrintName} number="" setNumber={() => {}} />
       <div className="flex items-center justify-between">
         <span className="font-sans text-sm text-muted">
           {t("Seunit", "Unit")}: <span className="font-semibold text-amber">{ringgit(unit)}</span>
@@ -416,13 +470,16 @@ function EditionConfig({
   const [editionId, setEditionId] = useState("");
   const [size, setSize] = useState("");
   const [qty, setQty] = useState(1);
-  const [namePrint, setNamePrint] = useState(false);
+  const [printName, setPrintName] = useState("");
+  const [printNumber, setPrintNumber] = useState("");
   const ed = editions.find((x) => x.id === editionId);
   // Guna tetapan produk ikut jenis edisi (jersi vs hustle gear).
   const isHustle = ed?.kind === "hustle_gear";
   const prod = isHustle ? hustle : jersi;
   const pp = isHustle ? hustlePP : jersiPP;
-  const unit = ed && size ? unitPrice(ed.price, size, pp, namePrint) : 0;
+  const nameOn = printName.trim() !== "";
+  const numberOn = printNumber.trim() !== "";
+  const unit = ed && size ? unitPrice(ed.price, size, pp, nameOn, numberOn) : 0;
 
   if (editions.length === 0)
     return <p className="font-sans text-sm text-muted">{t("Tiada koleksi lama untuk dijual buat masa ini.", "No past collection for sale right now.")}</p>;
@@ -435,13 +492,15 @@ function EditionConfig({
       edition_id: ed.id,
       size,
       qty,
-      name_print: namePrint,
+      print_name: printName.trim() || null,
+      print_number: printNumber.trim() || null,
       unit,
     });
     setEditionId("");
     setSize("");
     setQty(1);
-    setNamePrint(false);
+    setPrintName("");
+    setPrintNumber("");
   };
 
   return (
@@ -468,12 +527,7 @@ function EditionConfig({
           <input type="number" min={1} max={100} className={inputCls} value={qty} onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))} />
         </div>
       </div>
-      {prod?.name_print_enabled && (
-        <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
-          <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
-          {t("Cetak nama & nombor", "Print name & number")} (+{ringgit(Number(prod.name_print_fee) || 0)})
-        </label>
-      )}
+      <PrintInputs prod={prod} name={printName} setName={setPrintName} number={printNumber} setNumber={setPrintNumber} />
       <div className="flex items-center justify-between">
         <span className="font-sans text-sm text-muted">
           {t("Seunit", "Unit")}: <span className="font-semibold text-amber">{ringgit(unit)}</span>
@@ -609,7 +663,8 @@ function Checkout({
             <div className="min-w-0 flex-1">
               <p className="truncate font-sans text-sm font-medium text-paper">
                 {i.label} · {i.size} × {i.qty}
-                {i.name_print ? ` · ${t("cetak nama", "name print")}` : ""}
+                {i.print_name ? ` · ${t("Nama", "Name")}: ${i.print_name}` : ""}
+                {i.print_number ? ` · ${t("No", "No")}: ${i.print_number}` : ""}
               </p>
               <p className="font-sans text-xs text-muted">{ringgit(i.unit)} {t("seunit", "each")}</p>
             </div>

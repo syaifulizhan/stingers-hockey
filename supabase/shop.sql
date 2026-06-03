@@ -203,6 +203,10 @@ create trigger trg_notify_admins_new_order
 -- muslimah }. Hustle Gear: { standard }. URL gambar dalam bucket 'shop'.
 alter table public.shop_products add column if not exists size_charts jsonb not null default '{}'::jsonb;
 
+-- Cetak nombor (jersi sahaja; Hustle Gear tiada nombor).
+alter table public.shop_products add column if not exists number_print_enabled boolean not null default false;
+alter table public.shop_products add column if not exists number_print_fee numeric(8,2) not null default 0;
+
 -- Jenis legasi: 'jersi' atau 'hustle_gear' (satu jadual untuk dua legasi).
 alter table public.jersey_editions add column if not exists kind text not null default 'jersi';
 

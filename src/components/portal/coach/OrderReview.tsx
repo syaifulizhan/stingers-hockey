@@ -27,7 +27,8 @@ type Item = {
   edition_id?: string;
   size: string;
   qty: number;
-  name_print: boolean;
+  print_name?: string | null;
+  print_number?: string | null;
   unit: number;
 };
 type Order = {
@@ -86,10 +87,10 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
   // Senarai susun untuk edaran kepada pelanggan (tempahan disahkan).
   const downloadCustomerCsv = () => {
     const confirmed = orders.filter((o) => o.status === "disahkan");
-    const lines = [["Nama", "Telefon", "Item", "Saiz", "Kuantiti", "Cetak Nama"].map(csv).join(",")];
+    const lines = [["Nama", "Telefon", "Item", "Saiz", "Kuantiti", "Cetak Nama", "Cetak Nombor"].map(csv).join(",")];
     for (const o of confirmed) {
       for (const it of o.items ?? []) {
-        lines.push([o.full_name, o.phone, it.label, it.size, it.qty, it.name_print ? "Ya" : "-"].map(csv).join(","));
+        lines.push([o.full_name, o.phone, it.label, it.size, it.qty, it.print_name ?? "", it.print_number ?? ""].map(csv).join(","));
       }
     }
     downloadCsvFile(lines, `susun-pelanggan-${new Date().toISOString().slice(0, 10)}.csv`);
@@ -168,7 +169,8 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                     <li key={idx} className="flex justify-between gap-2 font-sans text-xs text-paper/90">
                       <span className="min-w-0 truncate">
                         {it.label} · {it.size} × {it.qty}
-                        {it.name_print ? " · cetak nama" : ""}
+                        {it.print_name ? ` · Nama: ${it.print_name}` : ""}
+                        {it.print_number ? ` · No: ${it.print_number}` : ""}
                       </span>
                       <span className="shrink-0 text-muted">{ringgit((Number(it.unit) || 0) * it.qty)}</span>
                     </li>
@@ -224,6 +226,7 @@ function Pivot({ orders }: { orders: Order[] }) {
   const rows = new Map<string, { reka: string; penutup: string; lengan: string; material: string; sizes: Record<string, number>; total: number }>();
   const sizeSet = new Set<string>();
   let namePrint = 0;
+  let numberPrint = 0;
   for (const o of confirmed) {
     for (const it of o.items ?? []) {
       if (it.category !== "jersi") continue;
@@ -233,7 +236,8 @@ function Pivot({ orders }: { orders: Order[] }) {
       row.total += it.qty;
       rows.set(k, row);
       sizeSet.add(it.size);
-      if (it.name_print) namePrint += it.qty;
+      if (it.print_name) namePrint += it.qty;
+      if (it.print_number) numberPrint += it.qty;
     }
   }
   const sizes = SIZE_ORDER.filter((s) => sizeSet.has(s));
@@ -250,6 +254,7 @@ function Pivot({ orders }: { orders: Order[] }) {
     lines.push(["GRAND TOTAL", "", "", "", ...sizes.map(() => ""), grand].join(","));
     lines.push("");
     lines.push(`Cetak nama: ${namePrint}`);
+    lines.push(`Cetak nombor: ${numberPrint}`);
     lines.push(`Jumlah (RM): ${grandRM.toFixed(2)}`);
     const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
@@ -325,23 +330,28 @@ function Pivot({ orders }: { orders: Order[] }) {
             </tbody>
           </table>
           <p className="mt-2 font-sans text-xs text-muted">
-            Cetak nama: <span className="text-paper">{namePrint}</span> · Jumlah (RM):{" "}
+            Cetak nama: <span className="text-paper">{namePrint}</span> · Cetak nombor:{" "}
+            <span className="text-paper">{numberPrint}</span> · Jumlah (RM):{" "}
             <span className="text-paper">{ringgit(grandRM)}</span>
           </p>
         </div>
       )}
 
       {/* Pivot Hustle Gear (ikut saiz) */}
-      {hSizes.length > 0 && (
-        <div className="mt-5 border-t border-amber/30 pt-4">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
-              Pivot Hustle Gear
-            </p>
+      <div className="mt-5 border-t border-amber/30 pt-4">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
+            Pivot Hustle Gear
+          </p>
+          {hSizes.length > 0 && (
             <button type="button" onClick={downloadHustleCsv} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber">
               <Download className="h-3.5 w-3.5" /> CSV
             </button>
-          </div>
+          )}
+        </div>
+        {hSizes.length === 0 ? (
+          <p className="font-sans text-sm text-muted">Tiada tempahan Hustle Gear disahkan lagi.</p>
+        ) : (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse font-sans text-xs">
               <thead>
@@ -358,8 +368,8 @@ function Pivot({ orders }: { orders: Order[] }) {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
