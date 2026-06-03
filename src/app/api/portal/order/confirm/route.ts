@@ -41,7 +41,9 @@ export async function POST(request: Request) {
   const proofUrl = (order as { proof_url: string | null }).proof_url;
   const fullName = (order as { full_name: string }).full_name;
 
-  // Jika ada bukti: pindah ke Drive DULU. Hanya clear storan bila Drive berjaya.
+  // Jika ada bukti: pindah ke Drive DULU. Hanya teruskan bila Drive berjaya —
+  // jadi bukti bayaran sentiasa terselamat sebelum apa-apa dipadam.
+  let driveUrl: string | null = null;
   if (proofUrl) {
     const drive = await pushImageToDrive({
       target: "tempahan",
@@ -55,20 +57,27 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    driveUrl = drive.fileUrl;
+  }
 
+  // Update DB DULU (rekod = sumber kebenaran). Bukti kini ada di Drive.
+  const { error: upErr } = await supabase
+    .from("shop_orders")
+    .update({ status: "disahkan", proof_url: null, proof_drive_url: driveUrl })
+    .eq("id", parsed.data.orderId);
+  if (upErr) {
+    // Bukti masih di Supabase + proof_url utuh → boleh cuba "Sah" semula.
+    console.error("[order/confirm] update gagal:", upErr.message);
+    return NextResponse.json({ ok: false, error: "Gagal kemas kini status." }, { status: 403 });
+  }
+
+  // Padam fail storan SELEPAS DB dikemas kini (best-effort; gagal = orphan
+  // kecil sahaja, bukti sudah selamat di Drive & rekod sudah betul).
+  if (proofUrl) {
     const i = proofUrl.indexOf("/shop/");
     if (i !== -1) {
       await supabase.storage.from("shop").remove([decodeURIComponent(proofUrl.slice(i + 6))]);
     }
-  }
-
-  const { error: upErr } = await supabase
-    .from("shop_orders")
-    .update({ status: "disahkan", proof_url: null })
-    .eq("id", parsed.data.orderId);
-  if (upErr) {
-    console.error("[order/confirm] update gagal:", upErr.message);
-    return NextResponse.json({ ok: false, error: "Gagal kemas kini status." }, { status: 403 });
   }
 
   return NextResponse.json({ ok: true });

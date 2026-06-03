@@ -169,6 +169,9 @@ create policy "coach delete shop" on storage.objects for delete to authenticated
 -- Status: 'menunggu_semakan' | 'disahkan' | 'ditolak'
 alter table public.shop_orders add column if not exists status text not null default 'menunggu_semakan';
 alter table public.shop_orders add column if not exists proof_url text;
+-- Pautan bukti yang diarkibkan ke Google Drive selepas "Sah" (proof_url di-null
+-- kan untuk jimat storan; pautan ini untuk jejak/rujukan jika ada pertikaian).
+alter table public.shop_orders add column if not exists proof_drive_url text;
 
 -- Tetapan DuitNow (QR + maklumat akaun) untuk dipapar ke pelanggan.
 alter table public.shop_settings add column if not exists duitnow_qr_url text;

@@ -322,7 +322,7 @@ export default function OrderShop({
           )}
           {tab === "hustle_gear" && <HustleConfig pp={hustlePP} hustle={hustle} onAdd={addItem} />}
           {tab === "jersi_lama" && (
-            <EditionConfig editions={editions} jersi={jersi} hustle={hustle} jersiPP={jersiPP} hustlePP={hustlePP} onAdd={addItem} />
+            <EditionConfig editions={editions} variants={variants} jersi={jersi} hustle={hustle} jersiPP={jersiPP} hustlePP={hustlePP} onAdd={addItem} />
           )}
           {tab === "pakej" && (
             <Checkout
@@ -520,6 +520,7 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
 /* ───────────────── Konfigurator Jersi Lama ───────────────── */
 function EditionConfig({
   editions,
+  variants,
   jersi,
   hustle,
   jersiPP,
@@ -527,6 +528,7 @@ function EditionConfig({
   onAdd,
 }: {
   editions: Edition[];
+  variants: Variant[];
   jersi?: Product;
   hustle?: Product;
   jersiPP: PriceProduct;
@@ -535,6 +537,8 @@ function EditionConfig({
 }) {
   const { t } = useLang();
   const [editionId, setEditionId] = useState("");
+  const [variantId, setVariantId] = useState("");
+  const [material, setMaterial] = useState("Biasa");
   const [size, setSize] = useState("");
   const [qtyStr, setQtyStr] = useState("1");
   const qty = Math.max(1, Number(qtyStr) || 1);
@@ -545,19 +549,42 @@ function EditionConfig({
   const isHustle = ed?.kind === "hustle_gear";
   const prod = isHustle ? hustle : jersi;
   const pp = isHustle ? hustlePP : jersiPP;
+  // Jersi lama mewarisi pilihan reka bentuk/material jersi terkini; cuma harga
+  // ASAS ikut edisi (harga individu variasi terkini diabaikan).
+  const useVariants = !isHustle && variants.length > 0;
+  const v = variants.find((x) => x.id === variantId);
   const nameOn = printName.trim() !== "";
   const numberOn = printNumber.trim() !== "";
-  const unit = ed && size ? unitPrice(ed.price, size, pp, nameOn, numberOn) : 0;
+  const lycraOn = !!v?.lycra_available;
+  const lycraFee = Number(jersi?.lycra_surcharge) || 0;
+  const edBase = Number(ed?.price) || 0;
+  // Harga asas edisi + caj reka bentuk + caj penutup (ikut jersi terkini).
+  const variantBase = (vv: Variant) =>
+    edBase +
+    (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
+    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0);
+  const base = useVariants
+    ? v
+      ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0)
+      : 0
+    : edBase;
+  const ready = !!ed && !!size && (!useVariants || !!v);
+  const unit = ready ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
   if (editions.length === 0)
     return <p className="font-sans text-sm text-muted">{t("Tiada koleksi lama untuk dijual buat masa ini.", "No past collection for sale right now.")}</p>;
 
   const add = () => {
-    if (!ed || !size) return;
+    if (!ready || !ed) return;
+    const baseLabel = `${ed.name}${ed.year ? ` ${ed.year}` : ""}`;
     onAdd({
       category: isHustle ? "hustle_lama" : "jersi_lama",
-      label: `${ed.name}${ed.year ? ` ${ed.year}` : ""}`,
+      label: useVariants && v ? `${baseLabel} · ${vLabel(v)}${lycraOn ? ` · ${material}` : ""}` : baseLabel,
       edition_id: ed.id,
+      reka_bentuk: useVariants && v ? v.reka_bentuk : null,
+      penutup: useVariants && v ? v.penutup : null,
+      lengan: useVariants && v ? v.lengan : null,
+      material: useVariants && lycraOn ? material : null,
       size,
       qty,
       print_name: printName.trim() || null,
@@ -565,6 +592,8 @@ function EditionConfig({
       unit,
     });
     setEditionId("");
+    setVariantId("");
+    setMaterial("Biasa");
     setSize("");
     setQtyStr("1");
     setPrintName("");
@@ -576,7 +605,11 @@ function EditionConfig({
       <ProductImage src={ed?.image_url} />
       <div>
         <label className={labelCls}>{t("Edisi", "Edition")}</label>
-        <select className={inputCls} value={editionId} onChange={(e) => setEditionId(e.target.value)}>
+        <select
+          className={inputCls}
+          value={editionId}
+          onChange={(e) => { setEditionId(e.target.value); setVariantId(""); setMaterial("Biasa"); }}
+        >
           <option value="">{t("Pilih edisi…", "Choose edition…")}</option>
           {editions.map((x) => (
             <option key={x.id} value={x.id}>
@@ -585,6 +618,35 @@ function EditionConfig({
           ))}
         </select>
       </div>
+
+      {useVariants && (
+        <>
+          <div>
+            <label className={labelCls}>{t("Jenis jersi", "Jersey type")}</label>
+            <select className={inputCls} value={variantId} onChange={(e) => { setVariantId(e.target.value); setMaterial("Biasa"); }}>
+              <option value="">{t("Pilih jenis…", "Choose type…")}</option>
+              {variants.map((x) => (
+                <option key={x.id} value={x.id}>
+                  {vLabel(x)} — {ringgit(variantBase(x))}
+                </option>
+              ))}
+            </select>
+          </div>
+          {lycraOn && (
+            <div>
+              <label className={labelCls}>{t("Material", "Material")}</label>
+              <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
+                {MATERIAL.map((m) => (
+                  <option key={m} value={m}>
+                    {m}{m === "Lycra" && lycraFee > 0 ? ` (+${ringgit(lycraFee)})` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </>
+      )}
+
       <SizeChartViewer charts={prod?.size_charts} keys={isHustle ? HUSTLE_CHARTS : JERSI_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -601,7 +663,7 @@ function EditionConfig({
         <span className="font-sans text-sm text-muted">
           {t("Seunit", "Unit")}: <span className="font-semibold text-amber">{ringgit(unit)}</span>
         </span>
-        <button type="button" onClick={add} disabled={!ed || !size} className={addBtn}>
+        <button type="button" onClick={add} disabled={!ready} className={addBtn}>
           <Plus className="h-4 w-4" /> {t("Tambah", "Add")}
         </button>
       </div>
