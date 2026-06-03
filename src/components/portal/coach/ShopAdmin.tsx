@@ -17,6 +17,38 @@ const sectionTitle = "display text-xl text-paper";
 const num = (v: unknown) => Number(v) || 0;
 const ringgit = (n: number) => `RM ${n.toFixed(2)}`;
 
+// Tindakan per-baris: busy & status SETEMPAT (bukan global) supaya satu baris
+// tak malapkan semua butang lain, dan maklum balas keluar tepat di sebelah pil.
+function useRowAction() {
+  const router = useRouter();
+  const [saving, setSaving] = useState(false);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const runRow = async (fn: () => Promise<void>) => {
+    setSaving(true);
+    setStatus(null);
+    try {
+      await fn();
+      setStatus({ ok: true, msg: "Disimpan ✓" });
+      router.refresh();
+    } catch (e) {
+      setStatus({ ok: false, msg: e instanceof Error ? e.message : "Gagal" });
+    } finally {
+      setSaving(false);
+    }
+  };
+  return { saving, status, runRow };
+}
+
+// Teks status kecil di sebelah butang.
+function RowStatus({ status }: { status: { ok: boolean; msg: string } | null }) {
+  if (!status) return null;
+  return (
+    <span className={`font-sans text-xs font-semibold ${status.ok ? "text-green-400" : "text-red-400"}`}>
+      {status.msg}
+    </span>
+  );
+}
+
 // Ciri berstruktur jersi (untuk pivot supplier yang kemas).
 const REKA_BENTUK = ["Bulat", "Berkolar Mandarin", "Berkolar Klasik", "Berkolar Biasa", "Muslimah"];
 const PENUTUP = ["Butang", "Zip", "Biasa"];
@@ -192,8 +224,6 @@ export default function ShopAdmin({
         title="Legasi Jersi (Jersi Lama)"
         subtitle="Set harga & tanda &ldquo;boleh beli&rdquo; untuk edisi cetak semula. Jersi semasa yang diarkib turun ke sini."
         uploadImage={uploadImage}
-        run={run}
-        busy={busy}
         supabase={supabase}
       />
       <EditionsEditor
@@ -202,8 +232,6 @@ export default function ShopAdmin({
         title="Legasi Hustle Gear"
         subtitle="Hustle Gear lama yang diarkib. Tanda &ldquo;boleh beli&rdquo; jika nak dijual."
         uploadImage={uploadImage}
-        run={run}
-        busy={busy}
         supabase={supabase}
       />
 
@@ -823,8 +851,6 @@ function EditionsEditor({
   title,
   subtitle,
   uploadImage,
-  run,
-  busy,
   supabase,
 }: {
   editions: Edition[];
@@ -832,8 +858,6 @@ function EditionsEditor({
   title: string;
   subtitle: string;
   uploadImage: (f: File) => Promise<string>;
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
   const items = editions.filter((e) => (e.kind ?? "jersi") === kind);
@@ -846,7 +870,7 @@ function EditionsEditor({
       ) : (
         <div className="flex flex-col gap-2">
           {items.map((ed) => (
-            <EditionRow key={ed.id} edition={ed} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
+            <EditionRow key={ed.id} edition={ed} uploadImage={uploadImage} supabase={supabase} />
           ))}
         </div>
       )}
@@ -857,21 +881,18 @@ function EditionsEditor({
 function EditionRow({
   edition,
   uploadImage,
-  run,
-  busy,
   supabase,
 }: {
   edition: Edition;
   uploadImage: (f: File) => Promise<string>;
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
+  const { saving, status, runRow } = useRowAction();
   const [price, setPrice] = useState(String(num(edition.price)));
   const [forSale, setForSale] = useState(edition.for_sale);
 
   const save = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase
         .from("jersey_editions")
         .update({ price: num(price), for_sale: forSale })
@@ -882,7 +903,7 @@ function EditionRow({
   const onImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    run(async () => {
+    runRow(async () => {
       const url = await uploadImage(f);
       const { error } = await supabase.from("jersey_editions").update({ image_url: url }).eq("id", edition.id);
       if (error) throw new Error(error.message);
@@ -891,7 +912,7 @@ function EditionRow({
 
   const del = () => {
     if (!window.confirm(`Padam "${edition.name}" dari legasi?`)) return;
-    run(async () => {
+    runRow(async () => {
       if (edition.image_url) {
         const i = edition.image_url.indexOf("/shop/");
         if (i !== -1) await supabase.storage.from("shop").remove([edition.image_url.slice(i + 6)]);
@@ -917,16 +938,17 @@ function EditionRow({
         <input type="checkbox" className="h-4 w-4 accent-amber" checked={forSale} onChange={(e) => setForSale(e.target.checked)} />
         Boleh beli
       </label>
-      <label className="cursor-pointer font-sans text-xs font-semibold text-amber hover:text-amber-deep">
+      <label className={`cursor-pointer font-sans text-xs font-semibold text-amber hover:text-amber-deep ${saving ? "pointer-events-none opacity-60" : ""}`}>
         Gambar
         <input type="file" accept="image/*" onChange={onImage} className="hidden" />
       </label>
-      <button type="button" onClick={save} disabled={busy} className="rounded-full bg-amber px-3 py-1.5 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
-        Simpan
+      <button type="button" onClick={save} disabled={saving} className="rounded-full bg-amber px-3 py-1.5 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
+        {saving ? "…" : "Simpan"}
       </button>
-      <button type="button" onClick={del} disabled={busy} aria-label="Padam" className="text-muted hover:text-amber disabled:opacity-50">
+      <button type="button" onClick={del} disabled={saving} aria-label="Padam" className="text-muted hover:text-amber disabled:opacity-50">
         <Trash2 className="h-4 w-4" />
       </button>
+      <RowStatus status={status} />
     </div>
   );
 }
@@ -971,15 +993,12 @@ const cleanDiscountReqs = (m: Record<string, string | number>) => {
 // Satu baris peraturan diskaun — boleh edit (bukan setakat toggle/padam).
 function DiscountRowItem({
   d,
-  run,
-  busy,
   supabase,
 }: {
   d: DiscountRow;
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
+  const { saving, status, runRow } = useRowAction();
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(d.label);
   const [percent, setPercent] = useState(String(num(d.percent)));
@@ -995,7 +1014,7 @@ function DiscountRowItem({
   };
 
   const save = () =>
-    run(async () => {
+    runRow(async () => {
       const requirements = cleanDiscountReqs(reqs);
       if (!label.trim() || num(percent) <= 0 || Object.keys(requirements).length === 0) {
         throw new Error("Isi nama, peratus, dan sekurang-kurangnya satu kategori (kuantiti > 0).");
@@ -1009,13 +1028,13 @@ function DiscountRowItem({
     });
 
   const toggle = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase.from("shop_discounts").update({ active: !d.active }).eq("id", d.id);
       if (error) throw new Error(error.message);
     });
 
   const del = () =>
-    run(async () => {
+    runRow(async () => {
       if (!window.confirm(`Padam diskaun "${d.label}"?`)) return;
       const { error } = await supabase.from("shop_discounts").delete().eq("id", d.id);
       if (error) throw new Error(error.message);
@@ -1050,18 +1069,19 @@ function DiscountRowItem({
             </div>
           ))}
         </div>
-        <div className="mt-3 flex gap-2">
-          <button type="button" onClick={save} disabled={busy} className={btnCls}>
-            Simpan
+        <div className="mt-3 flex items-center gap-2">
+          <button type="button" onClick={save} disabled={saving} className={btnCls}>
+            {saving ? "…" : "Simpan"}
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            disabled={busy}
+            disabled={saving}
             className="rounded-full border border-line px-5 py-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted hover:border-amber hover:text-amber disabled:opacity-60"
           >
             Batal
           </button>
+          <RowStatus status={status} />
         </div>
       </div>
     );
@@ -1076,10 +1096,11 @@ function DiscountRowItem({
         <p className="font-sans text-xs text-muted">{reqText(d.requirements)}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
+        <RowStatus status={status} />
         <button
           type="button"
           onClick={startEdit}
-          disabled={busy}
+          disabled={saving}
           className="rounded-full border border-line p-1.5 text-muted hover:border-amber hover:text-amber disabled:opacity-50"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -1087,7 +1108,7 @@ function DiscountRowItem({
         <button
           type="button"
           onClick={toggle}
-          disabled={busy}
+          disabled={saving}
           className="rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50"
         >
           {d.active ? "Aktif" : "Off"}
@@ -1095,7 +1116,7 @@ function DiscountRowItem({
         <button
           type="button"
           onClick={del}
-          disabled={busy}
+          disabled={saving}
           className="rounded-full border border-line p-1.5 text-muted hover:border-red-500/50 hover:text-red-400 disabled:opacity-50"
         >
           <Trash2 className="h-3.5 w-3.5" />
@@ -1153,7 +1174,7 @@ function DiscountsEditor({
       {discounts.length > 0 && (
         <div className="mb-4 flex flex-col gap-2">
           {discounts.map((d) => (
-            <DiscountRowItem key={d.id} d={d} run={run} busy={busy} supabase={supabase} />
+            <DiscountRowItem key={d.id} d={d} supabase={supabase} />
           ))}
         </div>
       )}
