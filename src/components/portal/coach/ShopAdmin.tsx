@@ -19,7 +19,7 @@ const ringgit = (n: number) => `RM ${n.toFixed(2)}`;
 
 // Ciri berstruktur jersi (untuk pivot supplier yang kemas).
 const REKA_BENTUK = ["Bulat", "Berkolar Mandarin", "Berkolar Klasik", "Berkolar Biasa", "Muslimah"];
-const PENUTUP = ["Butang", "Zip"];
+const PENUTUP = ["Butang", "Zip", "Biasa"];
 // Reka bentuk yang ada bukaan kolar (boleh Butang/Zip). Lain → tiada penutup.
 const CLOSURE_REKA = ["Bulat", "Berkolar Mandarin", "Berkolar Biasa"];
 const LENGAN = ["Pendek", "Panjang"];
@@ -47,6 +47,7 @@ type Product = {
   number_print_enabled?: boolean;
   number_print_fee?: number | string;
   size_charts?: Record<string, string> | null;
+  active?: boolean;
 };
 type Variant = {
   id: string;
@@ -362,9 +363,18 @@ function ProductSettings({
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
   const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
   const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
+  const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
   const [arkibName, setArkibName] = useState("");
   const [arkibYear, setArkibYear] = useState("");
+
+  const toggleActive = () =>
+    run(async () => {
+      const next = !active;
+      const { error } = await supabase.from("shop_products").update({ active: next }).eq("id", product.id);
+      if (error) throw new Error(error.message);
+      setActive(next);
+    });
 
   const save = () =>
     run(async () => {
@@ -428,7 +438,19 @@ function ProductSettings({
 
   return (
     <div className={cardCls}>
-      <h3 className={`${sectionTitle} mb-4`}>{title}</h3>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h3 className={sectionTitle}>{title}</h3>
+        <button
+          type="button"
+          onClick={toggleActive}
+          disabled={busy}
+          className={`rounded-full px-3 py-1 font-sans text-xs font-semibold transition-colors disabled:opacity-60 ${
+            active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+          }`}
+        >
+          {active ? "Aktif di kedai" : "Disembunyi"}
+        </button>
+      </div>
       <div className="flex flex-col gap-4 sm:flex-row">
         {/* Gambar */}
         <div className="sm:w-40">
