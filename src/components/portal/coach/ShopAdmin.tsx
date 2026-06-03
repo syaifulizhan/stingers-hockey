@@ -911,8 +911,16 @@ function EditionRow({
   };
 
   const del = () => {
-    if (!window.confirm(`Padam "${edition.name}" dari legasi?`)) return;
+    if (
+      !window.confirm(
+        `Padam SELURUH edisi "${edition.name}" dari senarai legasi?\n\n` +
+          `Ini buang entri & harga — BUKAN setakat gambar. Tindakan ini kekal.`
+      )
+    )
+      return;
     runRow(async () => {
+      // Hanya buang fail jika ia di storan 'shop' (gambar dimuat naik). Gambar
+      // statik /images/... tak disentuh.
       if (edition.image_url) {
         const i = edition.image_url.indexOf("/shop/");
         if (i !== -1) await supabase.storage.from("shop").remove([edition.image_url.slice(i + 6)]);
@@ -921,6 +929,17 @@ function EditionRow({
       if (error) throw new Error(error.message);
     });
   };
+
+  // Buang gambar SAHAJA (kosongkan slot), entri & harga kekal.
+  const clearImage = () =>
+    runRow(async () => {
+      if (edition.image_url) {
+        const i = edition.image_url.indexOf("/shop/");
+        if (i !== -1) await supabase.storage.from("shop").remove([edition.image_url.slice(i + 6)]);
+      }
+      const { error } = await supabase.from("jersey_editions").update({ image_url: null }).eq("id", edition.id);
+      if (error) throw new Error(error.message);
+    });
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
@@ -939,13 +958,18 @@ function EditionRow({
         Boleh beli
       </label>
       <label className={`cursor-pointer font-sans text-xs font-semibold text-amber hover:text-amber-deep ${saving ? "pointer-events-none opacity-60" : ""}`}>
-        Gambar
+        {edition.image_url ? "Tukar gambar" : "Gambar"}
         <input type="file" accept="image/*" onChange={onImage} className="hidden" />
       </label>
+      {edition.image_url && (
+        <button type="button" onClick={clearImage} disabled={saving} className="font-sans text-xs font-semibold text-muted hover:text-amber disabled:opacity-50">
+          Buang gambar
+        </button>
+      )}
       <button type="button" onClick={save} disabled={saving} className="rounded-full bg-amber px-3 py-1.5 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
         {saving ? "…" : "Simpan"}
       </button>
-      <button type="button" onClick={del} disabled={saving} aria-label="Padam" className="text-muted hover:text-amber disabled:opacity-50">
+      <button type="button" onClick={del} disabled={saving} aria-label="Padam edisi" title="Padam seluruh edisi" className="text-muted hover:text-red-400 disabled:opacity-50">
         <Trash2 className="h-4 w-4" />
       </button>
       <RowStatus status={status} />
