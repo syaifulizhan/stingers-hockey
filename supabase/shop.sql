@@ -207,8 +207,8 @@ alter table public.shop_products add column if not exists size_charts jsonb not 
 alter table public.shop_products add column if not exists number_print_enabled boolean not null default false;
 alter table public.shop_products add column if not exists number_print_fee numeric(8,2) not null default 0;
 
--- Caj material Lycra (+RM dari harga asas). Material jadi pilihan customer,
--- bukan sebahagian harga variasi.
+-- Material Lycra (pilihan customer +caj). lycra_enabled = tawar atau tidak.
+alter table public.shop_products add column if not exists lycra_enabled boolean not null default false;
 alter table public.shop_products add column if not exists lycra_surcharge numeric(8,2) not null default 0;
 
 -- Jenis legasi: 'jersi' atau 'hustle_gear' (satu jadual untuk dua legasi).

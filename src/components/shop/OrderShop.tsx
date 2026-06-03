@@ -25,6 +25,7 @@ type Product = {
   name_print_fee: number | string;
   number_print_enabled?: boolean;
   number_print_fee?: number | string;
+  lycra_enabled?: boolean;
   lycra_surcharge?: number | string;
   size_charts?: Record<string, string> | null;
 };
@@ -360,8 +361,9 @@ function JersiConfig({
   const v = variants.find((x) => x.id === variantId);
   const nameOn = printName.trim() !== "";
   const numberOn = printNumber.trim() !== "";
+  const lycraOn = !!jersi?.lycra_enabled;
   const lycraFee = Number(jersi?.lycra_surcharge) || 0;
-  const base = v ? Number(v.price) + (material === "Lycra" ? lycraFee : 0) : 0;
+  const base = v ? Number(v.price) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
   if (variants.length === 0)
@@ -371,11 +373,11 @@ function JersiConfig({
     if (!v || !size) return;
     onAdd({
       category: "jersi",
-      label: `${vLabel(v)} · ${material}`,
+      label: lycraOn ? `${vLabel(v)} · ${material}` : vLabel(v),
       reka_bentuk: v.reka_bentuk,
       penutup: v.penutup,
       lengan: v.lengan,
-      material,
+      material: lycraOn ? material : null,
       size,
       qty,
       print_name: printName.trim() || null,
@@ -404,17 +406,19 @@ function JersiConfig({
           ))}
         </select>
       </div>
-      <div>
-        <label className={labelCls}>{t("Material", "Material")}</label>
-        <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
-          {MATERIAL.map((m) => (
-            <option key={m} value={m}>
-              {m}
-              {m === "Lycra" && lycraFee > 0 ? ` (+${ringgit(lycraFee)})` : ""}
-            </option>
-          ))}
-        </select>
-      </div>
+      {lycraOn && (
+        <div>
+          <label className={labelCls}>{t("Material", "Material")}</label>
+          <select className={inputCls} value={material} onChange={(e) => setMaterial(e.target.value)}>
+            {MATERIAL.map((m) => (
+              <option key={m} value={m}>
+                {m}
+                {m === "Lycra" && lycraFee > 0 ? ` (+${ringgit(lycraFee)})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
       <SizeChartViewer charts={jersi?.size_charts} keys={JERSI_CHARTS} />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>

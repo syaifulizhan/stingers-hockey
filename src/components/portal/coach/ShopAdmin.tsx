@@ -45,6 +45,7 @@ type Product = {
   name_print_fee: number | string;
   number_print_enabled?: boolean;
   number_print_fee?: number | string;
+  lycra_enabled?: boolean;
   lycra_surcharge?: number | string;
   size_charts?: Record<string, string> | null;
   active?: boolean;
@@ -366,6 +367,7 @@ function ProductSettings({
   const [nameFee, setNameFee] = useState(String(num(product.name_print_fee)));
   const [numberPrint, setNumberPrint] = useState(product.number_print_enabled ?? false);
   const [numberFee, setNumberFee] = useState(String(num(product.number_print_fee ?? 0)));
+  const [lycraOn, setLycraOn] = useState(product.lycra_enabled ?? false);
   const [lycra, setLycra] = useState(String(num(product.lycra_surcharge ?? 0)));
   const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
@@ -392,7 +394,8 @@ function ProductSettings({
           name_print_fee: num(nameFee),
           number_print_enabled: allowNumber ? numberPrint : false,
           number_print_fee: allowNumber ? num(numberFee) : 0,
-          lycra_surcharge: allowLycra ? num(lycra) : 0,
+          lycra_enabled: allowLycra ? lycraOn : false,
+          lycra_surcharge: allowLycra && lycraOn ? num(lycra) : 0,
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -512,6 +515,12 @@ function ProductSettings({
             <input type="number" step="0.01" min="0" className={inputCls} value={kidDiscount} onChange={(e) => setKidDiscount(e.target.value)} />
           </div>
           {allowLycra && (
+            <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
+              <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraOn} onChange={(e) => setLycraOn(e.target.checked)} />
+              Tawar material Lycra
+            </label>
+          )}
+          {allowLycra && lycraOn && (
             <div>
               <label className={labelCls}>Caj material Lycra (+RM)</label>
               <input type="number" step="0.01" min="0" className={inputCls} value={lycra} onChange={(e) => setLycra(e.target.value)} />
