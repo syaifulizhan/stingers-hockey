@@ -21,16 +21,17 @@ const itemSchema = z.object({
   variant_id: z.string().uuid().nullable().optional(),
   edition_id: z.string().nullable().optional(),
   size: z.string().min(1).max(8),
-  qty: z.number().int().min(1).max(100),
+  qty: z.number().int().min(1).max(500),
   material: z.string().nullable().optional(),
   print_name: z.string().nullable().optional(),
   print_number: z.string().nullable().optional(),
 });
 
 const schema = z.object({
-  full_name: z.string().trim().min(3),
-  phone: z.string().trim().min(9),
-  email: z.string().trim().email().optional().or(z.literal("")).nullable(),
+  full_name: z.string().trim().min(3).max(120),
+  phone: z.string().trim().min(9).max(30),
+  // Email tak kritikal & tak disahkan di borang — jangan halang tempahan.
+  email: z.string().trim().max(200).optional().nullable().or(z.literal("")),
   delivery: z.enum(["pickup", "pos"]).default("pickup"),
   address: z.string().nullable().optional(),
   proof_url: z.string().url(),
