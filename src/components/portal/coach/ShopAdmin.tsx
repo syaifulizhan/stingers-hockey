@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Plus, ImagePlus, Pencil } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
@@ -23,6 +23,7 @@ function useRowAction() {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const clearStatus = useCallback(() => setStatus(null), []);
   const runRow = async (fn: () => Promise<void>) => {
     setSaving(true);
     setStatus(null);
@@ -36,14 +37,24 @@ function useRowAction() {
       setSaving(false);
     }
   };
-  return { saving, status, runRow };
+  return { saving, status, clearStatus, runRow };
 }
 
-// Teks status kecil di sebelah butang.
-function RowStatus({ status }: { status: { ok: boolean; msg: string } | null }) {
+// Teks status kecil di sebelah butang. Tick hijau pudar (animasi CSS) &
+// auto-hilang selepas ~2.6s; ralat merah kekal supaya sempat dibaca.
+function RowStatus({ status, clear }: { status: { ok: boolean; msg: string } | null; clear: () => void }) {
+  useEffect(() => {
+    if (!status || !status.ok) return;
+    const done = setTimeout(clear, 2600);
+    return () => clearTimeout(done);
+  }, [status, clear]);
   if (!status) return null;
   return (
-    <span className={`font-sans text-xs font-semibold ${status.ok ? "text-green-400" : "text-red-400"}`}>
+    <span
+      className={`font-sans text-xs font-semibold ${
+        status.ok ? "text-green-400 row-status-fade" : "text-red-400"
+      }`}
+    >
       {status.msg}
     </span>
   );
@@ -887,7 +898,7 @@ function EditionRow({
   uploadImage: (f: File) => Promise<string>;
   supabase: SB;
 }) {
-  const { saving, status, runRow } = useRowAction();
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [price, setPrice] = useState(String(num(edition.price)));
   const [forSale, setForSale] = useState(edition.for_sale);
 
@@ -972,7 +983,7 @@ function EditionRow({
       <button type="button" onClick={del} disabled={saving} aria-label="Padam edisi" title="Padam seluruh edisi" className="text-muted hover:text-red-400 disabled:opacity-50">
         <Trash2 className="h-4 w-4" />
       </button>
-      <RowStatus status={status} />
+      <RowStatus status={status} clear={clearStatus} />
     </div>
   );
 }
@@ -1022,7 +1033,7 @@ function DiscountRowItem({
   d: DiscountRow;
   supabase: SB;
 }) {
-  const { saving, status, runRow } = useRowAction();
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(d.label);
   const [percent, setPercent] = useState(String(num(d.percent)));
@@ -1105,7 +1116,7 @@ function DiscountRowItem({
           >
             Batal
           </button>
-          <RowStatus status={status} />
+          <RowStatus status={status} clear={clearStatus} />
         </div>
       </div>
     );
@@ -1120,7 +1131,7 @@ function DiscountRowItem({
         <p className="font-sans text-xs text-muted">{reqText(d.requirements)}</p>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
-        <RowStatus status={status} />
+        <RowStatus status={status} clear={clearStatus} />
         <button
           type="button"
           onClick={startEdit}
