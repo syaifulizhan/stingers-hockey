@@ -41,6 +41,43 @@ export function unitPrice(
 export const ringgit = (v: number) =>
   `RM ${v.toLocaleString("ms-MY", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// Muslimah sememangnya lengan panjang → kira caj lengan sebagai "Panjang".
+export const lenganKeyOf = (reka: string | null | undefined, lengan: string | null | undefined) =>
+  reka === "Muslimah" ? "Panjang" : lengan ?? "";
+
+export type SurchargeProduct = {
+  lycra_surcharge?: number | string;
+  reka_surcharges?: Record<string, number | string> | null;
+  penutup_surcharges?: Record<string, number | string> | null;
+  lengan_surcharges?: Record<string, number | string> | null;
+};
+export type VariantLite = {
+  price: number | string;
+  reka_bentuk: string | null;
+  penutup: string | null;
+  lengan: string | null;
+  lycra_available?: boolean;
+};
+
+// Harga asas satu variasi jersi (sebelum caj saiz & cetak): harga variasi (atau
+// baseOverride untuk jersi lama) + caj reka bentuk/penutup/lengan + Lycra (jika
+// dipilih & ditawarkan). Dikongsi paparan klien & kiraan server supaya identik.
+export function variantBasePrice(
+  v: VariantLite,
+  p: SurchargeProduct,
+  opts?: { baseOverride?: number; materialLycra?: boolean }
+): number {
+  const base = opts?.baseOverride ?? n(v.price);
+  const lycra = opts?.materialLycra && v.lycra_available ? n(p.lycra_surcharge) : 0;
+  return (
+    base +
+    n(p.reka_surcharges?.[v.reka_bentuk ?? ""]) +
+    n(p.penutup_surcharges?.[v.penutup ?? ""]) +
+    n(p.lengan_surcharges?.[lenganKeyOf(v.reka_bentuk, v.lengan)]) +
+    lycra
+  );
+}
+
 // Postage berasaskan berat. Sampai pos_base_kg = pos_base; lebih → +per kg.
 // Jadi beberapa helai yang masih dalam berat asas = sama harga dengan sehelai.
 export type PostageSettings = {
