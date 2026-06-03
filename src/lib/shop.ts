@@ -14,6 +14,8 @@ export type SizeSettings = {
 export type PriceProduct = SizeSettings & {
   name_print_enabled?: boolean;
   name_print_fee?: number | string;
+  number_print_enabled?: boolean;
+  number_print_fee?: number | string;
 };
 
 // Tambahan/potongan harga ikut saiz.
@@ -23,15 +25,17 @@ export function sizeDelta(size: string, p: SizeSettings): number {
   return 0;
 }
 
-// Harga seunit penuh untuk satu item.
+// Harga seunit penuh untuk satu item (+ cetak nama dan/atau nombor).
 export function unitPrice(
   base: number | string,
   size: string,
   p: PriceProduct,
-  namePrint: boolean
+  nameOn: boolean,
+  numberOn = false
 ): number {
-  const fee = namePrint && p.name_print_enabled ? n(p.name_print_fee) : 0;
-  return n(base) + sizeDelta(size, p) + fee;
+  const nameFee = nameOn && p.name_print_enabled ? n(p.name_print_fee) : 0;
+  const numFee = numberOn && p.number_print_enabled ? n(p.number_print_fee) : 0;
+  return n(base) + sizeDelta(size, p) + nameFee + numFee;
 }
 
 export const ringgit = (v: number) =>
