@@ -34,7 +34,7 @@ function XBrandIcon({ className }: { className?: string }) {
   );
 }
 
-export default function ShareButton({ title }: { title: string }) {
+export default function ShareButton({ title, heading }: { title: string; heading?: string }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -91,7 +91,7 @@ export default function ShareButton({ title }: { title: string }) {
           <div className="absolute left-0 z-50 mt-2 w-64 rounded-xl border border-line bg-bg-soft p-4 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-sans text-sm font-semibold text-paper">
-                {t("Kongsi berita", "Share article")}
+                {heading ?? t("Kongsi berita", "Share article")}
               </span>
               <button type="button" onClick={() => setOpen(false)} aria-label="Tutup" className="text-muted hover:text-paper">
                 <XIcon className="h-4 w-4" />

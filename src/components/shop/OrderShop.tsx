@@ -5,6 +5,7 @@ import { CheckCircle2, Trash2, Plus, Paperclip, X, Ruler } from "lucide-react";
 import { createPublicSupabase } from "@/lib/supabase/public";
 import { compressImage } from "@/lib/image-compress";
 import { useLang } from "@/lib/i18n";
+import ShareButton from "@/components/ShareButton";
 import {
   KID_SIZES,
   ADULT_SIZES,
@@ -15,6 +16,7 @@ import {
   bestDiscount,
   validDiscountRules,
   describeRequirements,
+  variantBasePrice,
   type PriceProduct,
   type DiscountRule,
 } from "@/lib/shop";
@@ -77,6 +79,7 @@ type CartItem = {
   lengan?: string | null;
   material?: string | null;
   edition_id?: string;
+  variant_id?: string | null;
   size: string;
   qty: number;
   print_name?: string | null;
@@ -92,9 +95,6 @@ const addBtn =
 
 const vLabel = (v: Variant) =>
   [v.reka_bentuk, v.penutup, v.lengan].filter(Boolean).join(" · ") || v.label;
-
-// Muslimah sememangnya lengan panjang → kira caj lengan sebagai "Panjang".
-const lenganKey = (v: Variant) => (v.reka_bentuk === "Muslimah" ? "Panjang" : v.lengan ?? "");
 
 function SizeSelect({
   value,
@@ -306,6 +306,12 @@ export default function OrderShop({
               "Pick items, add to your list, and confirm your order."
             )}
           </p>
+          <div className="mt-5 flex justify-center">
+            <ShareButton
+              title={t("Tempahan Pasukan Stingers Hockey", "Stingers Hockey Team Order")}
+              heading={t("Kongsi tempahan", "Share order page")}
+            />
+          </div>
         </div>
 
         {noProducts ? (
@@ -406,13 +412,9 @@ function JersiConfig({
   const numberOn = printNumber.trim() !== "";
   const lycraOn = !!v?.lycra_available;
   const lycraFee = Number(jersi?.lycra_surcharge) || 0;
-  // Harga asas variasi + caj reka bentuk + caj penutup (cth Mandarin +2, Zip +3).
-  const variantBase = (vv: Variant) =>
-    Number(vv.price) +
-    (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
-    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
-    (Number(jersi?.lengan_surcharges?.[lenganKey(vv)]) || 0);
-  const base = v ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
+  // Harga asas variasi + caj reka bentuk/penutup/lengan (cth Mandarin +2, Zip +3).
+  const variantBase = (vv: Variant) => variantBasePrice(vv, jersi ?? {});
+  const base = v ? variantBasePrice(v, jersi ?? {}, { materialLycra: lycraOn && material === "Lycra" }) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
   if (variants.length === 0)
@@ -427,6 +429,7 @@ function JersiConfig({
       penutup: v.penutup,
       lengan: v.lengan,
       material: lycraOn ? material : null,
+      variant_id: v.id,
       size,
       qty,
       print_name: printName.trim() || null,
@@ -578,15 +581,11 @@ function EditionConfig({
   const lycraOn = !!v?.lycra_available;
   const lycraFee = Number(jersi?.lycra_surcharge) || 0;
   const edBase = Number(ed?.price) || 0;
-  // Harga asas edisi + caj reka bentuk + caj penutup (ikut jersi terkini).
-  const variantBase = (vv: Variant) =>
-    edBase +
-    (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
-    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
-    (Number(jersi?.lengan_surcharges?.[lenganKey(vv)]) || 0);
+  // Harga asas EDISI + caj reka bentuk/penutup/lengan (ikut jersi terkini).
+  const variantBase = (vv: Variant) => variantBasePrice(vv, jersi ?? {}, { baseOverride: edBase });
   const base = useVariants
     ? v
-      ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0)
+      ? variantBasePrice(v, jersi ?? {}, { baseOverride: edBase, materialLycra: lycraOn && material === "Lycra" })
       : 0
     : edBase;
   const ready = !!ed && !!size && (!useVariants || !!v);
@@ -602,6 +601,7 @@ function EditionConfig({
       category: isHustle ? "hustle_lama" : "jersi_lama",
       label: useVariants && v ? `${baseLabel} · ${vLabel(v)}${lycraOn ? ` · ${material}` : ""}` : baseLabel,
       edition_id: ed.id,
+      variant_id: useVariants && v ? v.id : null,
       reka_bentuk: useVariants && v ? v.reka_bentuk : null,
       penutup: useVariants && v ? v.penutup : null,
       lengan: useVariants && v ? v.lengan : null,
@@ -768,22 +768,31 @@ function Checkout({
       if (upErr) throw new Error(t("Gagal muat naik bukti.", "Failed to upload proof."));
       const proofUrl = supabase.storage.from("shop").getPublicUrl(path).data.publicUrl;
 
-      const categories = new Set(cart.map((i) => i.category));
-      const { error: insErr } = await supabase.from("shop_orders").insert({
-        category: categories.size === 1 ? [...categories][0] : "pakej",
-        full_name: fullName.trim().toUpperCase(),
-        phone: phone.trim(),
-        email: email.trim() || null,
-        items: cart.map(({ key, ...rest }) => { void key; return rest; }),
-        subtotal,
-        discount,
-        total,
-        delivery: posOn ? delivery : "pickup",
-        postage,
-        address: posOn && delivery === "pos" ? address.trim() : null,
-        proof_url: proofUrl,
+      // Hantar RUJUKAN item sahaja — server kira semula harga & simpan.
+      const res = await fetch("/api/order/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: fullName.trim(),
+          phone: phone.trim(),
+          email: email.trim() || null,
+          delivery: posOn ? delivery : "pickup",
+          address: posOn && delivery === "pos" ? address.trim() : null,
+          proof_url: proofUrl,
+          items: cart.map((i) => ({
+            category: i.category,
+            variant_id: i.variant_id ?? null,
+            edition_id: i.edition_id ?? null,
+            size: i.size,
+            qty: i.qty,
+            material: i.material ?? null,
+            print_name: i.print_name ?? null,
+            print_number: i.print_number ?? null,
+          })),
+        }),
       });
-      if (insErr) throw new Error(insErr.message);
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!res.ok || !json.ok) throw new Error(json.error || t("Gagal hantar.", "Failed to submit."));
     } catch (e) {
       setError(e instanceof Error ? e.message : t("Gagal hantar.", "Failed to submit."));
       setSaving(false);
