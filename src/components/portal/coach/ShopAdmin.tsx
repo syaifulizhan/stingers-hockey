@@ -92,6 +92,7 @@ type Product = {
   lycra_surcharge?: number | string;
   reka_surcharges?: Record<string, number | string> | null;
   penutup_surcharges?: Record<string, number | string> | null;
+  lengan_surcharges?: Record<string, number | string> | null;
   size_charts?: Record<string, string> | null;
   active?: boolean;
 };
@@ -464,6 +465,7 @@ function ProductSettings({
   const [lycra, setLycra] = useState(String(num(product.lycra_surcharge ?? 0)));
   const [rekaS, setRekaS] = useState<Record<string, string>>(mapToStr(product.reka_surcharges));
   const [penutupS, setPenutupS] = useState<Record<string, string>>(mapToStr(product.penutup_surcharges));
+  const [lenganS, setLenganS] = useState<Record<string, string>>(mapToStr(product.lengan_surcharges));
   const [active, setActive] = useState(product.active ?? true);
   const [arkibOpen, setArkibOpen] = useState(false);
   const [arkibName, setArkibName] = useState("");
@@ -492,6 +494,7 @@ function ProductSettings({
           lycra_surcharge: allowLycra ? num(lycra) : 0,
           reka_surcharges: allowLycra ? strToNum(rekaS) : {},
           penutup_surcharges: allowLycra ? strToNum(penutupS) : {},
+          lengan_surcharges: allowLycra ? strToNum(lenganS) : {},
           updated_at: new Date().toISOString(),
         })
         .eq("id", product.id);
@@ -619,6 +622,7 @@ function ProductSettings({
           )}
           {allowLycra && <SurchargeEditor title="Caj Reka Bentuk (+RM)" values={REKA_BENTUK} map={rekaS} setMap={setRekaS} />}
           {allowLycra && <SurchargeEditor title="Caj Penutup (+RM)" values={PENUTUP} map={penutupS} setMap={setPenutupS} />}
+          {allowLycra && <SurchargeEditor title="Caj Lengan (+RM)" values={LENGAN} map={lenganS} setMap={setLenganS} />}
           <label className="flex items-center gap-2 font-sans text-sm text-paper/90">
             <input type="checkbox" className="h-4 w-4 accent-amber" checked={namePrint} onChange={(e) => setNamePrint(e.target.checked)} />
             Tawar cetak nama

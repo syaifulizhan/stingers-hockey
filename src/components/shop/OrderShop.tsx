@@ -34,6 +34,7 @@ type Product = {
   lycra_surcharge?: number | string;
   reka_surcharges?: Record<string, number | string> | null;
   penutup_surcharges?: Record<string, number | string> | null;
+  lengan_surcharges?: Record<string, number | string> | null;
   size_charts?: Record<string, string> | null;
 };
 
@@ -406,7 +407,8 @@ function JersiConfig({
   const variantBase = (vv: Variant) =>
     Number(vv.price) +
     (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
-    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0);
+    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
+    (Number(jersi?.lengan_surcharges?.[vv.lengan ?? ""]) || 0);
   const base = v ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
 
@@ -577,7 +579,8 @@ function EditionConfig({
   const variantBase = (vv: Variant) =>
     edBase +
     (Number(jersi?.reka_surcharges?.[vv.reka_bentuk ?? ""]) || 0) +
-    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0);
+    (Number(jersi?.penutup_surcharges?.[vv.penutup ?? ""]) || 0) +
+    (Number(jersi?.lengan_surcharges?.[vv.lengan ?? ""]) || 0);
   const base = useVariants
     ? v
       ? variantBase(v) + (lycraOn && material === "Lycra" ? lycraFee : 0)
