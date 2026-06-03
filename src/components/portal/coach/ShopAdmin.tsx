@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus, ImagePlus } from "lucide-react";
+import { Trash2, Plus, ImagePlus, Pencil } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
 
@@ -631,25 +631,13 @@ function VariantEditor({
       setPrice("");
     });
 
-  const del = (id: string) =>
-    run(async () => {
-      const { error } = await supabase.from("shop_variants").delete().eq("id", id);
-      if (error) throw new Error(error.message);
-    });
-
   return (
     <div className="mt-5 border-t border-line pt-4">
       <p className={labelCls}>Jenis jersi (variasi) — Reka Bentuk · Lengan + harga asas (material dipilih customer)</p>
       {variants.length > 0 && (
         <ul className="mb-3 flex flex-col gap-1.5">
           {variants.map((v) => (
-            <li key={v.id} className="flex items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
-              <span className="min-w-0 flex-1 truncate font-sans text-sm text-paper">{variantLabel(v)}</span>
-              <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(num(v.price))}</span>
-              <button type="button" onClick={() => del(v.id)} disabled={busy} aria-label="Padam" className="shrink-0 text-muted hover:text-amber">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </li>
+            <VariantRow key={v.id} v={v} run={run} busy={busy} supabase={supabase} />
           ))}
         </ul>
       )}
@@ -681,6 +669,81 @@ function VariantEditor({
         <Plus className="h-4 w-4" /> Tambah variasi
       </button>
     </div>
+  );
+}
+
+// Satu baris variasi — papar + edit (Reka Bentuk · Penutup · Lengan + harga).
+function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: boolean; supabase: SB }) {
+  const [editing, setEditing] = useState(false);
+  const [rekaBentuk, setRekaBentuk] = useState(v.reka_bentuk ?? "");
+  const [penutup, setPenutup] = useState(v.penutup ?? "");
+  const [lengan, setLengan] = useState(v.lengan ?? "");
+  const [price, setPrice] = useState(String(num(v.price)));
+  const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
+
+  const save = () =>
+    run(async () => {
+      if (!rekaBentuk || !lengan) throw new Error("Sila pilih Reka Bentuk & Lengan.");
+      if (hasClosure && !penutup) throw new Error("Sila pilih Penutup (Butang/Zip).");
+      const pen = hasClosure ? penutup : null;
+      const label = [rekaBentuk, pen, lengan].filter(Boolean).join(" · ");
+      const { error } = await supabase
+        .from("shop_variants")
+        .update({ reka_bentuk: rekaBentuk, penutup: pen, lengan, label, price: num(price) })
+        .eq("id", v.id);
+      if (error) throw new Error(error.message);
+      setEditing(false);
+    });
+
+  const del = () =>
+    run(async () => {
+      const { error } = await supabase.from("shop_variants").delete().eq("id", v.id);
+      if (error) throw new Error(error.message);
+    });
+
+  if (editing) {
+    return (
+      <li className="flex flex-col gap-2 rounded-lg border border-line bg-ink/40 p-2">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+          <select className={inputCls} value={rekaBentuk} onChange={(e) => { setRekaBentuk(e.target.value); if (!CLOSURE_REKA.includes(e.target.value)) setPenutup(""); }}>
+            <option value="">Reka Bentuk…</option>
+            {REKA_BENTUK.map((x) => <option key={x} value={x}>{x}</option>)}
+          </select>
+          {hasClosure && (
+            <select className={inputCls} value={penutup} onChange={(e) => setPenutup(e.target.value)}>
+              <option value="">Penutup…</option>
+              {PENUTUP.map((x) => <option key={x} value={x}>{x}</option>)}
+            </select>
+          )}
+          <select className={inputCls} value={lengan} onChange={(e) => setLengan(e.target.value)}>
+            <option value="">Lengan…</option>
+            {LENGAN.map((x) => <option key={x} value={x}>{x}</option>)}
+          </select>
+          <input type="number" step="0.01" min="0" className={inputCls} placeholder="Harga asas (RM)" value={price} onChange={(e) => setPrice(e.target.value)} />
+        </div>
+        <div className="flex gap-2">
+          <button type="button" onClick={save} disabled={busy} className="rounded-full bg-amber px-4 py-1 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
+            Simpan
+          </button>
+          <button type="button" onClick={() => setEditing(false)} className="rounded-full border border-line px-4 py-1 font-sans text-xs text-paper">
+            Batal
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
+      <span className="min-w-0 flex-1 truncate font-sans text-sm text-paper">{variantLabel(v)}</span>
+      <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(num(v.price))}</span>
+      <button type="button" onClick={() => setEditing(true)} disabled={busy} aria-label="Edit" className="shrink-0 text-muted hover:text-amber">
+        <Pencil className="h-4 w-4" />
+      </button>
+      <button type="button" onClick={del} disabled={busy} aria-label="Padam" className="shrink-0 text-muted hover:text-amber">
+        <Trash2 className="h-4 w-4" />
+      </button>
+    </li>
   );
 }
 
