@@ -60,21 +60,23 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
   const router = useRouter();
   const supabase = useSupabase();
   const [filter, setFilter] = useState("menunggu_semakan");
-  const [busy, setBusy] = useState(false);
+  // busyId = id tempahan yang sedang diproses → hanya kad itu malap (tiada
+  // kelipan pada kad lain).
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [showPivot, setShowPivot] = useState(false);
 
   const shown = orders.filter((o) => (filter === "semua" ? true : o.status === filter));
 
   const setStatus = async (id: string, status: string) => {
-    setBusy(true);
+    setBusyId(id);
     await supabase.from("shop_orders").update({ status }).eq("id", id);
-    setBusy(false);
+    setBusyId(null);
     router.refresh();
   };
 
   // "Sah" → pindah bukti ke Google Drive & clear storan (data tempahan kekal).
   const confirmOrder = async (id: string) => {
-    setBusy(true);
+    setBusyId(id);
     try {
       const res = await fetch("/api/portal/order/confirm", {
         method: "POST",
@@ -85,23 +87,23 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
       if (!res.ok || !json.ok) throw new Error(json.error || "Gagal sah tempahan.");
     } catch (err) {
       window.alert(err instanceof Error ? err.message : "Gagal sah tempahan.");
-      setBusy(false);
+      setBusyId(null);
       return;
     }
-    setBusy(false);
+    setBusyId(null);
     router.refresh();
   };
 
   const del = async (o: Order) => {
     if (!window.confirm(`Padam tempahan ${o.full_name}?`)) return;
-    setBusy(true);
+    setBusyId(o.id);
     if (o.proof_url) {
       const i = o.proof_url.indexOf("/shop/");
       if (i !== -1) await supabase.storage.from("shop").remove([o.proof_url.slice(i + 6)]);
     }
     await supabase.from("shop_orders").delete().eq("id", o.id);
     await supabase.from("notifications").delete().eq("ref_type", "order").eq("ref_id", o.id);
-    setBusy(false);
+    setBusyId(null);
     router.refresh();
   };
 
@@ -231,13 +233,13 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                 )}
 
                 <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-                  <button type="button" disabled={busy} onClick={() => confirmOrder(o.id)} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
+                  <button type="button" disabled={busyId === o.id} onClick={() => confirmOrder(o.id)} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
                     <Check className="h-3.5 w-3.5" /> Sah
                   </button>
-                  <button type="button" disabled={busy} onClick={() => setStatus(o.id, "ditolak")} className="inline-flex items-center gap-1 rounded-full border border-red-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+                  <button type="button" disabled={busyId === o.id} onClick={() => setStatus(o.id, "ditolak")} className="inline-flex items-center gap-1 rounded-full border border-red-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50">
                     <X className="h-3.5 w-3.5" /> Tolak
                   </button>
-                  <button type="button" disabled={busy} onClick={() => del(o)} className="ml-auto inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-muted hover:border-amber hover:text-amber disabled:opacity-50">
+                  <button type="button" disabled={busyId === o.id} onClick={() => del(o)} className="ml-auto inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-muted hover:border-amber hover:text-amber disabled:opacity-50">
                     <Trash2 className="h-3.5 w-3.5" /> Padam
                   </button>
                 </div>

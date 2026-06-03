@@ -152,10 +152,7 @@ export default function ShopAdmin({
   settings: Settings;
   discounts: Discount[];
 }) {
-  const router = useRouter();
   const supabase = useSupabase();
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
 
   const jersi = products.find((p) => p.id === "jersi");
   const hustle = products.find((p) => p.id === "hustle_gear");
@@ -173,27 +170,8 @@ export default function ShopAdmin({
     return supabase.storage.from("shop").getPublicUrl(path).data.publicUrl;
   };
 
-  const run = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    setErr(null);
-    try {
-      await fn();
-      router.refresh();
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Gagal menyimpan.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
   return (
     <div className="flex flex-col gap-6">
-      {err && (
-        <p className="rounded-lg border border-amber/50 bg-amber/10 px-4 py-2 font-sans text-sm text-amber">
-          {err}
-        </p>
-      )}
-
       {jersi && (
         <ProductSettings
           title="Jersi"
@@ -203,17 +181,9 @@ export default function ShopAdmin({
           allowNumber
           allowLycra
           uploadImage={uploadImage}
-          run={run}
-          busy={busy}
           supabase={supabase}
         >
-          <VariantEditor
-            productId="jersi"
-            variants={jersiVariants}
-            run={run}
-            busy={busy}
-            supabase={supabase}
-          />
+          <VariantEditor productId="jersi" variants={jersiVariants} supabase={supabase} />
         </ProductSettings>
       )}
 
@@ -224,8 +194,6 @@ export default function ShopAdmin({
           showBasePrice
           chartKeys={HUSTLE_CHARTS}
           uploadImage={uploadImage}
-          run={run}
-          busy={busy}
           supabase={supabase}
         />
       )}
@@ -247,17 +215,18 @@ export default function ShopAdmin({
         supabase={supabase}
       />
 
-      <DuitNowSettings settings={settings} uploadImage={uploadImage} run={run} busy={busy} supabase={supabase} />
+      <DuitNowSettings settings={settings} uploadImage={uploadImage} supabase={supabase} />
 
-      <PostageSettings settings={settings} run={run} busy={busy} supabase={supabase} />
+      <PostageSettings settings={settings} supabase={supabase} />
 
-      <DiscountsEditor discounts={discounts} run={run} busy={busy} supabase={supabase} />
+      <DiscountsEditor discounts={discounts} supabase={supabase} />
     </div>
   );
 }
 
 /* ───────────────────────── Penghantaran (Pos) ───────────────────────── */
-function PostageSettings({ settings, run, busy, supabase }: { settings: Settings; run: Run; busy: boolean; supabase: SB }) {
+function PostageSettings({ settings, supabase }: { settings: Settings; supabase: SB }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [enabled, setEnabled] = useState(settings.pos_enabled ?? false);
   const [weight, setWeight] = useState(String(num(settings.pos_weight_per_item_g ?? 250)));
   const [base, setBase] = useState(String(num(settings.pos_base ?? 8)));
@@ -265,7 +234,7 @@ function PostageSettings({ settings, run, busy, supabase }: { settings: Settings
   const [addPerKg, setAddPerKg] = useState(String(num(settings.pos_add_per_kg ?? 2)));
 
   const save = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase
         .from("shop_settings")
         .update({
@@ -307,9 +276,12 @@ function PostageSettings({ settings, run, busy, supabase }: { settings: Settings
           <input type="number" step="0.01" min="0" className={inputCls} value={addPerKg} onChange={(e) => setAddPerKg(e.target.value)} />
         </div>
       </div>
-      <button type="button" onClick={save} disabled={busy} className={`${btnCls} mt-4`}>
-        Simpan Penghantaran
-      </button>
+      <div className="mt-4 flex items-center gap-3">
+        <button type="button" onClick={save} disabled={saving} className={btnCls}>
+          {saving ? "…" : "Simpan Penghantaran"}
+        </button>
+        <RowStatus status={status} clear={clearStatus} />
+      </div>
     </div>
   );
 }
@@ -318,20 +290,17 @@ function PostageSettings({ settings, run, busy, supabase }: { settings: Settings
 function DuitNowSettings({
   settings,
   uploadImage,
-  run,
-  busy,
   supabase,
 }: {
   settings: Settings;
   uploadImage: (f: File) => Promise<string>;
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [info, setInfo] = useState(settings.info_akaun ?? "");
 
   const saveInfo = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase.from("shop_settings").update({ info_akaun: info }).eq("id", 1);
       if (error) throw new Error(error.message);
     });
@@ -339,7 +308,7 @@ function DuitNowSettings({
   const onQr = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    run(async () => {
+    runRow(async () => {
       const url = await uploadImage(f);
       const { error } = await supabase.from("shop_settings").update({ duitnow_qr_url: url }).eq("id", 1);
       if (error) throw new Error(error.message);
@@ -376,9 +345,12 @@ function DuitNowSettings({
             value={info}
             onChange={(e) => setInfo(e.target.value)}
           />
-          <button type="button" onClick={saveInfo} disabled={busy} className={`${btnCls} mt-3`}>
-            Simpan Maklumat
-          </button>
+          <div className="mt-3 flex items-center gap-3">
+            <button type="button" onClick={saveInfo} disabled={saving} className={btnCls}>
+              {saving ? "…" : "Simpan Maklumat"}
+            </button>
+            <RowStatus status={status} clear={clearStatus} />
+          </div>
         </div>
       </div>
     </div>
@@ -387,7 +359,6 @@ function DuitNowSettings({
 
 /* ───────────────────────── Jersi / Hustle Gear ───────────────────────── */
 type SB = ReturnType<typeof useSupabase>;
-type Run = (fn: () => Promise<void>) => Promise<void>;
 
 // Peta caj ↔ string (untuk input). Hanya nilai > 0 disimpan.
 const mapToStr = (m?: Record<string, number | string> | null) =>
@@ -438,8 +409,6 @@ function ProductSettings({
   allowNumber = false,
   allowLycra = false,
   uploadImage,
-  run,
-  busy,
   supabase,
   children,
 }: {
@@ -450,11 +419,10 @@ function ProductSettings({
   allowNumber?: boolean;
   allowLycra?: boolean;
   uploadImage: (f: File) => Promise<string>;
-  run: Run;
-  busy: boolean;
   supabase: SB;
   children?: React.ReactNode;
 }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [basePrice, setBasePrice] = useState(String(num(product.base_price)));
   const [bigSurcharge, setBigSurcharge] = useState(String(num(product.big_size_surcharge)));
   const [kidDiscount, setKidDiscount] = useState(String(num(product.kid_discount)));
@@ -472,7 +440,7 @@ function ProductSettings({
   const [arkibYear, setArkibYear] = useState("");
 
   const toggleActive = () =>
-    run(async () => {
+    runRow(async () => {
       const next = !active;
       const { error } = await supabase.from("shop_products").update({ active: next }).eq("id", product.id);
       if (error) throw new Error(error.message);
@@ -480,7 +448,7 @@ function ProductSettings({
     });
 
   const save = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase
         .from("shop_products")
         .update({
@@ -504,7 +472,7 @@ function ProductSettings({
   const onImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    run(async () => {
+    runRow(async () => {
       const url = await uploadImage(f);
       const { error } = await supabase.from("shop_products").update({ image_url: url }).eq("id", product.id);
       if (error) throw new Error(error.message);
@@ -514,7 +482,7 @@ function ProductSettings({
   const onChart = (key: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    run(async () => {
+    runRow(async () => {
       const url = await uploadImage(f);
       const charts = { ...(product.size_charts ?? {}), [key]: url };
       const { error } = await supabase.from("shop_products").update({ size_charts: charts }).eq("id", product.id);
@@ -524,7 +492,7 @@ function ProductSettings({
 
   // Arkib gambar semasa → legasi, kosongkan slot (variasi/harga kekal).
   const arkib = () =>
-    run(async () => {
+    runRow(async () => {
       if (!product.image_url) return;
       if (arkibName.trim() === "") throw new Error("Sila masukkan nama untuk legasi.");
       const { error: insErr } = await supabase.from("jersey_editions").insert({
@@ -550,7 +518,7 @@ function ProductSettings({
         <button
           type="button"
           onClick={toggleActive}
-          disabled={busy}
+          disabled={saving}
           className={`rounded-full px-3 py-1 font-sans text-xs font-semibold transition-colors disabled:opacity-60 ${
             active ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
           }`}
@@ -584,7 +552,7 @@ function ProductSettings({
                   <input className={`${inputCls} text-xs`} placeholder="Nama (cth Ventralis ed.)" value={arkibName} onChange={(e) => setArkibName(e.target.value)} />
                   <input className={`${inputCls} text-xs`} placeholder="Tahun (cth 2025)" value={arkibYear} onChange={(e) => setArkibYear(e.target.value)} />
                   <div className="flex gap-1.5">
-                    <button type="button" onClick={arkib} disabled={busy} className="flex-1 rounded-full bg-amber px-2 py-1 font-sans text-[0.7rem] font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
+                    <button type="button" onClick={arkib} disabled={saving} className="flex-1 rounded-full bg-amber px-2 py-1 font-sans text-[0.7rem] font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
                       Arkib
                     </button>
                     <button type="button" onClick={() => setArkibOpen(false)} className="rounded-full border border-line px-2 py-1 font-sans text-[0.7rem] text-paper">
@@ -678,9 +646,12 @@ function ProductSettings({
 
       {children}
 
-      <button type="button" onClick={save} disabled={busy} className={`${btnCls} mt-4`}>
-        Simpan {title}
-      </button>
+      <div className="mt-4 flex items-center gap-3">
+        <button type="button" onClick={save} disabled={saving} className={btnCls}>
+          {saving ? "…" : `Simpan ${title}`}
+        </button>
+        <RowStatus status={status} clear={clearStatus} />
+      </div>
     </div>
   );
 }
@@ -689,16 +660,13 @@ function ProductSettings({
 function VariantEditor({
   productId,
   variants,
-  run,
-  busy,
   supabase,
 }: {
   productId: string;
   variants: Variant[];
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [rekaBentuk, setRekaBentuk] = useState("");
   const [penutup, setPenutup] = useState("");
   const [lengan, setLengan] = useState("");
@@ -707,7 +675,7 @@ function VariantEditor({
   const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const add = () =>
-    run(async () => {
+    runRow(async () => {
       if (!rekaBentuk || !lengan) throw new Error("Sila pilih Reka Bentuk & Lengan.");
       if (hasClosure && !penutup) throw new Error("Sila pilih Penutup (Butang/Zip).");
       const pen = hasClosure ? penutup : null;
@@ -737,7 +705,7 @@ function VariantEditor({
       {variants.length > 0 && (
         <ul className="mb-3 flex flex-col gap-1.5">
           {variants.map((v) => (
-            <VariantRow key={v.id} v={v} run={run} busy={busy} supabase={supabase} />
+            <VariantRow key={v.id} v={v} supabase={supabase} />
           ))}
         </ul>
       )}
@@ -769,15 +737,19 @@ function VariantEditor({
         <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraAvail} onChange={(e) => setLycraAvail(e.target.checked)} />
         Tawar Lycra untuk variasi ini
       </label>
-      <button type="button" onClick={add} disabled={busy} className="mt-2 inline-flex items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
-        <Plus className="h-4 w-4" /> Tambah variasi
-      </button>
+      <div className="mt-2 flex items-center gap-3">
+        <button type="button" onClick={add} disabled={saving} className="inline-flex items-center justify-center gap-1 rounded-lg border border-line px-3 py-2 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
+          <Plus className="h-4 w-4" /> Tambah variasi
+        </button>
+        <RowStatus status={status} clear={clearStatus} />
+      </div>
     </div>
   );
 }
 
 // Satu baris variasi — papar + edit (Reka Bentuk · Penutup · Lengan + harga).
-function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: boolean; supabase: SB }) {
+function VariantRow({ v, supabase }: { v: Variant; supabase: SB }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   const [editing, setEditing] = useState(false);
   const [rekaBentuk, setRekaBentuk] = useState(v.reka_bentuk ?? "");
   const [penutup, setPenutup] = useState(v.penutup ?? "");
@@ -787,7 +759,7 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
   const hasClosure = CLOSURE_REKA.includes(rekaBentuk);
 
   const save = () =>
-    run(async () => {
+    runRow(async () => {
       if (!rekaBentuk || !lengan) throw new Error("Sila pilih Reka Bentuk & Lengan.");
       if (hasClosure && !penutup) throw new Error("Sila pilih Penutup (Butang/Zip).");
       const pen = hasClosure ? penutup : null;
@@ -801,7 +773,7 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
     });
 
   const del = () =>
-    run(async () => {
+    runRow(async () => {
       const { error } = await supabase.from("shop_variants").delete().eq("id", v.id);
       if (error) throw new Error(error.message);
     });
@@ -830,13 +802,14 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
           <input type="checkbox" className="h-4 w-4 accent-amber" checked={lycraAvail} onChange={(e) => setLycraAvail(e.target.checked)} />
           Tawar Lycra untuk variasi ini
         </label>
-        <div className="flex gap-2">
-          <button type="button" onClick={save} disabled={busy} className="rounded-full bg-amber px-4 py-1 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
-            Simpan
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={save} disabled={saving} className="rounded-full bg-amber px-4 py-1 font-sans text-xs font-semibold text-ink hover:bg-amber-deep disabled:opacity-60">
+            {saving ? "…" : "Simpan"}
           </button>
           <button type="button" onClick={() => setEditing(false)} className="rounded-full border border-line px-4 py-1 font-sans text-xs text-paper">
             Batal
           </button>
+          <RowStatus status={status} clear={clearStatus} />
         </div>
       </li>
     );
@@ -849,10 +822,11 @@ function VariantRow({ v, run, busy, supabase }: { v: Variant; run: Run; busy: bo
         <span className="shrink-0 rounded-full bg-amber/20 px-1.5 py-0.5 font-sans text-[0.6rem] font-bold uppercase text-amber">Lycra</span>
       )}
       <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(num(v.price))}</span>
-      <button type="button" onClick={() => setEditing(true)} disabled={busy} aria-label="Edit" className="shrink-0 text-muted hover:text-amber">
+      <RowStatus status={status} clear={clearStatus} />
+      <button type="button" onClick={() => setEditing(true)} disabled={saving} aria-label="Edit" className="shrink-0 text-muted hover:text-amber">
         <Pencil className="h-4 w-4" />
       </button>
-      <button type="button" onClick={del} disabled={busy} aria-label="Padam" className="shrink-0 text-muted hover:text-amber">
+      <button type="button" onClick={del} disabled={saving} aria-label="Padam" className="shrink-0 text-muted hover:text-amber">
         <Trash2 className="h-4 w-4" />
       </button>
     </li>
@@ -1167,15 +1141,12 @@ function DiscountRowItem({
 
 function DiscountsEditor({
   discounts,
-  run,
-  busy,
   supabase,
 }: {
   discounts: DiscountRow[];
-  run: Run;
-  busy: boolean;
   supabase: SB;
 }) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
   // Borang tambah peraturan baharu.
   const [label, setLabel] = useState("");
   const [percent, setPercent] = useState("");
@@ -1184,7 +1155,7 @@ function DiscountsEditor({
   const setReq = (cat: string, val: string) => setReqs((m) => ({ ...m, [cat]: val }));
 
   const add = () =>
-    run(async () => {
+    runRow(async () => {
       const requirements = cleanDiscountReqs(reqs);
       if (!label.trim() || num(percent) <= 0 || Object.keys(requirements).length === 0) {
         throw new Error("Isi nama, peratus, dan sekurang-kurangnya satu kategori (kuantiti > 0).");
@@ -1246,9 +1217,12 @@ function DiscountsEditor({
             </div>
           ))}
         </div>
-        <button type="button" onClick={add} disabled={busy} className={`${btnCls} mt-4 inline-flex items-center gap-1.5`}>
-          <Plus className="h-3.5 w-3.5" /> Tambah Diskaun
-        </button>
+        <div className="mt-4 flex items-center gap-3">
+          <button type="button" onClick={add} disabled={saving} className={`${btnCls} inline-flex items-center gap-1.5`}>
+            <Plus className="h-3.5 w-3.5" /> Tambah Diskaun
+          </button>
+          <RowStatus status={status} clear={clearStatus} />
+        </div>
       </div>
     </div>
   );
