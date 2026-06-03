@@ -8,6 +8,7 @@ import { useLang } from "@/lib/i18n";
 import {
   KID_SIZES,
   ADULT_SIZES,
+  BIG_SIZES,
   unitPrice,
   ringgit,
   computePostage,
@@ -46,6 +47,7 @@ type Variant = {
   penutup: string | null;
   lengan: string | null;
   material: string | null;
+  lycra_available?: boolean;
 };
 type Edition = { id: string; name: string; year: string | null; price: number | string; kind: string | null; image_url?: string | null };
 type Settings = {
@@ -84,16 +86,35 @@ const addBtn =
 const vLabel = (v: Variant) =>
   [v.reka_bentuk, v.penutup, v.lengan].filter(Boolean).join(" · ") || v.label;
 
-function SizeSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SizeSelect({
+  value,
+  onChange,
+  kidDiscount = 0,
+  bigSurcharge = 0,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  kidDiscount?: number;
+  bigSurcharge?: number;
+}) {
   const { t } = useLang();
+  const kidLabel =
+    kidDiscount > 0
+      ? `${t("Saiz Kanak", "Kids")} (−${ringgit(kidDiscount)})`
+      : t("Saiz Kanak (24–32)", "Kids (24–32)");
   return (
     <select className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
       <option value="">{t("Pilih saiz…", "Choose size…")}</option>
-      <optgroup label={t("Saiz Kanak (24–32)", "Kids (24–32)")}>
+      <optgroup label={kidLabel}>
         {KID_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
       </optgroup>
       <optgroup label={t("Saiz Dewasa", "Adult")}>
-        {ADULT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
+        {ADULT_SIZES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+            {BIG_SIZES.includes(s) && bigSurcharge > 0 ? ` (+${ringgit(bigSurcharge)})` : ""}
+          </option>
+        ))}
       </optgroup>
     </select>
   );
@@ -361,7 +382,7 @@ function JersiConfig({
   const v = variants.find((x) => x.id === variantId);
   const nameOn = printName.trim() !== "";
   const numberOn = printNumber.trim() !== "";
-  const lycraOn = !!jersi?.lycra_enabled;
+  const lycraOn = !!v?.lycra_available;
   const lycraFee = Number(jersi?.lycra_surcharge) || 0;
   const base = v ? Number(v.price) + (lycraOn && material === "Lycra" ? lycraFee : 0) : 0;
   const unit = v && size ? unitPrice(base, size, pp, nameOn, numberOn) : 0;
@@ -397,7 +418,7 @@ function JersiConfig({
       <ProductImage src={jersi?.image_url} />
       <div>
         <label className={labelCls}>{t("Jenis jersi", "Jersey type")}</label>
-        <select className={inputCls} value={variantId} onChange={(e) => setVariantId(e.target.value)}>
+        <select className={inputCls} value={variantId} onChange={(e) => { setVariantId(e.target.value); setMaterial("Biasa"); }}>
           <option value="">{t("Pilih jenis…", "Choose type…")}</option>
           {variants.map((x) => (
             <option key={x.id} value={x.id}>
@@ -423,7 +444,7 @@ function JersiConfig({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
-          <SizeSelect value={size} onChange={setSize} />
+          <SizeSelect value={size} onChange={setSize} kidDiscount={Number(pp.kid_discount) || 0} bigSurcharge={Number(pp.big_size_surcharge) || 0} />
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
@@ -468,7 +489,7 @@ function HustleConfig({ pp, hustle, onAdd }: { pp: PriceProduct; hustle?: Produc
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
-          <SizeSelect value={size} onChange={setSize} />
+          <SizeSelect value={size} onChange={setSize} kidDiscount={Number(pp.kid_discount) || 0} bigSurcharge={Number(pp.big_size_surcharge) || 0} />
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
@@ -560,7 +581,7 @@ function EditionConfig({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className={labelCls}>{t("Saiz", "Size")}</label>
-          <SizeSelect value={size} onChange={setSize} />
+          <SizeSelect value={size} onChange={setSize} kidDiscount={Number(pp.kid_discount) || 0} bigSurcharge={Number(pp.big_size_surcharge) || 0} />
         </div>
         <div>
           <label className={labelCls}>{t("Kuantiti", "Quantity")}</label>
