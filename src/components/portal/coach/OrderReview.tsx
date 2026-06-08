@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Trash2, Table2, Download } from "lucide-react";
+import { Check, X, Trash2, Table2, Download, Pencil } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { KID_SIZES, ADULT_SIZES, ringgit } from "@/lib/shop";
 
@@ -63,6 +63,8 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
   // busyId = id tempahan yang sedang diproses → hanya kad itu malap (tiada
   // kelipan pada kad lain).
   const [busyId, setBusyId] = useState<string | null>(null);
+  // fadingId = id tempahan yang Sah/Tolak baru ditekan → butang malap & lenyap.
+  const [fadingId, setFadingId] = useState<string | null>(null);
   const [showPivot, setShowPivot] = useState(false);
 
   const shown = orders.filter((o) => (filter === "semua" ? true : o.status === filter));
@@ -232,13 +234,21 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                   </a>
                 )}
 
-                <div className="mt-3 flex flex-wrap gap-2 border-t border-line pt-3">
-                  <button type="button" disabled={busyId === o.id} onClick={() => confirmOrder(o.id)} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
-                    <Check className="h-3.5 w-3.5" /> Sah
-                  </button>
-                  <button type="button" disabled={busyId === o.id} onClick={() => setStatus(o.id, "ditolak")} className="inline-flex items-center gap-1 rounded-full border border-red-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50">
-                    <X className="h-3.5 w-3.5" /> Tolak
-                  </button>
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3">
+                  {o.status === "menunggu_semakan" ? (
+                    <div className={`flex flex-wrap gap-2 transition-opacity duration-300 ${fadingId === o.id ? "pointer-events-none opacity-0" : "opacity-100"}`}>
+                      <button type="button" disabled={busyId === o.id} onClick={() => { setFadingId(o.id); confirmOrder(o.id); }} className="inline-flex items-center gap-1 rounded-full border border-green-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-green-400 hover:bg-green-500/10 disabled:opacity-50">
+                        <Check className="h-3.5 w-3.5" /> Sah
+                      </button>
+                      <button type="button" disabled={busyId === o.id} onClick={() => { setFadingId(o.id); setStatus(o.id, "ditolak"); }} className="inline-flex items-center gap-1 rounded-full border border-red-500/50 px-3 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-50">
+                        <X className="h-3.5 w-3.5" /> Tolak
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" disabled={busyId === o.id} onClick={() => { setFadingId(null); setStatus(o.id, "menunggu_semakan"); }} className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber disabled:opacity-50">
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </button>
+                  )}
                   <button type="button" disabled={busyId === o.id} onClick={() => del(o)} className="ml-auto inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-muted hover:border-amber hover:text-amber disabled:opacity-50">
                     <Trash2 className="h-3.5 w-3.5" /> Padam
                   </button>
