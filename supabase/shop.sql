@@ -258,3 +258,32 @@ drop policy if exists shop_discounts_write on public.shop_discounts;
 create policy shop_discounts_write on public.shop_discounts for all to authenticated
   using (public.is_admin()) with check (public.is_admin());
 grant select on public.shop_discounts to anon;
+
+-- ============================================================================
+-- SOFT-DELETE TEMPAHAN (Tong Sampah 3 hari)
+-- Padam tempahan = tanda `deleted_at` (bukan buang terus). Coach boleh tarik
+-- balik dalam tempoh hormat; selepas 3 hari, pg_cron buang kekal.
+-- (Kebenaran update/delete sedia ada — shop_orders_update/delete = is_admin.)
+-- ============================================================================
+alter table public.shop_orders add column if not exists deleted_at timestamptz;
+create index if not exists shop_orders_deleted_at_idx on public.shop_orders (deleted_at);
+
+-- Buang kekal selepas 3 hari, automatik dalam DB (tak perlu service key).
+-- pg_cron sudah tersedia di Supabase — cuma perlu diaktifkan sekali.
+create extension if not exists pg_cron;
+
+do $$
+begin
+  if exists (select 1 from cron.job where jobname = 'purge-deleted-shop-orders') then
+    perform cron.unschedule('purge-deleted-shop-orders');
+  end if;
+end $$;
+
+-- Jalankan 7 pagi setiap hari (selepas keep-alive 6 pagi).
+select cron.schedule(
+  'purge-deleted-shop-orders',
+  '0 7 * * *',
+  $$delete from public.shop_orders
+      where deleted_at is not null
+        and deleted_at < now() - interval '3 days'$$
+);
