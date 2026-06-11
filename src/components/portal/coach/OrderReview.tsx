@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X, Trash2, Table2, Download, Pencil } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
@@ -67,12 +67,35 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
   const [fadingId, setFadingId] = useState<string | null>(null);
   const [showPivot, setShowPivot] = useState(false);
 
-  const shown = orders.filter((o) => (filter === "semua" ? true : o.status === filter));
+  // Lapisan optimistik. router.refresh() menyegarkan data pelayan, tetapi paparan
+  // terbitan (Pivot, Senarai Susun, senarai kad) MESTI berubah serta-merta selepas
+  // tindakan — jangan tunggu data pelayan tiba. Padaman & tukar status direkod di
+  // sini dan ditindih atas prop `orders`, supaya SEMUA paparan kekal konsisten
+  // (elak pivot/susun masih kira tempahan yang baru dipadam). Tindihan ini hanya
+  // hidup dalam sesi & dikosongkan bila halaman dimuat semula; setiap laluan tukar
+  // status mengemas kini tindihan, jadi ia tak pernah jadi basi.
+  const [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set());
+  const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
+
+  const effectiveOrders = useMemo(
+    () =>
+      orders
+        .filter((o) => !removedIds.has(o.id))
+        .map((o) => (statusOverride[o.id] ? { ...o, status: statusOverride[o.id] } : o)),
+    [orders, removedIds, statusOverride]
+  );
+
+  const shown = effectiveOrders.filter((o) => (filter === "semua" ? true : o.status === filter));
 
   const setStatus = async (id: string, status: string) => {
     setBusyId(id);
-    await supabase.from("shop_orders").update({ status }).eq("id", id);
+    const { error } = await supabase.from("shop_orders").update({ status }).eq("id", id);
     setBusyId(null);
+    if (error) {
+      window.alert("Gagal kemas kini status.");
+      return;
+    }
+    setStatusOverride((m) => ({ ...m, [id]: status }));
     router.refresh();
   };
 
@@ -93,6 +116,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
       return;
     }
     setBusyId(null);
+    setStatusOverride((m) => ({ ...m, [id]: "disahkan" }));
     router.refresh();
   };
 
@@ -103,15 +127,21 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
       const i = o.proof_url.indexOf("/shop/");
       if (i !== -1) await supabase.storage.from("shop").remove([o.proof_url.slice(i + 6)]);
     }
-    await supabase.from("shop_orders").delete().eq("id", o.id);
+    const { error } = await supabase.from("shop_orders").delete().eq("id", o.id);
+    if (error) {
+      setBusyId(null);
+      window.alert("Gagal padam tempahan.");
+      return;
+    }
     await supabase.from("notifications").delete().eq("ref_type", "order").eq("ref_id", o.id);
     setBusyId(null);
+    setRemovedIds((s) => new Set(s).add(o.id));
     router.refresh();
   };
 
   // Senarai susun untuk edaran kepada pelanggan (tempahan disahkan).
   const downloadCustomerCsv = () => {
-    const confirmed = orders.filter((o) => o.status === "disahkan");
+    const confirmed = effectiveOrders.filter((o) => o.status === "disahkan");
     const lines = [["Nama", "Telefon", "Item", "Saiz", "Kuantiti", "Cetak Nama", "Cetak Nombor"].map(csv).join(",")];
     for (const o of confirmed) {
       for (const it of o.items ?? []) {
@@ -161,7 +191,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
         </div>
       </div>
 
-      {showPivot && <Pivot orders={orders} />}
+      {showPivot && <Pivot orders={effectiveOrders} />}
 
       {shown.length === 0 ? (
         <p className="font-sans text-sm text-muted">Tiada tempahan dalam kategori ini.</p>
