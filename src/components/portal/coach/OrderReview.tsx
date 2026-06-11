@@ -2,11 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Trash2, Table2, Download, Pencil } from "lucide-react";
+import { Check, X, Trash2, Table2, Download, Pencil, RotateCcw } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { KID_SIZES, ADULT_SIZES, ringgit } from "@/lib/shop";
 
 const SIZE_ORDER = [...KID_SIZES, ...ADULT_SIZES];
+
+// Tempoh hormat Tong Sampah — selaras dengan pg_cron purge di supabase/shop.sql.
+const GRACE_DAYS = 3;
+const daysLeft = (deletedAt: string) =>
+  Math.max(0, Math.ceil((new Date(deletedAt).getTime() + GRACE_DAYS * 86400000 - Date.now()) / 86400000));
 
 const csv = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
 const downloadCsvFile = (lines: string[], name: string) => {
@@ -48,6 +53,7 @@ type Order = {
   proof_drive_url: string | null;
   status: string;
   created_at: string;
+  deleted_at?: string | null;
 };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -66,26 +72,46 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
   // fadingId = id tempahan yang Sah/Tolak baru ditekan → butang malap & lenyap.
   const [fadingId, setFadingId] = useState<string | null>(null);
   const [showPivot, setShowPivot] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
 
   // Lapisan optimistik. router.refresh() menyegarkan data pelayan, tetapi paparan
-  // terbitan (Pivot, Senarai Susun, senarai kad) MESTI berubah serta-merta selepas
-  // tindakan — jangan tunggu data pelayan tiba. Padaman & tukar status direkod di
-  // sini dan ditindih atas prop `orders`, supaya SEMUA paparan kekal konsisten
-  // (elak pivot/susun masih kira tempahan yang baru dipadam). Tindihan ini hanya
-  // hidup dalam sesi & dikosongkan bila halaman dimuat semula; setiap laluan tukar
-  // status mengemas kini tindihan, jadi ia tak pernah jadi basi.
-  const [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set());
+  // terbitan (Pivot, Senarai Susun, senarai kad, Tong Sampah) MESTI berubah
+  // serta-merta selepas tindakan — jangan tunggu data pelayan tiba. Padam / tarik
+  // balik / tukar status direkod di sini & ditindih atas prop `orders` supaya SEMUA
+  // paparan kekal konsisten. Tindihan ini hidup dalam sesi sahaja & dikosongkan
+  // bila halaman dimuat semula; setiap laluan mengemas kini tindihan, jadi tak basi.
+  const [removedIds, setRemovedIds] = useState<Set<string>>(() => new Set()); // buang kekal
   const [statusOverride, setStatusOverride] = useState<Record<string, string>>({});
+  const [softDeleted, setSoftDeleted] = useState<Record<string, boolean>>({}); // true=tong sampah, false=ditarik balik
 
-  const effectiveOrders = useMemo(
+  const withOverrides = useMemo(
     () =>
       orders
         .filter((o) => !removedIds.has(o.id))
-        .map((o) => (statusOverride[o.id] ? { ...o, status: statusOverride[o.id] } : o)),
-    [orders, removedIds, statusOverride]
+        .map((o) => {
+          const status = statusOverride[o.id] ?? o.status;
+          const deleted_at =
+            o.id in softDeleted
+              ? softDeleted[o.id]
+                ? o.deleted_at ?? new Date().toISOString()
+                : null
+              : o.deleted_at ?? null;
+          return { ...o, status, deleted_at };
+        }),
+    [orders, removedIds, statusOverride, softDeleted]
   );
 
-  const shown = effectiveOrders.filter((o) => (filter === "semua" ? true : o.status === filter));
+  // Tempahan aktif (bukan di tong sampah) — sumber untuk senarai, Pivot & Susun.
+  const activeOrders = useMemo(() => withOverrides.filter((o) => !o.deleted_at), [withOverrides]);
+  const trashedOrders = useMemo(
+    () =>
+      withOverrides
+        .filter((o) => o.deleted_at)
+        .sort((a, b) => (b.deleted_at! < a.deleted_at! ? -1 : 1)),
+    [withOverrides]
+  );
+
+  const shown = activeOrders.filter((o) => (filter === "semua" ? true : o.status === filter));
 
   const setStatus = async (id: string, status: string) => {
     setBusyId(id);
@@ -120,8 +146,45 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
     router.refresh();
   };
 
+  // Padam = masuk Tong Sampah (soft-delete). Bukti TAK dibuang lagi supaya boleh
+  // ditarik balik sepenuhnya dalam tempoh hormat. pg_cron buang kekal selepas 3 hari.
   const del = async (o: Order) => {
-    if (!window.confirm(`Padam tempahan ${o.full_name}?`)) return;
+    if (
+      !window.confirm(
+        `Padam tempahan ${o.full_name}?\n\nMasuk Tong Sampah — boleh tarik balik dalam ${GRACE_DAYS} hari sebelum dibuang kekal.`
+      )
+    )
+      return;
+    setBusyId(o.id);
+    const { error } = await supabase
+      .from("shop_orders")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", o.id);
+    setBusyId(null);
+    if (error) {
+      window.alert("Gagal padam tempahan.");
+      return;
+    }
+    setSoftDeleted((m) => ({ ...m, [o.id]: true }));
+    router.refresh();
+  };
+
+  // Tarik balik dari Tong Sampah.
+  const restore = async (o: Order) => {
+    setBusyId(o.id);
+    const { error } = await supabase.from("shop_orders").update({ deleted_at: null }).eq("id", o.id);
+    setBusyId(null);
+    if (error) {
+      window.alert("Gagal tarik balik tempahan.");
+      return;
+    }
+    setSoftDeleted((m) => ({ ...m, [o.id]: false }));
+    router.refresh();
+  };
+
+  // Buang KEKAL serta-merta (dari Tong Sampah) — buang bukti + baris + notifikasi.
+  const purgeNow = async (o: Order) => {
+    if (!window.confirm(`Buang KEKAL tempahan ${o.full_name}? Tindakan ini tak boleh diundur.`)) return;
     setBusyId(o.id);
     if (o.proof_url) {
       const i = o.proof_url.indexOf("/shop/");
@@ -130,7 +193,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
     const { error } = await supabase.from("shop_orders").delete().eq("id", o.id);
     if (error) {
       setBusyId(null);
-      window.alert("Gagal padam tempahan.");
+      window.alert("Gagal buang tempahan.");
       return;
     }
     await supabase.from("notifications").delete().eq("ref_type", "order").eq("ref_id", o.id);
@@ -141,7 +204,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
 
   // Senarai susun untuk edaran kepada pelanggan (tempahan disahkan).
   const downloadCustomerCsv = () => {
-    const confirmed = effectiveOrders.filter((o) => o.status === "disahkan");
+    const confirmed = activeOrders.filter((o) => o.status === "disahkan");
     const lines = [["Nama", "Telefon", "Item", "Saiz", "Kuantiti", "Cetak Nama", "Cetak Nombor"].map(csv).join(",")];
     for (const o of confirmed) {
       for (const it of o.items ?? []) {
@@ -174,6 +237,15 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
           ))}
         </div>
         <div className="flex gap-1.5">
+          {trashedOrders.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowTrash((v) => !v)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-red-400 hover:text-red-400"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Tong Sampah ({trashedOrders.length})
+            </button>
+          )}
           <button
             type="button"
             onClick={downloadCustomerCsv}
@@ -191,7 +263,50 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
         </div>
       </div>
 
-      {showPivot && <Pivot orders={effectiveOrders} />}
+      {showPivot && <Pivot orders={activeOrders} />}
+
+      {showTrash && trashedOrders.length > 0 && (
+        <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
+          <p className="mb-1 font-sans text-xs font-semibold uppercase tracking-wider text-red-400">
+            Tong Sampah
+          </p>
+          <p className="mb-3 font-sans text-xs text-muted">
+            Tempahan yang dipadam disimpan di sini & dibuang kekal secara automatik selepas {GRACE_DAYS} hari. Tarik balik
+            jika silap padam.
+          </p>
+          <div className="flex flex-col gap-2">
+            {trashedOrders.map((o) => (
+              <div key={o.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-ink/40 px-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-sans text-sm font-semibold text-paper">{o.full_name}</p>
+                  <p className="font-sans text-xs text-muted">
+                    {o.phone}
+                    {o.deleted_at
+                      ? ` · dipadam ${new Date(o.deleted_at).toLocaleDateString("ms-MY", { day: "numeric", month: "short" })} · ${daysLeft(o.deleted_at)} hari lagi`
+                      : ""}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={busyId === o.id}
+                  onClick={() => restore(o)}
+                  className="inline-flex items-center gap-1 rounded-full border border-amber/50 px-3 py-1.5 font-sans text-xs font-semibold text-amber hover:bg-amber/10 disabled:opacity-50"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" /> Tarik Balik
+                </button>
+                <button
+                  type="button"
+                  disabled={busyId === o.id}
+                  onClick={() => purgeNow(o)}
+                  className="inline-flex items-center gap-1 rounded-full border border-line px-3 py-1.5 font-sans text-xs font-semibold text-muted hover:border-red-500/50 hover:text-red-400 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Buang Kekal
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {shown.length === 0 ? (
         <p className="font-sans text-sm text-muted">Tiada tempahan dalam kategori ini.</p>
