@@ -72,6 +72,17 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
             </Reveal>
           ))}
         </div>
+
+        <Reveal delay={0.3}>
+          <div className="mt-10 text-center">
+            <Link
+              href="/berita"
+              className="inline-block rounded-full border border-amber px-7 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-amber transition-colors hover:bg-amber hover:text-ink"
+            >
+              {t("Lihat Semua Berita →", "View All News →")}
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
