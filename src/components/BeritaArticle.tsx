@@ -20,7 +20,7 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
   return (
     <article className="mx-auto max-w-2xl px-6 pt-32 pb-20 sm:pt-40">
       <Link
-        href="/#berita"
+        href="/berita"
         className="inline-flex items-center gap-1.5 font-sans text-sm text-muted transition-colors hover:text-amber"
       >
         <ArrowLeft className="h-4 w-4" /> {t("Semua berita", "All news")}

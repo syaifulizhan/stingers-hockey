@@ -305,9 +305,17 @@ export default async function DashboardPage() {
 
       {/* Berita */}
       <section className="mt-8">
-        <h2 className="mb-4 flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
-          <Newspaper className="h-4 w-4" /> Berita Pasukan
-        </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 font-sans text-sm font-semibold uppercase tracking-wider text-muted">
+            <Newspaper className="h-4 w-4" /> Berita Pasukan
+          </h2>
+          <Link
+            href="/portal/news"
+            className="font-sans text-xs font-semibold text-amber transition-colors hover:text-amber-deep"
+          >
+            Lihat semua →
+          </Link>
+        </div>
         {news.length > 0 ? (
           <div className="flex flex-col gap-2">
             {news.map((n) => (
