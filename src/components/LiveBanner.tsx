@@ -32,7 +32,9 @@ export default async function LiveBanner() {
   const { data: matchesData } = await supabase
     .from("matches")
     .select("id, opponent, match_date, competition, category, our_score, opp_score, created_at")
-    .in("season_id", openIds);
+    .in("season_id", openIds)
+    .order("created_at", { ascending: false })
+    .limit(50);
   const matches = (matchesData ?? []) as Match[];
   if (matches.length === 0) return null;
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { sendPush } from "@/lib/push";
@@ -85,6 +86,10 @@ export async function POST(request: Request) {
     url: link,
   });
 
+  // Invalidate cache laman utama & arkib berita supaya berita baharu terus muncul.
+  revalidatePath("/");
+  revalidatePath("/berita");
+
   return NextResponse.json({ ok: true });
 }
 
@@ -119,6 +124,8 @@ export async function PATCH(request: Request) {
     console.error("[coach/news] edit gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini berita." }, { status: 403 });
   }
+  revalidatePath("/");
+  revalidatePath("/berita");
   return NextResponse.json({ ok: true });
 }
 
@@ -141,5 +148,7 @@ export async function DELETE(request: Request) {
   }
   // Buang notifikasi berita berkaitan supaya tak tertinggal di loceng.
   await supabase.from("notifications").delete().eq("ref_type", "news").eq("ref_id", id);
+  revalidatePath("/");
+  revalidatePath("/berita");
   return NextResponse.json({ ok: true });
 }
