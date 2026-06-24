@@ -13,9 +13,10 @@ import Footer from "@/components/Footer";
 import { createPublicSupabase } from "@/lib/supabase/public";
 import type { Jersey } from "@/lib/jerseys";
 
-// Render segar setiap permintaan supaya berita terkini sentiasa muncul
-// (elak cache fetch yang degil semasa berita ditambah/dipadam).
-export const dynamic = "force-dynamic";
+// Revalidate setiap 60 saat — Vercel CDN cache sajikan terus tanpa hit Supabase.
+// Bila berita/keputusan dikemas kini, API route panggil revalidatePath('/') untuk
+// invalidate segera.
+export const revalidate = 60;
 
 export default async function Home() {
   // Galeri Legasi Jersi dari Supabase (admin boleh edit). Komponen fallback

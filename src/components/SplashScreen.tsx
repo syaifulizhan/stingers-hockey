@@ -23,7 +23,7 @@ export default function SplashScreen() {
       hide(); // sudah ditunjuk sesi ini → sembunyi segera
       return;
     }
-    const t = setTimeout(hide, 2100); // sesi baru → main penuh
+    const t = setTimeout(hide, 1500); // sesi baru → main penuh
     return () => clearTimeout(t);
   }, []);
 

@@ -152,7 +152,7 @@ body::before {
   }
 }
 .splash {
-  animation: splash-fade 2s ease forwards;
+  animation: splash-fade 1.5s ease forwards;
 }
 
 /* Status simpan per-baris (panel admin) — kekal sekejap, kemudian pudar. */

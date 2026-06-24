@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { createPublicSupabase } from "@/lib/supabase/public";
+
+export const revalidate = 60;
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import BeritaArchiveView from "@/components/BeritaArchiveView";

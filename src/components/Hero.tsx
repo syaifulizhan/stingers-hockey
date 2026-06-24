@@ -10,17 +10,17 @@ import { useLang } from "@/lib/i18n";
 // Dua foto pemain bersilih ganti (crossfade) sebagai latar.
 const heroImages = ["/images/hero-player.jpg", "/images/hero-player2.jpg"];
 
-// Reveal tajuk perkataan demi perkataan
+// Reveal tajuk perkataan demi perkataan — delay dikurangkan untuk LCP lebih pantas
 const container = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
+  show: { transition: { staggerChildren: 0.07, delayChildren: 0.05 } },
 };
 const word = {
-  hidden: { opacity: 0, y: "0.4em" },
+  hidden: { opacity: 0, y: "0.3em" },
   show: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
 
@@ -49,6 +49,9 @@ export default function Hero() {
           src={src}
           alt=""
           aria-hidden="true"
+          fetchPriority={i === 0 ? "high" : "low"}
+          loading={i === 0 ? "eager" : "lazy"}
+          decoding={i === 0 ? "sync" : "async"}
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[1500ms] ${
             i === idx ? "opacity-100" : "opacity-0"
           }`}
@@ -63,9 +66,9 @@ export default function Hero() {
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-28 pb-32">
         {/* Eyebrow */}
         <motion.p
-          initial={{ opacity: 0, y: 12 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.3 }}
           className="mb-6 font-sans text-xs font-semibold uppercase tracking-[0.35em] text-amber sm:text-sm"
         >
           {t(
@@ -102,9 +105,9 @@ export default function Hero() {
 
         {/* Sub-text */}
         <motion.p
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.7 }}
+          transition={{ duration: 0.35, delay: 0.3 }}
           className="mt-8 max-w-xl font-sans text-base text-muted sm:text-lg"
         >
           {t(
@@ -115,9 +118,9 @@ export default function Hero() {
 
         {/* CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.85 }}
+          transition={{ duration: 0.35, delay: 0.4 }}
           className="mt-10"
         >
           <Button href="/portal">
@@ -132,7 +135,7 @@ export default function Hero() {
         aria-label="Scroll ke bawah"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
+        transition={{ delay: 0.6 }}
         className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-paper/60 hover:text-amber"
       >
         <motion.span
