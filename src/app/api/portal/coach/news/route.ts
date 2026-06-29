@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { sendPush } from "@/lib/push";
@@ -21,7 +22,8 @@ async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<strin
 const schema = z.object({
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   body: z.string().trim().max(2000).optional().or(z.literal("")),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  // Sehingga 5 URL gambar; yang pertama ialah gambar utama.
+  imageUrls: z.array(z.string().url()).max(5).optional().default([]),
 });
 
 export async function POST(request: Request) {
@@ -45,26 +47,47 @@ export async function POST(request: Request) {
     );
   }
 
+  const imageUrls = parsed.data.imageUrls ?? [];
+  const mainImageUrl = imageUrls[0] ?? null;
+
   const supabase = await createServerSupabase();
   const slug = await uniqueSlug(supabase, makeSlug(parsed.data.title));
-  const { data, error } = await supabase
+
+  // Bina payload tanpa image_urls jika tiada gambar — elak ralat kolum
+  // "does not exist" pada DB yang belum dimigrasi.
+  const insertPayload: Record<string, unknown> = {
+    title: parsed.data.title,
+    body: parsed.data.body || null,
+    image_url: mainImageUrl,
+    author: userId,
+    slug,
+  };
+  if (imageUrls.length > 0) {
+    insertPayload.image_urls = imageUrls;
+  }
+
+  let { data, error } = await supabase
     .from("news")
-    .insert({
-      title: parsed.data.title,
-      body: parsed.data.body || null,
-      image_url: parsed.data.imageUrl || null,
-      author: userId,
-      slug,
-    })
+    .insert(insertPayload)
     .select("id")
     .maybeSingle();
 
+  // Jika kolum image_urls belum wujud dalam DB, cuba semula tanpa galeri.
+  if (error && (error.code === "42703" || error.code === "PGRST204") && insertPayload.image_urls) {
+    console.warn("[coach/news] image_urls column missing, retrying without gallery");
+    const { image_urls: _dropped, ...fallbackPayload } = insertPayload;
+    const retry = await supabase.from("news").insert(fallbackPayload).select("id").maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
-    console.error("[coach/news] gagal:", error.message);
-    return NextResponse.json(
-      { ok: false, error: "Gagal post berita (mungkin anda bukan jurulatih)." },
-      { status: 403 }
-    );
+    console.error("[coach/news] INSERT gagal:", error.code, error.message);
+    const msg =
+      error.code === "42501"
+        ? "Anda tiada kebenaran untuk post berita."
+        : `Gagal post berita. (${error.message})`;
+    return NextResponse.json({ ok: false, error: msg }, { status: 403 });
   }
 
   // Notifikasi broadcast kepada semua ahli.
@@ -84,6 +107,10 @@ export async function POST(request: Request) {
     body: parsed.data.title,
     url: link,
   });
+
+  // Invalidate cache laman utama & arkib berita supaya berita baharu terus muncul.
+  revalidatePath("/");
+  revalidatePath("/berita");
 
   return NextResponse.json({ ok: true });
 }
@@ -119,6 +146,8 @@ export async function PATCH(request: Request) {
     console.error("[coach/news] edit gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini berita." }, { status: 403 });
   }
+  revalidatePath("/");
+  revalidatePath("/berita");
   return NextResponse.json({ ok: true });
 }
 
@@ -141,5 +170,7 @@ export async function DELETE(request: Request) {
   }
   // Buang notifikasi berita berkaitan supaya tak tertinggal di loceng.
   await supabase.from("notifications").delete().eq("ref_type", "news").eq("ref_id", id);
+  revalidatePath("/");
+  revalidatePath("/berita");
   return NextResponse.json({ ok: true });
 }
