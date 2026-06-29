@@ -52,25 +52,35 @@ export async function POST(request: Request) {
 
   const supabase = await createServerSupabase();
   const slug = await uniqueSlug(supabase, makeSlug(parsed.data.title));
+
+  // Bina payload tanpa image_urls jika tiada gambar — elak ralat kolum
+  // "does not exist" pada DB yang belum dimigrasi.
+  const insertPayload: Record<string, unknown> = {
+    title: parsed.data.title,
+    body: parsed.data.body || null,
+    image_url: mainImageUrl,
+    author: userId,
+    slug,
+  };
+  if (imageUrls.length > 0) {
+    insertPayload.image_urls = imageUrls;
+  }
+
   const { data, error } = await supabase
     .from("news")
-    .insert({
-      title: parsed.data.title,
-      body: parsed.data.body || null,
-      image_url: mainImageUrl,
-      image_urls: imageUrls.length > 0 ? imageUrls : null,
-      author: userId,
-      slug,
-    })
+    .insert(insertPayload)
     .select("id")
     .maybeSingle();
 
   if (error) {
-    console.error("[coach/news] gagal:", error.message);
-    return NextResponse.json(
-      { ok: false, error: "Gagal post berita (mungkin anda bukan jurulatih)." },
-      { status: 403 }
-    );
+    console.error("[coach/news] INSERT gagal:", error.code, error.message);
+    const msg =
+      error.code === "42703" || error.code === "PGRST204"
+        ? "Ralat skema pangkalan data. Sila jalankan migrasi image_urls."
+        : error.code === "42501"
+          ? "Anda tiada kebenaran untuk post berita."
+          : `Gagal post berita. (${error.message})`;
+    return NextResponse.json({ ok: false, error: msg }, { status: 403 });
   }
 
   // Notifikasi broadcast kepada semua ahli.
