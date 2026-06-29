@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import SmartImg from "@/components/SmartImg";
 
 type NewsRow = {
   id: string;
@@ -54,8 +55,7 @@ export default function BeritaArchiveView({ news }: { news: NewsRow[] }) {
               className="group flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-bg-soft transition-colors hover:border-amber/60"
             >
               {n.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-                <img
+                <SmartImg
                   src={n.image_url}
                   alt={n.title}
                   className="aspect-video w-full object-cover"

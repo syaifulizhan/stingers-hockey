@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Newspaper, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import SmartImg from "@/components/SmartImg";
 
 type NewsRow = {
   id: string;
@@ -46,8 +47,7 @@ export default async function PortalNewsArchivePage() {
               className="flex items-center gap-4 rounded-xl border border-line bg-bg-soft/50 p-3 transition-colors hover:border-amber/60"
             >
               {n.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-                <img
+                <SmartImg
                   src={n.image_url}
                   alt=""
                   className="h-16 w-16 shrink-0 rounded-lg object-cover"

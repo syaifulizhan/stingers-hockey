@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import SmartImg from "@/components/SmartImg";
 
 export default function NewsImageCarousel({
   images,
@@ -39,8 +40,7 @@ export default function NewsImageCarousel({
   // Satu gambar — papar biasa tanpa carousel.
   if (images.length <= 1) {
     return images[0] ? (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
+      <SmartImg
         src={images[0]}
         alt={title}
         className="mt-6 w-full rounded-2xl border border-line object-cover"
@@ -61,8 +61,7 @@ export default function NewsImageCarousel({
             data-slide={i}
             className="w-[90%] shrink-0 snap-start"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <SmartImg
               src={src}
               alt={`${title} — ${i + 1}/${images.length}`}
               draggable={false}
