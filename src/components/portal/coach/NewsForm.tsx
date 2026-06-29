@@ -9,7 +9,7 @@ import { compressImage } from "@/lib/image-compress";
 const inputCls =
   "w-full rounded-lg border border-line bg-ink px-4 py-3 font-sans text-sm text-paper placeholder:text-muted/60 outline-none focus:border-amber";
 
-const MAX_MB = 5;
+const MAX_MB = 20;
 const MAX_IMAGES = 5;
 
 type ImageEntry = { file: File; preview: string };
