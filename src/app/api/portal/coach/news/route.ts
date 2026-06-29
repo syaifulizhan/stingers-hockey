@@ -66,20 +66,27 @@ export async function POST(request: Request) {
     insertPayload.image_urls = imageUrls;
   }
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("news")
     .insert(insertPayload)
     .select("id")
     .maybeSingle();
 
+  // Jika kolum image_urls belum wujud dalam DB, cuba semula tanpa galeri.
+  if (error && (error.code === "42703" || error.code === "PGRST204") && insertPayload.image_urls) {
+    console.warn("[coach/news] image_urls column missing, retrying without gallery");
+    const { image_urls: _dropped, ...fallbackPayload } = insertPayload;
+    const retry = await supabase.from("news").insert(fallbackPayload).select("id").maybeSingle();
+    data = retry.data;
+    error = retry.error;
+  }
+
   if (error) {
     console.error("[coach/news] INSERT gagal:", error.code, error.message);
     const msg =
-      error.code === "42703" || error.code === "PGRST204"
-        ? "Ralat skema pangkalan data. Sila jalankan migrasi image_urls."
-        : error.code === "42501"
-          ? "Anda tiada kebenaran untuk post berita."
-          : `Gagal post berita. (${error.message})`;
+      error.code === "42501"
+        ? "Anda tiada kebenaran untuk post berita."
+        : `Gagal post berita. (${error.message})`;
     return NextResponse.json({ ok: false, error: msg }, { status: 403 });
   }
 
