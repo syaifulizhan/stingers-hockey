@@ -10,6 +10,7 @@ type NewsRow = {
   title: string;
   body: string | null;
   image_url: string | null;
+  image_urls: string[] | null;
   published_at: string;
 };
 
@@ -17,7 +18,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 async function getNews(idOrSlug: string): Promise<NewsRow | null> {
   const supabase = createPublicSupabase();
-  const cols = "id, title, body, image_url, published_at";
+  const cols = "id, title, body, image_url, image_urls, published_at";
   // Utama: cari ikut slug tajuk.
   const bySlug = await supabase.from("news").select(cols).eq("slug", idOrSlug).maybeSingle();
   if (bySlug.data) return bySlug.data as NewsRow;

@@ -113,6 +113,8 @@ create table if not exists public.news (
 );
 alter table public.news add column if not exists slug text;
 create unique index if not exists news_slug_key on public.news (slug) where slug is not null;
+-- Galeri: sehingga 5 URL gambar; image_url kekal sebagai gambar utama (image_urls[1]).
+alter table public.news add column if not exists image_urls text[];
 
 -- ============================================================================
 -- FUNGSI PEMBANTU — semak peranan pengguna semasa

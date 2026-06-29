@@ -22,7 +22,8 @@ async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<strin
 const schema = z.object({
   title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(200),
   body: z.string().trim().max(2000).optional().or(z.literal("")),
-  imageUrl: z.string().url().optional().or(z.literal("")),
+  // Sehingga 5 URL gambar; yang pertama ialah gambar utama.
+  imageUrls: z.array(z.string().url()).max(5).optional().default([]),
 });
 
 export async function POST(request: Request) {
@@ -46,6 +47,9 @@ export async function POST(request: Request) {
     );
   }
 
+  const imageUrls = parsed.data.imageUrls ?? [];
+  const mainImageUrl = imageUrls[0] ?? null;
+
   const supabase = await createServerSupabase();
   const slug = await uniqueSlug(supabase, makeSlug(parsed.data.title));
   const { data, error } = await supabase
@@ -53,7 +57,8 @@ export async function POST(request: Request) {
     .insert({
       title: parsed.data.title,
       body: parsed.data.body || null,
-      image_url: parsed.data.imageUrl || null,
+      image_url: mainImageUrl,
+      image_urls: imageUrls.length > 0 ? imageUrls : null,
       author: userId,
       slug,
     })
