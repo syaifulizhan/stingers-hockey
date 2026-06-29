@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import NewsImageCarousel from "@/components/NewsImageCarousel";
 
 type NewsRow = {
   id: string;
@@ -35,8 +36,6 @@ export default async function NewsDetailPage({
         ? [news.image_url]
         : [];
 
-  const [mainImage, ...extraImages] = gallery;
-
   return (
     <article className="mx-auto max-w-2xl px-6 py-10">
       <Link
@@ -57,40 +56,11 @@ export default async function NewsDetailPage({
         })}
       </p>
 
-      {/* Gambar utama */}
-      {mainImage && (
-        // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-        <img
-          src={mainImage}
-          alt={news.title}
-          className="mt-6 w-full rounded-2xl border border-line object-cover"
-        />
-      )}
+      <NewsImageCarousel images={gallery} title={news.title} />
 
-      {/* Isi berita */}
       {news.body && (
         <div className="mt-6 whitespace-pre-wrap font-sans text-base leading-relaxed text-paper/90">
           {news.body}
-        </div>
-      )}
-
-      {/* Galeri gambar tambahan */}
-      {extraImages.length > 0 && (
-        <div className="mt-8">
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
-            Galeri
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {extraImages.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-              <img
-                key={src}
-                src={src}
-                alt={`${news.title} — gambar ${i + 2}`}
-                className="w-full rounded-xl border border-line object-cover aspect-video"
-              />
-            ))}
-          </div>
         </div>
       )}
     </article>
