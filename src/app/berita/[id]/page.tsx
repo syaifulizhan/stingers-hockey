@@ -16,16 +16,38 @@ type NewsRow = {
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+async function queryNews(
+  supabase: ReturnType<typeof createPublicSupabase>,
+  field: "slug" | "id",
+  value: string
+): Promise<NewsRow | null> {
+  // Cuba dengan image_urls dahulu; jika kolum belum wujud dalam DB, cuba tanpa.
+  const full = await supabase
+    .from("news")
+    .select("id, title, body, image_url, image_urls, published_at")
+    .eq(field, value)
+    .maybeSingle();
+  if (full.data) return full.data as NewsRow;
+
+  if (full.error) {
+    const fallback = await supabase
+      .from("news")
+      .select("id, title, body, image_url, published_at")
+      .eq(field, value)
+      .maybeSingle();
+    if (fallback.data) return { ...fallback.data, image_urls: null } as NewsRow;
+  }
+  return null;
+}
+
 async function getNews(idOrSlug: string): Promise<NewsRow | null> {
   const supabase = createPublicSupabase();
-  const cols = "id, title, body, image_url, image_urls, published_at";
   // Utama: cari ikut slug tajuk.
-  const bySlug = await supabase.from("news").select(cols).eq("slug", idOrSlug).maybeSingle();
-  if (bySlug.data) return bySlug.data as NewsRow;
+  const bySlug = await queryNews(supabase, "slug", idOrSlug);
+  if (bySlug) return bySlug;
   // Fallback: pautan lama yang guna UUID.
   if (UUID_RE.test(idOrSlug)) {
-    const byId = await supabase.from("news").select(cols).eq("id", idOrSlug).maybeSingle();
-    if (byId.data) return byId.data as NewsRow;
+    return queryNews(supabase, "id", idOrSlug);
   }
   return null;
 }

@@ -20,13 +20,23 @@ export default async function NewsDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createServerSupabase();
-  const { data } = await supabase
+
+  let result = await supabase
     .from("news")
     .select("id, title, body, image_url, image_urls, published_at")
     .eq("id", id)
     .maybeSingle();
 
-  const news = data as NewsRow | null;
+  // Jika kolum image_urls belum wujud dalam DB, cuba tanpa.
+  if (result.error) {
+    result = await supabase
+      .from("news")
+      .select("id, title, body, image_url, published_at")
+      .eq("id", id)
+      .maybeSingle();
+  }
+
+  const news = result.data ? { image_urls: null, ...result.data } as NewsRow : null;
   if (!news) notFound();
 
   const gallery: string[] =
