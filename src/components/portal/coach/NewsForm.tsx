@@ -11,6 +11,8 @@ const inputCls =
 
 const MAX_MB = 20;
 const MAX_IMAGES = 5;
+const MAX_TITLE = 400;
+const MAX_BODY = 20000;
 
 type ImageEntry = { file: File; preview: string };
 
@@ -66,6 +68,14 @@ export default function NewsForm() {
       setError("Tajuk diperlukan.");
       return;
     }
+    if (title.length > MAX_TITLE) {
+      setError(`Tajuk terlalu panjang (maksimum ${MAX_TITLE} aksara).`);
+      return;
+    }
+    if (body.length > MAX_BODY) {
+      setError(`Isi berita terlalu panjang (maksimum ${MAX_BODY} aksara).`);
+      return;
+    }
     setSaving(true);
 
     try {
@@ -108,19 +118,36 @@ export default function NewsForm() {
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-3 rounded-xl border border-line bg-bg-soft/50 p-5">
-      <input
-        className={inputCls}
-        placeholder="Tajuk berita"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-      <textarea
-        rows={2}
-        className={`${inputCls} resize-y`}
-        placeholder="Isi berita (pilihan)…"
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
-      />
+      <div>
+        <input
+          className={inputCls}
+          placeholder="Tajuk berita"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={MAX_TITLE}
+        />
+        {title.length > MAX_TITLE * 0.85 && (
+          <p className="mt-1 text-right font-sans text-[0.65rem] text-muted">
+            {title.length}/{MAX_TITLE}
+          </p>
+        )}
+      </div>
+
+      <div>
+        <textarea
+          rows={5}
+          className={`${inputCls} resize-y`}
+          placeholder="Isi berita (pilihan)…"
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          maxLength={MAX_BODY}
+        />
+        {body.length > MAX_BODY * 0.9 && (
+          <p className="mt-1 text-right font-sans text-[0.65rem] text-muted">
+            {body.length.toLocaleString()}/{MAX_BODY.toLocaleString()}
+          </p>
+        )}
+      </div>
 
       {/* Grid pratonton gambar */}
       {images.length > 0 && (
