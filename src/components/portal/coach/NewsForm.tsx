@@ -149,7 +149,7 @@ export default function NewsForm() {
                 type="button"
                 onClick={() => remove(i)}
                 aria-label={`Buang gambar ${i + 1}`}
-                className="absolute right-1.5 top-1.5 rounded-full bg-ink/80 p-1 text-paper opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute right-1.5 top-1.5 rounded-full bg-ink/80 p-1.5 text-paper shadow"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
