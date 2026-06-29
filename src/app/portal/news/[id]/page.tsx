@@ -36,7 +36,7 @@ export default async function NewsDetailPage({
       .maybeSingle();
   }
 
-  const news = result.data ? { image_urls: null, ...result.data } as NewsRow : null;
+  const news = (result.data ?? null) as NewsRow | null;
   if (!news) notFound();
 
   const gallery: string[] =
