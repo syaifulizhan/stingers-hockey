@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
+import NewsImageCarousel from "@/components/NewsImageCarousel";
 
 type NewsRow = {
   id: string;
@@ -18,15 +19,12 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
   const { lang, t } = useLang();
   const locale = lang === "en" ? "en-MY" : "ms-MY";
 
-  // Gunakan image_urls jika ada, fallback ke image_url sahaja.
   const gallery: string[] =
     news.image_urls && news.image_urls.length > 0
       ? news.image_urls
       : news.image_url
         ? [news.image_url]
         : [];
-
-  const [mainImage, ...extraImages] = gallery;
 
   return (
     <article className="mx-auto max-w-2xl px-6 pt-32 pb-20 sm:pt-40">
@@ -51,40 +49,11 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
         <ShareButton title={news.title} />
       </div>
 
-      {/* Gambar utama */}
-      {mainImage && (
-        // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-        <img
-          src={mainImage}
-          alt={news.title}
-          className="mt-6 w-full rounded-2xl border border-line object-cover"
-        />
-      )}
+      <NewsImageCarousel images={gallery} title={news.title} />
 
-      {/* Isi berita */}
       {news.body && (
         <div className="mt-6 whitespace-pre-wrap font-sans text-base leading-relaxed text-paper/90">
           {news.body}
-        </div>
-      )}
-
-      {/* Galeri gambar tambahan */}
-      {extraImages.length > 0 && (
-        <div className="mt-8">
-          <p className="mb-3 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
-            {t("Galeri", "Gallery")}
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {extraImages.map((src, i) => (
-              // eslint-disable-next-line @next/next/no-img-element -- gambar dari Supabase Storage
-              <img
-                key={src}
-                src={src}
-                alt={`${news.title} — gambar ${i + 2}`}
-                className="w-full rounded-xl border border-line object-cover aspect-video"
-              />
-            ))}
-          </div>
         </div>
       )}
     </article>
