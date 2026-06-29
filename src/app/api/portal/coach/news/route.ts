@@ -20,8 +20,8 @@ async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<strin
 
 // Coach post berita. RLS (news_write = is_coach) menguatkuasakan kebenaran.
 const schema = z.object({
-  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(400),
-  body: z.string().trim().max(20000).optional().or(z.literal("")),
+  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }),
+  body: z.string().trim().optional().or(z.literal("")),
   // Sehingga 5 URL gambar; yang pertama ialah gambar utama.
   imageUrls: z.array(z.string().url()).max(5).optional().default([]),
 });
@@ -118,8 +118,8 @@ export async function POST(request: Request) {
 // Edit berita (tajuk + isi).
 const editSchema = z.object({
   id: z.string().uuid(),
-  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }).max(400),
-  body: z.string().trim().max(20000).optional().or(z.literal("")),
+  title: z.string().trim().min(1, { message: "Tajuk diperlukan." }),
+  body: z.string().trim().optional().or(z.literal("")),
 });
 
 export async function PATCH(request: Request) {
