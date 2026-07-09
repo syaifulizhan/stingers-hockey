@@ -620,3 +620,18 @@ create policy pending_write on public.pending_approvals for update to authentica
   using (public.is_coach()) with check (public.is_coach());
 
 grant select, insert, update on public.pending_approvals to authenticated;
+
+-- ============================================================================
+-- MIGRATION: Existing Users Auto-Approved
+-- Jalankan query dibawah ini di Supabase SQL Editor SEBELUM deploy ke production
+-- Ini pastikan semua existing users (yang sudah ada) tetap boleh access.
+-- Hanya pengguna BARU sahaja yang perlu approval.
+-- ============================================================================
+-- UPDATE public.users
+-- SET approval_status = 'approved'
+-- WHERE profile_complete = true AND approval_status = 'pending';
+--
+-- UPDATE public.pending_approvals
+-- SET status = 'approved', reviewed_at = now(), reviewed_by = 'system-migration'
+-- WHERE status = 'pending'
+--   AND user_id IN (SELECT clerk_user_id FROM public.users WHERE profile_complete = true);
