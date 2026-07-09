@@ -3,6 +3,33 @@ import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { profileSchema } from "@/lib/portal-schema";
 import { createServerSupabase } from "@/lib/supabase/server";
 
+// GET /api/portal/profile — Ambil profil pengguna semasa
+export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json(
+      { ok: false, error: "Sila log masuk." },
+      { status: 401 }
+    );
+  }
+
+  const supabase = await createServerSupabase();
+  const { data: user, error } = await supabase
+    .from("users")
+    .select("*, approval_status")
+    .eq("clerk_user_id", userId)
+    .single();
+
+  if (error) {
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ ok: true, user });
+}
+
 // Simpan profil ahli:
 //   1. Tulis ke Supabase (jadual users) — sumber utama portal.
 //   2. Cermin ke Google Sheet "Pendaftaran" — kekalkan aliran sedia ada coach.
@@ -40,6 +67,26 @@ export async function POST(request: Request) {
 
   // 1. Simpan ke Supabase (RLS: hanya boleh tulis baris sendiri).
   const supabase = await createServerSupabase();
+
+  // Semak domain allowlist — jika email domain dalam senarai, tetapkan approval_status='pending'
+  let approvalStatus = "approved"; // default: lulus terus
+  let domain: string | null = null;
+
+  if (email) {
+    domain = email.split("@")[1]?.toLowerCase() || null;
+    if (domain) {
+      const { data: allowlistEntry } = await supabase
+        .from("domain_allowlist")
+        .select("id")
+        .eq("domain", domain)
+        .single();
+
+      if (allowlistEntry) {
+        approvalStatus = "pending"; // perlu approval
+      }
+    }
+  }
+
   const { error } = await supabase.from("users").upsert(
     {
       clerk_user_id: userId,
@@ -59,6 +106,7 @@ export async function POST(request: Request) {
       position: d.position || null,
       notes: d.notes || null,
       profile_complete: true,
+      approval_status: approvalStatus,
     },
     { onConflict: "clerk_user_id" }
   );
@@ -69,6 +117,23 @@ export async function POST(request: Request) {
       { ok: false, error: "Gagal menyimpan ke database." },
       { status: 500 }
     );
+  }
+
+  // Jika domain dalam allowlist, buat record pending_approvals
+  if (approvalStatus === "pending" && domain) {
+    const { error: pendingErr } = await supabase
+      .from("pending_approvals")
+      .insert({
+        user_id: userId,
+        domain: domain,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (pendingErr && pendingErr.code !== "23505") { // 23505 = unique constraint (sudah ada)
+      console.error("[portal/profile] gagal buat pending_approval:", pendingErr.message);
+    }
   }
 
   // 2. Cermin ke Google Sheet (best-effort — jangan gagalkan jika Sheet tiada).

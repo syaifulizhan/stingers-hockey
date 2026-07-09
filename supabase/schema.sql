@@ -584,3 +584,66 @@ create or replace view public.public_players as
          coalesce(nullif(display_name, ''), full_name) as name
   from public.users;
 grant select on public.public_players to anon, authenticated;
+
+-- ============================================================================
+-- DOMAIN ALLOWLIST — Senarai putih domain email yang memerlukan approval
+--   admin/coach boleh tambah domain (cth: gpi.edu.my). Pengguna dari domain
+--   ini perlu diluluskan oleh coach/admin sebelum boleh guna akaun.
+-- ============================================================================
+create table if not exists public.domain_allowlist (
+  id          uuid primary key default gen_random_uuid(),
+  domain      text not null unique,                      -- cth: gpi.edu.my
+  created_by  text not null,                             -- clerk_user_id (coach/admin)
+  created_at  timestamptz not null default now()
+);
+alter table public.domain_allowlist enable row level security;
+
+drop policy if exists domain_allowlist_select on public.domain_allowlist;
+create policy domain_allowlist_select on public.domain_allowlist for select to authenticated
+  using (true);
+
+drop policy if exists domain_allowlist_write on public.domain_allowlist;
+create policy domain_allowlist_write on public.domain_allowlist for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+grant select, insert, delete on public.domain_allowlist to authenticated;
+
+-- ============================================================================
+-- PENDING APPROVALS — Pengguna dari domain allowlist menunggu approval
+--   status: 'pending' (tunggu), 'approved' (lulus), 'rejected' (tolak)
+--   Hanya coach/admin boleh approve/reject. Setelah approved, user bolehlah
+--   login & guna sistem. Sebelum tu, user akan dapat mesej "tunggu approval".
+-- ============================================================================
+create table if not exists public.pending_approvals (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      text not null unique references public.users(clerk_user_id) on delete cascade,
+  domain       text not null,                            -- domain email (cth: gpi.edu.my)
+  status       text not null default 'pending'
+                check (status in ('pending','approved','rejected')),
+  requested_at timestamptz not null default now(),
+  reviewed_by  text,                                     -- clerk_user_id (coach/admin)
+  reviewed_at  timestamptz,
+  note         text                                      -- alasan approval/rejection
+);
+alter table public.pending_approvals enable row level security;
+
+-- Pengguna sendiri & coach boleh lihat status pending mereka
+drop policy if exists pending_select on public.pending_approvals;
+create policy pending_select on public.pending_approvals for select to authenticated
+  using (user_id = auth.jwt()->>'sub' or public.is_coach());
+
+-- Hanya coach/admin boleh update approval
+drop policy if exists pending_write on public.pending_approvals;
+create policy pending_write on public.pending_approvals for update to authenticated
+  using (public.is_coach()) with check (public.is_coach());
+
+grant select, insert, update on public.pending_approvals to authenticated;
+
+-- ============================================================================
+-- LAJUR STATUS — tambah ke users untuk menandai pending vs active
+-- ============================================================================
+alter table public.users add column if not exists approval_status text not null default 'approved'
+  check (approval_status in ('pending','approved','rejected'));
+
+-- Pengguna dengan approval_status='pending' tidak boleh login/guna sistem sepenuhnya
+-- (sistem akan cek kolum ini setiap kali perlu akses)
