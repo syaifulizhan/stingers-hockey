@@ -1,62 +1,46 @@
-# Domain Allowlist — Sistem Kelulusan Pendaftaran
+# Sistem Kelulusan Pendaftaran
 
-## Apa itu Domain Allowlist?
+## Apa itu Sistem Kelulusan?
 
-Domain allowlist membolehkan admin/coach untuk mengawal pendaftaran pengguna dari domain email tertentu (cth: `gpi.edu.my`). Pengguna dari domain yang berada dalam senarai putih perlu diluluskan oleh admin/coach sebelum boleh menggunakan portal sepenuhnya.
+Semua pengguna yang baru sign up perlu diluluskan oleh admin/coach sebelum boleh menggunakan portal sepenuhnya. Sistem ini memastikan hanya pengguna yang diluluskan boleh akses.
 
 ## Aliran
 
 1. **Pendaftaran Pengguna**: Pengguna mendaftar & melengkap profil
-2. **Semak Domain**: Sistem semak jika domain email mereka dalam allowlist
-3. **Tetapkan Status**:
-   - Jika domain dalam allowlist → `approval_status = 'pending'`
-   - Jika tidak → `approval_status = 'approved'`
-4. **Buat Pending Record**: Jika pending, buat record dalam jadual `pending_approvals`
-5. **Admin/Coach Luluskan**: Admin/coach lihat pending approval dan pilih untuk luluskan atau tolak
-6. **Pengguna Boleh Login**: Selepas diluluskan, pengguna boleh akses portal penuh
+2. **Auto-Pending**: Sistem auto-set `approval_status = 'pending'` untuk semua pengguna baru
+3. **Buat Pending Record**: Buat record dalam jadual `pending_approvals`
+4. **Admin/Coach Luluskan**: Admin/coach lihat pending approval dan pilih untuk luluskan atau tolak
+5. **Pengguna Boleh Login**: Selepas diluluskan, pengguna boleh akses portal penuh
 
 ## Cara Guna
 
-### Untuk Admin/Coach: Tambah Domain ke Allowlist
+### Untuk Admin/Coach: Luluskan Pendaftaran
 
 Pergi ke `/portal/admin/allowlist` (hanya admin/coach):
 
-1. Buka tab "Domain"
-2. Masukkan domain (cth: `gpi.edu.my`)
-3. Klik "Tambah"
-4. Domain akan muncul dalam senarai
-
-### Untuk Admin/Coach: Luluskan Pendaftaran
-
-Di halaman yang sama, tab "Pending Approval":
-
-1. Lihat senarai pengguna yang menunggu kelulusan
-2. Klik "Luluskan" atau "Tolak"
-3. Pengguna akan dapat notifikasi status mereka
+1. Lihat senarai semua pengguna yang menunggu kelulusan
+2. Setiap pengguna menunjukkan:
+   - Nama penuh
+   - Email
+   - Sekolah
+   - Tarikh pendaftaran
+3. Klik "Luluskan" untuk approve atau "Tolak" untuk reject
+4. Pengguna akan dapat notifikasi status mereka
 
 ### Untuk Pengguna: Semak Status Kelulusan
 
 Jika pendaftaran anda menunggu kelulusan:
 
 1. Anda akan diarahkan ke `/portal/approval-pending`
-2. Lihat maklumat pendaftaran & domain anda
+2. Lihat maklumat pendaftaran anda
 3. Tunggu admin/coach untuk meluluskan
 
 ## Database Schema
-
-### Jadual: `domain_allowlist`
-```sql
-- id (UUID): ID unik
-- domain (text): Domain email (cth: gpi.edu.my)
-- created_by (text): Clerk user ID admin/coach
-- created_at (timestamp): Tarikh ditambah
-```
 
 ### Jadual: `pending_approvals`
 ```sql
 - id (UUID): ID unik
 - user_id (text): Clerk user ID pengguna (FK to users.clerk_user_id)
-- domain (text): Domain email
 - status (text): 'pending' | 'approved' | 'rejected'
 - requested_at (timestamp): Tarikh pendaftaran
 - reviewed_by (text): Clerk user ID admin/coach
@@ -67,50 +51,13 @@ Jika pendaftaran anda menunggu kelulusan:
 ### Jadual: `users` — Lajur Baru
 ```sql
 - approval_status (text): 'pending' | 'approved' | 'rejected'
-  (default: 'approved' — hanya 'pending' jika domain dalam allowlist)
+  (default: 'pending' — semua pengguna baru set pending)
 ```
 
 ## API Endpoints
 
-### GET `/api/portal/admin/allowlist`
-Dapatkan senarai domain allowlist (semua orang boleh baca).
-
-**Response:**
-```json
-{
-  "domains": [
-    {
-      "id": "uuid",
-      "domain": "gpi.edu.my",
-      "created_by": "clerk_id",
-      "created_at": "2026-01-01T00:00:00Z"
-    }
-  ]
-}
-```
-
-### POST `/api/portal/admin/allowlist`
-Tambah domain baru (hanya admin).
-
-**Body:**
-```json
-{
-  "domain": "gpi.edu.my"
-}
-```
-
-### DELETE `/api/portal/admin/allowlist`
-Buang domain dari senarai (hanya admin).
-
-**Body:**
-```json
-{
-  "domain": "gpi.edu.my"
-}
-```
-
 ### GET `/api/portal/admin/pending-approvals`
-Dapatkan senarai pending approval (hanya admin/coach).
+Dapatkan senarai semua pending approval (hanya admin/coach).
 
 **Response:**
 ```json
@@ -119,13 +66,17 @@ Dapatkan senarai pending approval (hanya admin/coach).
     {
       "id": "uuid",
       "user_id": "clerk_id",
-      "domain": "gpi.edu.my",
       "status": "pending",
       "requested_at": "2026-01-01T00:00:00Z",
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "note": null,
       "user": {
         "full_name": "NAMA PENUH",
-        "email": "nama@gpi.edu.my",
-        "school": "SEKOLAH"
+        "email": "nama@gmail.com",
+        "school": "SEKOLAH",
+        "profile_complete": true,
+        "created_at": "2026-01-01T00:00:00Z"
       }
     }
   ]
@@ -144,39 +95,42 @@ Luluskan atau tolak pendaftaran (hanya admin/coach).
 }
 ```
 
+**Response:**
+```json
+{
+  "ok": true,
+  "status": "approved" | "rejected"
+}
+```
+
 ## Alur Teknikal
 
 1. **Pendaftaran**: `POST /api/portal/profile`
-   - Ambil email dari Clerk
-   - Ekstrak domain dari email
-   - Semak jika domain ada dalam `domain_allowlist`
-   - Jika ada → set `approval_status = 'pending'`
-   - Buat record dalam `pending_approvals`
+   - Pengguna melengkap profil
+   - Auto-set `approval_status = 'pending'` untuk SEMUA pengguna baru
+   - Buat record dalam `pending_approvals` dengan status 'pending'
 
 2. **Kelulusan**: `POST /api/portal/admin/pending-approvals`
+   - Admin/coach klik "Luluskan" atau "Tolak"
    - Update `pending_approvals.status` ke 'approved' atau 'rejected'
    - Update `users.approval_status` ke status yang sama
-   - Jika rejected, pengguna tidak boleh akses portal
+   - Set `reviewed_by` (admin/coach ID) dan `reviewed_at` (timestamp)
 
 3. **Portal Access**: Middleware `PortalApprovalGuard`
    - Semak `users.approval_status` pada setiap akses portal
    - Jika 'pending' → redirect ke `/portal/approval-pending`
+   - Jika 'approved' → allow akses penuh
    - Jika 'rejected' → show error message
 
 ## Contoh Penggunaan
 
-### Skenario 1: Pendaftaran dari GPI (Gawai Permata Indonesia)
+### Skenario: Pendaftaran Baru
 
-1. Tambah `gpi.edu.my` ke allowlist
-2. Pengguna dari GPI mendaftar dengan email `nama@gpi.edu.my`
-3. Sistem detect domain, set status = 'pending'
-4. Admin/coach lihat pending approval
-5. Admin/coach klik "Luluskan"
-6. Pengguna dapat akses portal
-
-### Skenario 2: Pendaftaran dari Domain Umum
-
-1. Domain umum (`gmail.com`, `yahoo.com`) TIDAK dalam allowlist
-2. Pengguna mendaftar dengan email `nama@gmail.com`
-3. Sistem detect domain TIDAK dalam senarai, set status = 'approved'
-4. Pengguna terus dapat akses portal tanpa espera
+1. Pengguna sign up dengan email apapun (gmail, yahoo, gpi.edu.my, etc)
+2. Melengkap profil di `/portal/profile`
+3. Sistem auto-set status = 'pending', buat record di `pending_approvals`
+4. Pengguna diarahkan ke `/portal/approval-pending` (tunggu approval)
+5. Admin/coach pergi ke `/portal/admin/allowlist`
+6. Admin/coach klik "Luluskan"
+7. `users.approval_status` berubah jadi 'approved'
+8. Pengguna refresh portal, dapat akses penuh
