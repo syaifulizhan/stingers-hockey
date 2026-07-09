@@ -30,7 +30,7 @@ export async function GET() {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getSupabase()
     .from("pending_approvals")
     .select(
       `
@@ -80,7 +80,7 @@ export async function POST(request: Request) {
   }
 
   // Ambil pending approval record
-  const { data: pending, error: fetchErr } = await supabase
+  const { data: pending, error: fetchErr } = await getSupabase()
     .from("pending_approvals")
     .select("*")
     .eq("id", approvalId)
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
   // Update pending_approvals
   const newStatus = action === "approve" ? "approved" : "rejected";
-  const { error: updateErr } = await supabase
+  const { error: updateErr } = await getSupabase()
     .from("pending_approvals")
     .update({
       status: newStatus,
@@ -107,7 +107,7 @@ export async function POST(request: Request) {
   }
 
   // Update user approval_status
-  const { error: userErr } = await supabase
+  const { error: userErr } = await getSupabase()
     .from("users")
     .update({ approval_status: newStatus })
     .eq("clerk_user_id", pending.user_id);
