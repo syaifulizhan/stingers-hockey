@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { auth } from "@clerk/nextjs/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 // GET /api/portal/admin/pending-approvals — Dapatkan senarai pending approval
 export async function GET() {
@@ -15,7 +17,7 @@ export async function GET() {
   }
 
   // Semak admin/coach
-  const { data: user } = await supabase
+  const { data: user } = await getSupabase()
     .from("users")
     .select("role")
     .eq("clerk_user_id", userId)
@@ -54,7 +56,7 @@ export async function POST(request: Request) {
   }
 
   // Semak admin/coach
-  const { data: user } = await supabase
+  const { data: user } = await getSupabase()
     .from("users")
     .select("role")
     .eq("clerk_user_id", userId)
