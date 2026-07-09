@@ -33,7 +33,7 @@ export async function GET() {
     .select(
       `
       *,
-      user:users(id, clerk_user_id, full_name, email, school)
+      user:users(clerk_user_id, full_name, email, school, profile_complete, created_at)
     `
     )
     .eq("status", "pending")

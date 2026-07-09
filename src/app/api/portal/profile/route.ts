@@ -68,25 +68,7 @@ export async function POST(request: Request) {
   // 1. Simpan ke Supabase (RLS: hanya boleh tulis baris sendiri).
   const supabase = await createServerSupabase();
 
-  // Semak domain allowlist — jika email domain dalam senarai, tetapkan approval_status='pending'
-  let approvalStatus = "approved"; // default: lulus terus
-  let domain: string | null = null;
-
-  if (email) {
-    domain = email.split("@")[1]?.toLowerCase() || null;
-    if (domain) {
-      const { data: allowlistEntry } = await supabase
-        .from("domain_allowlist")
-        .select("id")
-        .eq("domain", domain)
-        .single();
-
-      if (allowlistEntry) {
-        approvalStatus = "pending"; // perlu approval
-      }
-    }
-  }
-
+  // Semua sign up perlu approval — set approval_status='pending'
   const { error } = await supabase.from("users").upsert(
     {
       clerk_user_id: userId,
@@ -106,7 +88,7 @@ export async function POST(request: Request) {
       position: d.position || null,
       notes: d.notes || null,
       profile_complete: true,
-      approval_status: approvalStatus,
+      approval_status: "pending", // semua baru perlu approval
     },
     { onConflict: "clerk_user_id" }
   );
@@ -119,21 +101,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // Jika domain dalam allowlist, buat record pending_approvals
-  if (approvalStatus === "pending" && domain) {
-    const { error: pendingErr } = await supabase
-      .from("pending_approvals")
-      .insert({
-        user_id: userId,
-        domain: domain,
-        status: "pending",
-      })
-      .select()
-      .single();
+  // Buat pending approval record (jika belum ada)
+  const { error: pendingErr } = await supabase
+    .from("pending_approvals")
+    .insert({
+      user_id: userId,
+      status: "pending",
+    })
+    .select()
+    .single();
 
-    if (pendingErr && pendingErr.code !== "23505") { // 23505 = unique constraint (sudah ada)
-      console.error("[portal/profile] gagal buat pending_approval:", pendingErr.message);
-    }
+  if (pendingErr && pendingErr.code !== "23505") { // 23505 = unique constraint (sudah ada)
+    console.error("[portal/profile] gagal buat pending_approval:", pendingErr.message);
   }
 
   // 2. Cermin ke Google Sheet (best-effort — jangan gagalkan jika Sheet tiada).
