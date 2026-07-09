@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PortalApprovalGuard } from "@/components/PortalApprovalGuard";
 
 // Metadata khusus portal. noindex supaya portal tak muncul di Google.
 // ClerkProvider kini di root layout (laman utama pun perlu tahu status login).
@@ -10,5 +11,9 @@ export const metadata: Metadata = {
 export default function PortalLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return <div className="min-h-screen bg-ink text-paper">{children}</div>;
+  return (
+    <div className="min-h-screen bg-ink text-paper">
+      <PortalApprovalGuard>{children}</PortalApprovalGuard>
+    </div>
+  );
 }
