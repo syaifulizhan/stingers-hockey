@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, LayoutDashboard, UserCog, CheckSquare } from "lucide-react";
+import { Home, LayoutDashboard, UserCog } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
-import { useEffect, useState } from "react";
 import NotificationBell from "@/components/portal/NotificationBell";
 import Wordmark from "@/components/ui/Wordmark";
 
@@ -12,42 +11,14 @@ import Wordmark from "@/components/ui/Wordmark";
 //   • Laman Utama → website awam (/)
 //   • Dashboard   → /portal/dashboard
 //   • Edit Profil → /portal/onboarding
-//   • Kelulusan   → /portal/admin/allowlist (admin/coach sahaja)
-const baseLinks = [
+const links = [
   { href: "/", label: "Laman Utama", Icon: Home },
   { href: "/portal/dashboard", label: "Dashboard", Icon: LayoutDashboard },
   { href: "/portal/onboarding", label: "Edit Profil", Icon: UserCog },
 ];
 
-const adminLinks = [
-  { href: "/portal/admin/allowlist", label: "Kelulusan", Icon: CheckSquare },
-];
-
 export default function PortalNav({ badge }: { badge?: string }) {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        const res = await fetch("/api/portal/profile");
-        if (res.ok) {
-          const data = await res.json();
-          setUserRole(data.user?.role || null);
-        }
-      } catch (err) {
-        console.error("Gagal ambil user role:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserRole();
-  }, []);
-
-  const isAdminOrCoach = userRole && ["admin", "coach"].includes(userRole);
-  const links = isAdminOrCoach ? [...baseLinks, ...adminLinks] : baseLinks;
 
   return (
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, ShoppingBag } from "lucide-react";
+import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, ShoppingBag, CheckSquare } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
 import { memberName, preferredName } from "@/lib/names";
@@ -24,6 +24,7 @@ import CoachSummary from "@/components/portal/coach/CoachSummary";
 import ShopAdmin from "@/components/portal/coach/ShopAdmin";
 import OrderReview from "@/components/portal/coach/OrderReview";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
+import ApprovalPanel from "@/components/portal/coach/ApprovalPanel";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 
 type Member = {
@@ -619,6 +620,21 @@ export default async function CoachPage() {
                     ))}
                   </div>
                 )}
+              </section>
+            ),
+          },
+          {
+            id: "kelulusan",
+            label: "Kelulusan",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <CheckSquare className="h-4 w-4" /> Kelulusan Pendaftaran
+                </h2>
+                <p className="text-muted mb-4 font-sans text-sm">
+                  Luluskan atau tolak cubaan sign up baharu
+                </p>
+                <ApprovalPanel />
               </section>
             ),
           },
