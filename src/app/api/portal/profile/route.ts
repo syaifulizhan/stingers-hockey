@@ -107,6 +107,7 @@ export async function POST(request: Request) {
     .insert({
       user_id: userId,
       status: "pending",
+      requested_at: new Date().toISOString(),
     })
     .select()
     .single();

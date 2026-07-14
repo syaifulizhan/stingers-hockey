@@ -35,6 +35,8 @@ export default function ApprovalPage() {
 
     if (isLoaded && userId) {
       fetchData();
+      const interval = setInterval(fetchData, 3000);
+      return () => clearInterval(interval);
     }
   }, [isLoaded, userId, router]);
 
@@ -69,6 +71,8 @@ export default function ApprovalPage() {
 
       if (!res.ok) throw new Error("Gagal kemaskini approval");
 
+      setError("");
+      await new Promise(r => setTimeout(r, 500));
       fetchData();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Ralat");
