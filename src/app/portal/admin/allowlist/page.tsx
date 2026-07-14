@@ -116,7 +116,7 @@ export default function ApprovalPage() {
                 key={item.id}
                 className="rounded-lg border border-line bg-bg-soft p-5 hover:border-amber/50 transition"
               >
-                <div className="flex justify-between items-start mb-4">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-0">
                   <div className="flex-1">
                     <h3 className="font-sans font-semibold text-paper text-lg">
                       {item.user?.full_name || "N/A"}
@@ -139,16 +139,16 @@ export default function ApprovalPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => handleApprove(item.id, "approve")}
-                      className="px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition font-sans text-sm font-semibold flex items-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition font-sans text-sm font-semibold flex items-center justify-center sm:justify-start gap-2 whitespace-nowrap"
                     >
                       <CheckCircle className="h-4 w-4" /> Luluskan
                     </button>
                     <button
                       onClick={() => handleApprove(item.id, "reject")}
-                      className="px-4 py-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition font-sans text-sm font-semibold flex items-center gap-2"
+                      className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-red-500/50 text-red-400 hover:bg-red-500/10 transition font-sans text-sm font-semibold flex items-center justify-center sm:justify-start gap-2 whitespace-nowrap"
                     >
                       <XCircle className="h-4 w-4" /> Tolak
                     </button>
