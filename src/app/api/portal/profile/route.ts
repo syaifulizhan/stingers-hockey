@@ -102,7 +102,7 @@ export async function POST(request: Request) {
   }
 
   // Buat pending approval record (jika belum ada)
-  const { error: pendingErr } = await supabase
+  const { data: pendingData, error: pendingErr } = await supabase
     .from("pending_approvals")
     .insert({
       user_id: userId,
@@ -112,8 +112,19 @@ export async function POST(request: Request) {
     .select()
     .single();
 
-  if (pendingErr && pendingErr.code !== "23505") { // 23505 = unique constraint (sudah ada)
-    console.error("[portal/profile] gagal buat pending_approval:", pendingErr.message);
+  if (pendingErr) {
+    if (pendingErr.code === "23505") {
+      console.log("[portal/profile] pending_approval sudah ada untuk user:", userId);
+    } else {
+      console.error("[portal/profile] gagal buat pending_approval:", {
+        code: pendingErr.code,
+        message: pendingErr.message,
+        details: pendingErr.details,
+        userId,
+      });
+    }
+  } else {
+    console.log("[portal/profile] pending_approval berjaya dibuat:", pendingData?.id);
   }
 
   // 2. Cermin ke Google Sheet (best-effort — jangan gagalkan jika Sheet tiada).
