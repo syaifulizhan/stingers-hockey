@@ -32,15 +32,61 @@ export function PortalApprovalGuard({
       return;
     }
 
+    // Check cached status first - hanya cek sekali per session
+    const cached = getCachedApprovalStatus();
+    if (cached !== null) {
+      if (cached === "pending") {
+        router.push("/portal/approval-pending");
+      }
+      setChecking(false);
+      return;
+    }
+
+    // Jika cache kosong, cek dari API
     checkApprovalStatus();
-  }, [isLoaded, userId, pathname]);
+  }, [isLoaded, userId]); // Removed pathname - hanya cek pada mount/userId change
+
+  const getCachedApprovalStatus = (): string | null => {
+    try {
+      const cached = sessionStorage.getItem(`approval_status_${userId}`);
+      if (cached) {
+        const { status, timestamp } = JSON.parse(cached);
+        // Cache valid selama 30 menit
+        const age = Date.now() - timestamp;
+        if (age < 30 * 60 * 1000) {
+          return status;
+        }
+        // Cache expired, delete
+        sessionStorage.removeItem(`approval_status_${userId}`);
+      }
+    } catch (err) {
+      console.error("Cache read error:", err);
+    }
+    return null;
+  };
+
+  const cacheApprovalStatus = (status: string) => {
+    try {
+      sessionStorage.setItem(
+        `approval_status_${userId}`,
+        JSON.stringify({ status, timestamp: Date.now() })
+      );
+    } catch (err) {
+      console.error("Cache write error:", err);
+    }
+  };
 
   const checkApprovalStatus = async () => {
     try {
       const res = await fetch("/api/portal/profile");
       if (res.ok) {
         const data = await res.json();
-        if (data.user?.approval_status === "pending") {
+        const status = data.user?.approval_status || "approved";
+
+        // Cache status untuk session ini
+        cacheApprovalStatus(status);
+
+        if (status === "pending") {
           router.push("/portal/approval-pending");
           return;
         }
@@ -55,7 +101,7 @@ export function PortalApprovalGuard({
   if (checking) {
     return (
       <div className="min-h-screen bg-ink flex items-center justify-center">
-        <p className="text-paper">Memeriksa status kelulusan…</p>
+        <p className="text-paper">Memuatkan…</p>
       </div>
     );
   }
