@@ -2,38 +2,56 @@
 
 import { useEffect, useState } from "react";
 import { Eye } from "lucide-react";
+import { useLang } from "@/lib/i18n";
 
 const INITIAL_VISITORS = 99235;
-const STORAGE_KEY = "stingers_visitor_count";
 
 export default function VisitorCounter() {
+  const { t } = useLang();
   const [count, setCount] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Initialize dari localStorage atau set ke initial value
-    const stored = localStorage.getItem(STORAGE_KEY);
-    const initialCount = stored ? parseInt(stored, 10) : INITIAL_VISITORS;
-    setCount(initialCount);
+    async function initializeVisitor() {
+      try {
+        const response = await fetch("/api/visitors");
+        const data = await response.json();
+        setCount(data.count ?? INITIAL_VISITORS);
 
-    // Simula pelawat baru setiap 5-15 saat untuk effect yang cantik
-    const interval = setInterval(() => {
-      setCount((prev) => {
-        if (prev === null) return initialCount + 1;
-        const newCount = prev + 1;
-        localStorage.setItem(STORAGE_KEY, newCount.toString());
-        return newCount;
-      });
-    }, Math.random() * 10000 + 5000); // 5-15 saat
+        await fetch("/api/visitors", { method: "POST" });
+      } catch (error) {
+        console.error("Failed to fetch visitor count:", error);
+        setCount(INITIAL_VISITORS);
+      } finally {
+        setIsLoading(false);
+      }
+    }
 
-    return () => clearInterval(interval);
+    initializeVisitor();
   }, []);
 
-  if (count === null) return null;
+  useEffect(() => {
+    if (count === null) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch("/api/visitors");
+        const data = await response.json();
+        setCount(data.count ?? count);
+      } catch (error) {
+        console.error("Failed to refresh visitor count:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [count]);
+
+  if (isLoading || count === null) return null;
 
   return (
     <div className="group inline-flex flex-col items-end gap-1.5">
       <div className="text-xs font-sans text-muted/60 uppercase tracking-wide opacity-0 transition-opacity group-hover:opacity-100">
-        {count === INITIAL_VISITORS ? "Live Count" : "Total Views"}
+        {t("Pelawat", "Visitors")}
       </div>
       <div className="inline-flex items-center gap-2 rounded-lg border border-amber/20 bg-gradient-to-r from-amber/5 to-amber/10 px-3.5 py-2 text-sm font-mono text-amber/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:border-amber/40 hover:from-amber/10 hover:to-amber/15 hover:shadow-md hover:shadow-amber/10">
         <Eye className="h-4 w-4 animate-pulse" />
