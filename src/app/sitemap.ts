@@ -14,37 +14,56 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/berita`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
-      priority: 0.9,
+      priority: 0.95,
     },
     {
       url: `${BASE_URL}/live`,
       lastModified: new Date(),
       changeFrequency: "hourly" as const,
-      priority: 0.8,
+      priority: 0.9,
     },
     {
       url: `${BASE_URL}/keputusan`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
-      priority: 0.8,
+      priority: 0.85,
     },
     {
       url: `${BASE_URL}/tempahan`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
-      priority: 0.7,
+      priority: 0.8,
     },
     {
       url: `${BASE_URL}/hustle-gear`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
-      priority: 0.7,
+      priority: 0.8,
     },
     {
       url: `${BASE_URL}/launching`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
-      priority: 0.6,
+      priority: 0.7,
+    },
+    // High-priority article pages (recent news)
+    {
+      url: `${BASE_URL}/berita/lima-pemain-stingers`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/berita/sk-taman-desaminium`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE_URL}/berita/stingers-hockey-sktd`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
     },
   ];
 

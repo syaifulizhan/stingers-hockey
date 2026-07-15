@@ -154,6 +154,23 @@ const jsonLd = [
   },
   faqSchema,
   organizationSchema,
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Stingers Hockey",
+    url: SITE_URL,
+    searchAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+      },
+    },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${SITE_URL}/berita?search={search_term_string}`,
+    },
+  },
 ];
 
 export default function RootLayout({
