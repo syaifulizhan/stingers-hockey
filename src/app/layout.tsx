@@ -49,6 +49,9 @@ export const metadata: Metadata = {
   title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium | Hoki.my",
   description:
     "Hoki.my — Pasukan hoki rasmi SK Taman Desaminium. Strike Hard. Strike Fast. Sertai pencarian bakat Stingers Hockey 2026. Latihan, jersi, dan berita hoki terkini.",
+  verification: {
+    google: "scHV8-Ztac4CjvRJp4_cUIhsWbFl6i-yaVvi7H-jiH8",
+  },
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
@@ -95,34 +98,60 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// JSON-LD structured data — SportsTeam schema
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SportsTeam",
-  name: "Stingers Hockey",
-  sport: "Field Hockey",
-  foundingDate: "2017",
-  slogan: "Strike Hard. Strike Fast.",
-  url: SITE_URL,
-  email: "hstingers@gmail.com",
-  telephone: "+60389413905",
-  memberOf: {
-    "@type": "EducationalOrganization",
-    name: "Sekolah Kebangsaan Taman Desaminium",
-  },
-  location: {
-    "@type": "Place",
-    name: "SK Taman Desaminium",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Persiaran Desaminium 1, Taman Desaminium",
-      addressLocality: "Seri Kembangan",
-      postalCode: "43300",
-      addressRegion: "Selangor",
-      addressCountry: "MY",
+// JSON-LD structured data — Multiple schemas for better SEO
+const jsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SportsTeam",
+    name: "Stingers Hockey",
+    sport: "Field Hockey",
+    foundingDate: "2017",
+    slogan: "Strike Hard. Strike Fast.",
+    url: SITE_URL,
+    email: "hstingers@gmail.com",
+    telephone: "+60389413905",
+    memberOf: {
+      "@type": "EducationalOrganization",
+      name: "Sekolah Kebangsaan Taman Desaminium",
+    },
+    location: {
+      "@type": "Place",
+      name: "SK Taman Desaminium",
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "Persiaran Desaminium 1, Taman Desaminium",
+        addressLocality: "Seri Kembangan",
+        postalCode: "43300",
+        addressRegion: "Selangor",
+        addressCountry: "MY",
+      },
     },
   },
-};
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Hoki.my",
+        item: SITE_URL,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Berita",
+        item: `${SITE_URL}/berita`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: "Live",
+        item: `${SITE_URL}/live`,
+      },
+    ],
+  },
+];
 
 export default function RootLayout({
   children,
@@ -141,7 +170,7 @@ export default function RootLayout({
           {/* JSON-LD (data, bukan skrip boleh-laku) — corak rasmi Next App Router. */}
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@graph": jsonLd }) }}
           />
           <LanguageProvider>{children}</LanguageProvider>
           <PullToRefresh />
