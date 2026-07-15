@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Disallow private areas
+Disallow: /portal/sign-in
+Disallow: /portal/sign-up
+Disallow: /portal/onboarding
+Disallow: /portal/dashboard
+Disallow: /portal/admin/
+Disallow: /portal/coach/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://hoki.my/sitemap.xml
