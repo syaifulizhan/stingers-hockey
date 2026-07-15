@@ -49,13 +49,13 @@ export default function VisitorCounter() {
   if (isLoading || count === null) return null;
 
   return (
-    <div className="group inline-flex flex-col items-end gap-1.5">
-      <div className="text-xs font-sans text-muted/60 uppercase tracking-wide opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="group inline-flex flex-col items-end gap-2">
+      <div className="text-xs font-sans font-semibold text-amber/70 uppercase tracking-widest">
         {t("Pelawat", "Visitors")}
       </div>
-      <div className="inline-flex items-center gap-2 rounded-lg border border-amber/20 bg-gradient-to-r from-amber/5 to-amber/10 px-3.5 py-2 text-sm font-mono text-amber/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:border-amber/40 hover:from-amber/10 hover:to-amber/15 hover:shadow-md hover:shadow-amber/10">
-        <Eye className="h-4 w-4 animate-pulse" />
-        <span className="tabular-nums font-semibold tracking-tight">{count.toLocaleString("en-US")}</span>
+      <div className="inline-flex items-center gap-2.5 rounded-lg border border-amber/30 bg-gradient-to-br from-amber/10 via-amber/5 to-transparent px-4 py-2.5 text-sm font-mono text-amber/90 backdrop-blur-sm shadow-lg shadow-amber/10 transition-all duration-300 hover:border-amber/50 hover:shadow-xl hover:shadow-amber/20">
+        <Eye className="h-5 w-5 flex-shrink-0 text-amber/80 animate-pulse" aria-hidden="true" />
+        <span className="tabular-nums font-bold tracking-tight">{count.toLocaleString("en-US")}</span>
       </div>
     </div>
   );
