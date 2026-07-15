@@ -38,15 +38,17 @@ const archivo = Archivo({
   display: "swap",
 });
 
-const SITE_URL = "https://stingers-hockey-r99l.vercel.app";
+const SITE_URL = process.env.NODE_ENV === "production"
+  ? "https://hoki.my"
+  : "https://stingers-hockey-r99l.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   applicationName: "Stingers Hockey",
   manifest: "/manifest.webmanifest",
-  title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium",
+  title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium | Hoki.my",
   description:
-    "Strike Hard. Strike Fast. Pasukan hoki rasmi Sekolah Kebangsaan Taman Desaminium sejak 2017. Sertai pencarian bakat Stingers Hockey 2026.",
+    "Hoki.my — Pasukan hoki rasmi SK Taman Desaminium. Strike Hard. Strike Fast. Sertai pencarian bakat Stingers Hockey 2026. Latihan, jersi, dan berita hoki terkini.",
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
@@ -57,11 +59,16 @@ export const metadata: Metadata = {
     title: "Stingers",
   },
   keywords: [
+    "hoki",
+    "hoki malaysia",
+    "hoki.my",
     "Stingers Hockey",
     "field hockey Malaysia",
+    "hoki sekolah",
     "SK Taman Desaminium",
     "hoki sekolah Selangor",
     "pasukan hoki Seri Kembangan",
+    "kejohanan hoki",
   ],
   authors: [{ name: "Stingers Hockey" }],
   openGraph: {
