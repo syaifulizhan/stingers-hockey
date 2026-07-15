@@ -49,13 +49,13 @@ export default function VisitorCounter() {
   if (isLoading || count === null) return null;
 
   return (
-    <div className="group inline-flex flex-col items-end gap-2">
-      <div className="text-xs font-sans font-semibold text-amber/70 uppercase tracking-widest">
+    <div className="group inline-flex flex-col items-end gap-2.5">
+      <div className="text-xs font-sans font-bold text-amber uppercase tracking-widest leading-none">
         {t("Pelawat", "Visitors")}
       </div>
-      <div className="inline-flex items-center gap-2.5 rounded-lg border border-amber/30 bg-gradient-to-br from-amber/10 via-amber/5 to-transparent px-4 py-2.5 text-sm font-mono text-amber/90 backdrop-blur-sm shadow-lg shadow-amber/10 transition-all duration-300 hover:border-amber/50 hover:shadow-xl hover:shadow-amber/20">
-        <Eye className="h-5 w-5 flex-shrink-0 text-amber/80 animate-pulse" aria-hidden="true" />
-        <span className="tabular-nums font-bold tracking-tight">{count.toLocaleString("en-US")}</span>
+      <div className="inline-flex items-center gap-3 rounded-xl border-2 border-amber/50 bg-gradient-to-br from-amber/15 via-amber/5 to-amber/0 px-5 py-3 text-base font-mono text-amber/95 backdrop-blur-md shadow-2xl shadow-amber/20 transition-all duration-300 hover:border-amber/70 hover:from-amber/20 hover:via-amber/10 hover:shadow-amber/30 ring-1 ring-amber/20">
+        <Eye className="h-6 w-6 flex-shrink-0 text-amber/80 animate-pulse drop-shadow-lg" aria-hidden="true" />
+        <span className="tabular-nums font-bold tracking-tighter text-lg">{count.toLocaleString("en-US")}</span>
       </div>
     </div>
   );
