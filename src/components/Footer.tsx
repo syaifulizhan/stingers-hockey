@@ -5,6 +5,7 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { contact, navLinks, social } from "@/lib/site";
 import Wordmark from "@/components/ui/Wordmark";
 import { useLang } from "@/lib/i18n";
+import VisitorCounter from "@/components/VisitorCounter";
 
 // Ikon brand — versi lucide ini tiada glyph brand, jadi guna SVG inline.
 function XIcon({ className }: { className?: string }) {
@@ -36,6 +37,10 @@ export default function Footer() {
   return (
     <footer id="hubungi" className="border-t border-line bg-bg-soft">
       <div className="mx-auto max-w-7xl px-6 py-16">
+        <div className="mb-8 flex items-start justify-between">
+          <div className="flex-1" />
+          <VisitorCounter />
+        </div>
         <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr]">
           {/* Kolum 1 — brand */}
           <div>
