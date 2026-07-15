@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import ServiceWorker from "@/components/ServiceWorker";
 import InstallPrompt from "@/components/InstallPrompt";
@@ -141,6 +142,7 @@ export default function RootLayout({
           <SplashScreen />
           <ServiceWorker />
           <InstallPrompt />
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
