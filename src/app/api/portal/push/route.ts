@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireApprovedApi } from "@/lib/portal-guard";
 
 // Simpan langganan push pengguna semasa.
 const schema = z.object({
@@ -10,6 +11,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireApprovedApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -42,6 +47,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireApprovedApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });

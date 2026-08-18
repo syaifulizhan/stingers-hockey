@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth, currentUser, clerkClient } from "@clerk/nextjs/server";
 import { profileSchema } from "@/lib/portal-schema";
-import { createServerSupabase } from "@/lib/supabase/server";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
+import { getPortalAccess } from "@/lib/portal-guard";
 
 // GET /api/portal/profile — Ambil profil pengguna semasa
 export async function GET() {
@@ -13,12 +14,15 @@ export async function GET() {
     );
   }
 
-  const supabase = await createServerSupabase();
+  // Klien admin + penapis tegar pada userId: pengguna hanya boleh baca baris
+  // SENDIRI. Perlu guna admin kerana RLS kini menyekat pengguna 'pending',
+  // sedangkan halaman "menunggu kelulusan" mesti dapat baca statusnya sendiri.
+  const supabase = createSupabaseAdmin();
   const { data: user, error } = await supabase
     .from("users")
-    .select("*, approval_status")
+    .select("*")
     .eq("clerk_user_id", userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json(
@@ -27,7 +31,12 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({ ok: true, user });
+  // Tiada baris lagi = baru sign up = belum diluluskan. JANGAN pulangkan
+  // 500 di sini: guard klien dahulu melepaskan pengguna apabila ia gagal.
+  return NextResponse.json({
+    ok: true,
+    user: user ?? { clerk_user_id: userId, approval_status: "pending" },
+  });
 }
 
 // Simpan profil ahli:
@@ -65,10 +74,15 @@ export async function POST(request: Request) {
   const user = await currentUser();
   const email = user?.primaryEmailAddress?.emailAddress ?? null;
 
-  // 1. Simpan ke Supabase (RLS: hanya boleh tulis baris sendiri).
-  const supabase = await createServerSupabase();
+  // 1. Simpan ke Supabase. Klien admin + kunci pada clerk_user_id sendiri.
+  const supabase = createSupabaseAdmin();
 
-  // Semua sign up perlu approval — set approval_status='pending'
+  // PENTING: jangan sentuh approval_status untuk pengguna yang SUDAH
+  // diluluskan — dahulu baris ini menurunkan semula taraf mereka ke
+  // 'pending' setiap kali mereka mengemas kini profil.
+  const access = await getPortalAccess();
+  const keepApproved = access?.approved === true;
+
   const { error } = await supabase.from("users").upsert(
     {
       clerk_user_id: userId,
@@ -88,7 +102,8 @@ export async function POST(request: Request) {
       position: d.position || null,
       notes: d.notes || null,
       profile_complete: true,
-      approval_status: "pending", // semua baru perlu approval
+      // Pengguna baharu → 'pending'. Yang sudah diluluskan kekal 'approved'.
+      approval_status: keepApproved ? "approved" : "pending",
     },
     { onConflict: "clerk_user_id" }
   );
@@ -101,16 +116,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // Buat pending approval record (jika belum ada)
+  // Rekod pending approval — idempoten, dan TIDAK menimpa keputusan admin
+  // yang sedia ada (ignoreDuplicates).
   const { data: pendingData, error: pendingErr } = await supabase
     .from("pending_approvals")
-    .insert({
-      user_id: userId,
-      status: "pending",
-      requested_at: new Date().toISOString(),
-    })
+    .upsert(
+      {
+        user_id: userId,
+        status: keepApproved ? "approved" : "pending",
+        requested_at: new Date().toISOString(),
+      },
+      { onConflict: "user_id", ignoreDuplicates: true }
+    )
     .select()
-    .single();
+    .maybeSingle();
 
   if (pendingErr) {
     if (pendingErr.code === "23505") {

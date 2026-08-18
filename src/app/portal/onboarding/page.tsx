@@ -1,14 +1,19 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { ensureUserRow } from "@/lib/portal-auth";
+import { redirect } from "next/navigation";
+import { getPortalAccess } from "@/lib/portal-guard";
 import OnboardingForm from "@/components/portal/OnboardingForm";
 import type { ProfileInput } from "@/lib/portal-schema";
 
 export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage() {
-  // Cipta baris ahli kalau belum ada (nampak di panel jurulatih serta-merta).
-  await ensureUserRow();
+  // Onboarding SENGAJA dibuka kepada pengguna yang masih menunggu kelulusan:
+  // borang inilah yang memberi admin nama, sekolah & emel untuk membuat
+  // keputusan. Yang DITOLAK tidak dibenarkan masuk semula.
+  const access = await getPortalAccess();
+  if (!access) redirect("/portal/sign-in");
+  if (access.status === "rejected") redirect("/portal/approval-pending");
 
   const { userId } = await auth();
   const user = await currentUser();

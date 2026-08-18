@@ -3,9 +3,14 @@ import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach } from "@/lib/portal-auth";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Jurulatih/admin cipta & urus season perlawanan.
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya jurulatih/admin." }, { status: 403 });
@@ -37,6 +42,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya jurulatih/admin." }, { status: 403 });
   }
@@ -76,6 +85,10 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya jurulatih/admin." }, { status: 403 });
   }
