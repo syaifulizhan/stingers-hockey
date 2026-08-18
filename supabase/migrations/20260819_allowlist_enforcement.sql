@@ -11,6 +11,29 @@
 -- Jalankan di Supabase Dashboard > SQL Editor.
 -- ============================================================================
 
+-- ────────────────────────────────────────────────────────────────────────────
+-- SEMAKAN PRA-TERBANG — JALANKAN INI DAHULU, SENDIRIAN.
+-- Ia hanya MEMBACA. Ia tidak mengubah apa-apa.
+--
+-- Migrasi di bawah menjadikan is_coach()/is_admin() menuntut kelulusan. Jika
+-- mana-mana jurulatih atau admin anda BUKAN 'approved', mereka akan hilang
+-- kuasa sehingga diluluskan. Semak dahulu:
+--
+--   select role, approval_status, count(*)
+--   from public.users
+--   group by role, approval_status
+--   order by role, approval_status;
+--
+-- Jika ada baris role='coach'/'admin' dengan approval_status bukan 'approved',
+-- luluskan mereka dahulu (gantikan emel dengan yang sebenar):
+--
+--   update public.users set approval_status = 'approved'
+--   where role in ('coach','admin') and email in ('emel-anda@contoh.com');
+--
+-- Tetapkan juga PORTAL_ADMIN_EMAILS di Vercel — dengan itu gate akan
+-- memulihkan sendiri peranan admin anda pada log masuk berikutnya.
+-- ────────────────────────────────────────────────────────────────────────────
+
 -- ── 1. Jadual allowlist email (pra-kelulusan, diurus dalam app) ─────────────
 -- Email di sini diluluskan automatik sebaik mereka log masuk kali pertama.
 create table if not exists public.allowlist_emails (
