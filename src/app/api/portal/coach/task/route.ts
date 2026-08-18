@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Coach cipta tugasan. assignedTo kosong = semua ahli.
 // Pengecualian dalam tugasan umum: ahli + arahan/limit khas.
@@ -19,6 +20,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -87,6 +92,10 @@ const editSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -122,6 +131,10 @@ export async function PATCH(request: Request) {
 
 // Padam tugasan (RLS: hanya coach/admin). Hantaran berkaitan turut terpadam (cascade).
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });

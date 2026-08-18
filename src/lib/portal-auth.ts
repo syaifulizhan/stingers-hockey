@@ -1,42 +1,17 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { getPortalAccess } from "@/lib/portal-guard";
 
 export type Role = "member" | "coach" | "admin";
 
-// Pastikan ahli WUJUD dalam Supabase sebaik mereka masuk portal — walaupun
-// belum lengkapkan profil. Ini buat mereka:
-//   • nampak terus di Panel Jurulatih (boleh diberi task / direkod kehadiran),
-//   • ada peranan 'member' (bukan null), jadi portal berfungsi penuh.
-// ignoreDuplicates: kalau baris dah ada, ia TIDAK menimpa data profil sedia ada.
+/**
+ * @deprecated Guna getPortalAccess() / requireApprovedPage() dari
+ * `@/lib/portal-guard`. Dikekalkan sebagai pembungkus nipis supaya kod lama
+ * tidak pecah — gate itulah yang kini mencipta baris users DAN rekod
+ * pending_approvals seiring.
+ */
 export async function ensureUserRow() {
-  const { userId } = await auth();
-  if (!userId) return;
-  const user = await currentUser();
-  // Utamakan username Clerk; jika tiada, guna nama pendek (firstName sahaja) —
-  // BUKAN nama penuh dari akaun Google/email MOE.
-  const fullName = user?.username || user?.firstName || user?.lastName || null;
-  const email = user?.primaryEmailAddress?.emailAddress ?? null;
-  const supabase = await createServerSupabase();
-
-  const { data: existing } = await supabase
-    .from("users")
-    .select("profile_complete, full_name")
-    .eq("clerk_user_id", userId)
-    .maybeSingle();
-
-  if (!existing) {
-    const { error } = await supabase
-      .from("users")
-      .insert({ clerk_user_id: userId, full_name: fullName, email, profile_complete: false });
-    if (error) console.error("[ensureUserRow] insert gagal:", error.message);
-    return;
-  }
-
-  // Selagi profil BELUM lengkap, nama auto = username Clerk. Selepas ahli isi
-  // profil (profile_complete), nama pilihan mereka dikekalkan (tak ditimpa).
-  if (!existing.profile_complete && fullName && existing.full_name !== fullName) {
-    await supabase.from("users").update({ full_name: fullName, email }).eq("clerk_user_id", userId);
-  }
+  await getPortalAccess();
 }
 
 // Dapatkan peranan pengguna semasa dari Supabase (sumber kebenaran sebenar).
@@ -46,9 +21,12 @@ export async function getMyRole(): Promise<Role | null> {
   const supabase = await createServerSupabase();
   const { data } = await supabase
     .from("users")
-    .select("role")
+    .select("role, approval_status")
     .eq("clerk_user_id", userId)
     .maybeSingle();
+  // Akaun yang belum diluluskan TIADA peranan — seorang 'coach' yang masih
+  // menunggu kelulusan tidak boleh menggunakan kuasa coach.
+  if (data?.approval_status !== "approved") return null;
   return ((data?.role as Role) ?? null) || null;
 }
 

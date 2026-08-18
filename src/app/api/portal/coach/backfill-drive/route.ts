@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { pushImageToDrive } from "@/lib/drive";
 import { preferredName } from "@/lib/names";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Backfill SEKALI sahaja: pindah SEMUA bukti hantaran yang sudah "Disemak"
 // (reviewed) tetapi gambarnya masih dalam Supabase → ke Google Drive, kemudian
@@ -13,6 +14,10 @@ const dateMY = (iso: string) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kuala_Lumpur" }).format(new Date(iso));
 
 export async function POST() {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });

@@ -10,6 +10,7 @@ import {
   type AssessmentType,
 } from "@/lib/assessments";
 import { memberName } from "@/lib/names";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Jurulatih/admin simpan penilaian (kemahiran / jurulatih). Skala 1–10.
 const schema = z.object({
@@ -21,6 +22,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!isCoach(await getMyRole())) {
     return NextResponse.json(
@@ -107,6 +112,10 @@ export async function POST(request: Request) {
 
 // Padam satu penilaian.
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Tidak dibenarkan." }, { status: 403 });
   }
