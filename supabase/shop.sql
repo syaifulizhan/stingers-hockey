@@ -336,7 +336,7 @@ begin
   select current_batch into v_cur from public.shop_settings where id = 1;
   if v_cur is null then
     insert into public.shop_batches (id, label, opened_at)
-    values ('slot-1', 'Slot 1 · tempahan terdahulu',
+    values ('slot-1', 'Slot 1 - tempahan terdahulu',
             coalesce((select min(created_at) from public.shop_orders), now()))
     on conflict (id) do nothing;
     update public.shop_orders set batch = 'slot-1' where batch is null;
