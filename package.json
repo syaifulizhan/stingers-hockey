@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/check-portal-gates.mjs && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:gates": "node scripts/check-portal-gates.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.4.2",

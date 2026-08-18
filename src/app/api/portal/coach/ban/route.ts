@@ -3,6 +3,7 @@ import { z } from "zod";
 import { clerkClient } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isAdmin } from "@/lib/portal-auth";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Ban / authorize semula seorang ahli. HANYA admin.
 //  - Ban: halang login (Clerk), tanda banned, BUANG hantaran + media (jimat storan).
@@ -13,6 +14,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const role = await getMyRole();
   if (!isAdmin(role)) {
     return NextResponse.json(

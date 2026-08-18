@@ -1,136 +1,125 @@
-# Sistem Kelulusan Pendaftaran
+# Allowlist Portal
 
-## Apa itu Sistem Kelulusan?
+Siapa yang dibenarkan masuk portal ahli — dan bagaimana ia dikuatkuasakan.
 
-Semua pengguna yang baru sign up perlu diluluskan oleh admin/coach sebelum boleh menggunakan portal sepenuhnya. Sistem ini memastikan hanya pengguna yang diluluskan boleh akses.
+## Ringkasan
 
-## Aliran
+Portal ini **tertutup secara lalai**. Sign up di Clerk sahaja tidak memberi
+apa-apa akses. Seseorang hanya boleh masuk jika **salah satu** benar:
 
-1. **Pendaftaran Pengguna**: Pengguna mendaftar & melengkap profil
-2. **Auto-Pending**: Sistem auto-set `approval_status = 'pending'` untuk semua pengguna baru
-3. **Buat Pending Record**: Buat record dalam jadual `pending_approvals`
-4. **Admin/Coach Luluskan**: Admin/coach lihat pending approval dan pilih untuk luluskan atau tolak
-5. **Pengguna Boleh Login**: Selepas diluluskan, pengguna boleh akses portal penuh
+| Cara | Untuk siapa | Diurus di mana |
+|---|---|---|
+| `PORTAL_ADMIN_EMAILS` (env) | Anda sendiri / admin sistem | Vercel → Environment Variables |
+| `PORTAL_ALLOWED_EMAILS` (env) | Jaring kecemasan jika DB tumbang | Vercel → Environment Variables |
+| Jadual `allowlist_emails` | Pra-kelulusan pukal (cth. satu skuad) | Portal → Jurulatih → Allowlist |
+| `users.approval_status = 'approved'` | Kelulusan seorang demi seorang | Portal → Jurulatih → Allowlist |
 
-## Cara Guna
+Semua yang lain dihalakan ke `/portal/approval-pending` dan **tidak dapat
+membaca apa-apa data** — bukan sekadar tidak nampak butang.
 
-### Untuk Admin/Coach: Luluskan Pendaftaran
+## Tiga lapis penguatkuasaan
 
-Pergi ke `/portal/admin/allowlist` (hanya admin/coach):
+Kelulusan diperiksa tiga kali, di tiga tempat berbeza. Melangkau satu lapisan
+tidak memberi apa-apa, kerana dua lagi masih berdiri.
 
-1. Lihat senarai semua pengguna yang menunggu kelulusan
-2. Setiap pengguna menunjukkan:
-   - Nama penuh
-   - Email
-   - Sekolah
-   - Tarikh pendaftaran
-3. Klik "Luluskan" untuk approve atau "Tolak" untuk reject
-4. Pengguna akan dapat notifikasi status mereka
+1. **`src/proxy.ts`** — default deny. Setiap laluan di bawah `/portal` dan
+   `/api/portal` menuntut log masuk, kecuali `/portal`, `/portal/sign-in`,
+   `/portal/sign-up`. Ini semakan *optimistic* sahaja: ia tahu anda log masuk,
+   bukan sama ada anda diluluskan.
 
-### Untuk Pengguna: Semak Status Kelulusan
+2. **`src/lib/portal-guard.ts`** — gate sebenar, berjalan di server.
+   - Page: `requireApprovedPage()`, `requireCoachPage()`, `requireAdminPage()`
+   - Route: `requireApprovedApi()`, `requireCoachApi()`, `requireAdminApi()`
 
-Jika pendaftaran anda menunggu kelulusan:
+   Ia dipanggil **sebelum** sebarang data disentuh, jadi tiada apa-apa yang
+   bocor melalui RSC payload. Peraturannya: **gagal = tolak**. Jika Supabase
+   tidak dapat dihubungi, jika lajur hilang, jika apa-apa melencong —
+   pengguna TIDAK diluluskan.
 
-1. Anda akan diarahkan ke `/portal/approval-pending`
-2. Lihat maklumat pendaftaran anda
-3. Tunggu admin/coach untuk meluluskan
+3. **RLS Supabase** — `public.is_approved()`. Walaupun seseorang memintas
+   keseluruhan aplikasi dan bercakap terus dengan Supabase menggunakan anon
+   key + token Clerk mereka sendiri, pangkalan data memulangkan kosong.
+   Lihat `supabase/migrations/20260819_allowlist_enforcement.sql`.
 
-## Database Schema
+## Aliran pengguna baharu
 
-### Jadual: `pending_approvals`
-```sql
-- id (UUID): ID unik
-- user_id (text): Clerk user ID pengguna (FK to users.clerk_user_id)
-- status (text): 'pending' | 'approved' | 'rejected'
-- requested_at (timestamp): Tarikh pendaftaran
-- reviewed_by (text): Clerk user ID admin/coach
-- reviewed_at (timestamp): Tarikh kelulusan/penolakan
-- note (text): Catatan (cth alasan tolak)
+1. Sign up melalui Clerk.
+2. Gate mencipta baris `users` (`approval_status = 'pending'`) **dan** rekod
+   `pending_approvals` serentak — supaya tiada pengguna yang wujud dalam DB
+   tetapi tidak kelihatan di panel admin.
+3. Onboarding (`/portal/onboarding`) **sengaja dibuka** kepada pengguna
+   pending: borang itulah yang memberi admin nama, sekolah dan emel untuk
+   membuat keputusan.
+4. Semua laluan lain → `/portal/approval-pending`.
+5. Admin/jurulatih pergi ke **Portal → Jurulatih → tab Allowlist** (atau
+   terus ke `/portal/admin/allowlist`) dan menekan **Luluskan** atau **Tolak**.
+6. Halaman "menunggu kelulusan" menyemak setiap 2 saat, jadi pengguna masuk
+   sendiri tanpa perlu log masuk semula.
+
+## Pra-kelulusan pukal
+
+Daripada meluluskan seorang demi seorang, tampal senarai emel (dipisah koma
+atau baris baharu) ke dalam kotak **Emel Dibenarkan**. Kesannya:
+
+- Sesiapa yang **sudah** mendaftar dengan emel itu diluluskan serta-merta.
+- Sesiapa yang mendaftar **kemudian** diluluskan automatik pada log masuk pertama.
+
+Membuang emel dari senarai **tidak** menarik balik kelulusan sedia ada — untuk
+itu gunakan **Tolak**, supaya menarik akses sentiasa satu keputusan yang jelas
+dan bukan kesan sampingan. Menolak seseorang turut membuang emelnya dari
+allowlist, jika tidak gate akan meluluskannya semula pada log masuk berikutnya.
+
+## Pemasangan
+
+### 1. Env (Vercel + `.env.local`)
+
+```
+SUPABASE_SERVICE_ROLE_KEY=…   # WAJIB — gate tidak berfungsi tanpanya
+PORTAL_ADMIN_EMAILS=emel-anda@contoh.com
+PORTAL_ALLOWED_EMAILS=        # pilihan
 ```
 
-### Jadual: `users` — Lajur Baru
-```sql
-- approval_status (text): 'pending' | 'approved' | 'rejected'
-  (default: 'pending' — semua pengguna baru set pending)
-```
+`SUPABASE_SERVICE_ROLE_KEY` adalah **wajib**. Tanpanya `createSupabaseAdmin()`
+melontar ralat, gate menolak semua orang kecuali `PORTAL_ADMIN_EMAILS`, dan
+portal berkesan tertutup. Sentiasa tetapkan `PORTAL_ADMIN_EMAILS` supaya anda
+tidak boleh terkunci di luar portal sendiri.
 
-## API Endpoints
+### 2. Migrasi SQL
 
-### GET `/api/portal/admin/pending-approvals`
-Dapatkan senarai semua pending approval (hanya admin/coach).
+Jalankan `supabase/migrations/20260819_allowlist_enforcement.sql` di
+**Supabase Dashboard → SQL Editor**. Ia idempoten — selamat dijalankan
+berulang kali. Ia:
 
-**Response:**
-```json
-{
-  "pending": [
-    {
-      "id": "uuid",
-      "user_id": "clerk_id",
-      "status": "pending",
-      "requested_at": "2026-01-01T00:00:00Z",
-      "reviewed_by": null,
-      "reviewed_at": null,
-      "note": null,
-      "user": {
-        "full_name": "NAMA PENUH",
-        "email": "nama@gmail.com",
-        "school": "SEKOLAH",
-        "profile_complete": true,
-        "created_at": "2026-01-01T00:00:00Z"
-      }
-    }
-  ]
-}
-```
+- mencipta jadual `allowlist_emails`
+- mencipta `public.is_approved()`, dan menambah syarat kelulusan pada
+  `is_coach()` / `is_admin()`
+- mengetatkan polisi RLS supaya `authenticated` sahaja tidak mencukupi
+- menambah polisi INSERT pada `pending_approvals` yang sebelum ini **hilang**
+  (RLS senyap-senyap menolak setiap insert, jadi sign up baharu tidak pernah
+  muncul di panel admin)
+- menampung pengguna sedia ada yang tiada rekod `pending_approvals`
+- menyelaraskan status yang tidak sepadan antara `users` dan `pending_approvals`
 
-### POST `/api/portal/admin/pending-approvals`
-Luluskan atau tolak pendaftaran (hanya admin/coach).
+Polisi `to anon` (papan skor awam, berita awam) tidak disentuh.
 
-**Body:**
-```json
-{
-  "approvalId": "uuid",
-  "action": "approve" | "reject",
-  "note": "Catatan (optional)"
-}
-```
+## API
 
-**Response:**
-```json
-{
-  "ok": true,
-  "status": "approved" | "rejected"
-}
-```
+| Endpoint | Kaedah | Siapa | Guna |
+|---|---|---|---|
+| `/api/portal/admin/allowlist` | GET | jurulatih/admin | senarai emel dibenarkan |
+| `/api/portal/admin/allowlist` | POST | jurulatih/admin | tambah emel `{ email, note? }` |
+| `/api/portal/admin/allowlist` | DELETE | jurulatih/admin | buang emel `{ email }` |
+| `/api/portal/admin/pending-approvals` | GET | jurulatih/admin | senarai menunggu |
+| `/api/portal/admin/pending-approvals` | POST | jurulatih/admin | `{ approvalId, action, note? }` |
 
-## Alur Teknikal
+## Menambah laluan portal baharu
 
-1. **Pendaftaran**: `POST /api/portal/profile`
-   - Pengguna melengkap profil
-   - Auto-set `approval_status = 'pending'` untuk SEMUA pengguna baru
-   - Buat record dalam `pending_approvals` dengan status 'pending'
+`proxy.ts` kini default-deny, jadi laluan baharu **dilindungi secara automatik**
+— tiada apa-apa yang perlu didaftarkan. Yang masih perlu anda buat:
 
-2. **Kelulusan**: `POST /api/portal/admin/pending-approvals`
-   - Admin/coach klik "Luluskan" atau "Tolak"
-   - Update `pending_approvals.status` ke 'approved' atau 'rejected'
-   - Update `users.approval_status` ke status yang sama
-   - Set `reviewed_by` (admin/coach ID) dan `reviewed_at` (timestamp)
+- Page server → panggil `requireApprovedPage()` (atau varian coach/admin)
+  sebagai baris **pertama**, sebelum sebarang query.
+- Route handler → `const gate = await requireApprovedApi(); if (!gate.ok) return gate.response;`
 
-3. **Portal Access**: Middleware `PortalApprovalGuard`
-   - Semak `users.approval_status` pada setiap akses portal
-   - Jika 'pending' → redirect ke `/portal/approval-pending`
-   - Jika 'approved' → allow akses penuh
-   - Jika 'rejected' → show error message
-
-## Contoh Penggunaan
-
-### Skenario: Pendaftaran Baru
-
-1. Pengguna sign up dengan email apapun (gmail, yahoo, gpi.edu.my, etc)
-2. Melengkap profil di `/portal/profile`
-3. Sistem auto-set status = 'pending', buat record di `pending_approvals`
-4. Pengguna diarahkan ke `/portal/approval-pending` (tunggu approval)
-5. Admin/coach pergi ke `/portal/admin/allowlist`
-6. Admin/coach klik "Luluskan"
-7. `users.approval_status` berubah jadi 'approved'
-8. Pengguna refresh portal, dapat akses penuh
+Jika anda terlupa, RLS masih menghalang kebocoran data — tetapi pengguna akan
+melihat halaman kosong dan bukan mesej yang betul.
