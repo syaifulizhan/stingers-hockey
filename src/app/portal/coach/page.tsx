@@ -8,7 +8,6 @@ import { memberName, preferredName } from "@/lib/names";
 import { assessmentAverage } from "@/lib/assessments";
 import { generateReport } from "@/lib/report";
 import PortalNav from "@/components/portal/PortalNav";
-import SyncClerkButton from "@/components/portal/coach/SyncClerkButton";
 import NewsForm from "@/components/portal/coach/NewsForm";
 import TaskForm from "@/components/portal/coach/TaskForm";
 import MembersPanel from "@/components/portal/coach/MembersPanel";
@@ -457,7 +456,6 @@ export default async function CoachPage() {
                 <h2 className={sectionTitle}>
                   <Users className="h-4 w-4" /> Ahli
                 </h2>
-                {admin && <SyncClerkButton />}
                 <MembersPanel members={members} admin={admin} />
               </section>
             ),

@@ -9,5 +9,6 @@
       "path": "/api/seo/auto-boost",
       "schedule": "0 3 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "git log -1 --pretty=%B | grep -qF '[skip ci]'"
 }

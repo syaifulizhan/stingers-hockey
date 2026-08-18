@@ -1,11 +1,15 @@
 name: Keepalive
 
-# GitHub disables scheduled workflows after 60 days without repository activity.
-# This job pushes a timestamp commit twice a month (max ~16 day gap) to reset that counter.
+# GitHub mematikan scheduled workflow selepas 60 hari repo tiada aktiviti commit.
+# Job ini commit satu timestamp setiap minggu supaya kiraan itu sentiasa reset.
+#
+# Dahulu ia berjalan dua kali sebulan (1 & 15 haribulan). Ia berfungsi, tetapi
+# jarang — jadi repo ini nampak lengang berbanding gpi (mingguan) dan Diwan
+# Izhan. Kini diselaraskan dengan gpi: mingguan.
 
 on:
   schedule:
-    - cron: '0 3 1,15 * *'
+    - cron: "0 22 * * 0" # Ahad 22:00 UTC = Isnin 06:00 waktu Malaysia
   workflow_dispatch:
 
 permissions:
@@ -21,13 +25,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write timestamp
+      - name: Tulis timestamp
         run: date -u +'%Y-%m-%dT%H:%M:%SZ' > .github/last-activity.txt
 
-      - name: Commit and push
+      - name: Commit & push
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Tanpa pengawal ini, `git commit` gagal dengan "nothing to commit"
+          # dan menggagalkan seluruh job apabila timestamp tidak berubah.
+          if git diff --quiet -- .github/last-activity.txt; then
+            echo "Tiada perubahan — langkau commit."
+            exit 0
+          fi
           git add .github/last-activity.txt
+          # [skip ci] ditangkap oleh "ignoreCommand" dalam vercel.json supaya
+          # commit mingguan ini tidak mencetuskan deploy production.
           git commit -m "chore: keepalive timestamp [skip ci]"
           git push
