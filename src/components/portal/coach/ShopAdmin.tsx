@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Plus, ImagePlus, Pencil } from "lucide-react";
+import { Trash2, Plus, ImagePlus, Pencil, Layers, Archive, Brush } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
 
@@ -118,9 +118,12 @@ type Edition = {
   sort_order: number;
   kind?: string | null;
 };
+type Batch = { id: string; label: string; opened_at: string; closed_at: string | null };
+
 type Settings = {
   pakej_discount_percent: number;
   pakej_min_items: number;
+  current_batch?: string | null;
   duitnow_qr_url?: string | null;
   info_akaun?: string | null;
   pos_enabled?: boolean;
@@ -145,12 +148,14 @@ export default function ShopAdmin({
   editions,
   settings,
   discounts,
+  batches = [],
 }: {
   products: Product[];
   variants: Variant[];
   editions: Edition[];
   settings: Settings;
   discounts: Discount[];
+  batches?: Batch[];
 }) {
   const supabase = useSupabase();
 
@@ -172,6 +177,8 @@ export default function ShopAdmin({
 
   return (
     <div className="flex flex-col gap-6">
+      <SlotSettings batches={batches} currentBatch={settings.current_batch ?? null} supabase={supabase} />
+
       {jersi && (
         <ProductSettings
           title="Jersi"
@@ -220,6 +227,275 @@ export default function ShopAdmin({
       <PostageSettings settings={settings} supabase={supabase} />
 
       <DiscountsEditor discounts={discounts} supabase={supabase} />
+
+      <MaintenanceCard />
+    </div>
+  );
+}
+
+/* ───────────────────────── Slot tempahan (batch) ─────────────────────────
+   Buka slot baharu = tukar penanda pada tempahan yang MASUK selepas ini.
+   Tempahan lama kekal dalam DB, cuma berpindah ke arkib dalam panel Tempahan.
+   Tiada baris dipadam di sini — langsung.                                   */
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+
+const tarikh = (iso: string) =>
+  new Date(iso).toLocaleDateString("ms-MY", { day: "numeric", month: "short", year: "numeric" });
+
+function SlotSettings({
+  batches,
+  currentBatch,
+  supabase,
+}: {
+  batches: Batch[];
+  currentBatch: string | null;
+  supabase: SB;
+}) {
+  const { saving, status, clearStatus, runRow } = useRowAction();
+  const [label, setLabel] = useState("");
+  const [confirming, setConfirming] = useState(false);
+
+  const current = batches.find((b) => b.id === currentBatch) ?? null;
+  const id = slugify(label);
+  const reopening = batches.some((b) => b.id === id);
+
+  const open = () =>
+    runRow(async () => {
+      if (id.length < 2) throw new Error("Beri nama slot (sekurang-kurangnya 2 aksara).");
+      const { error } = await supabase.rpc("open_shop_slot", { p_id: id, p_label: label.trim() });
+      if (error) throw new Error(error.message);
+      setLabel("");
+      setConfirming(false);
+    });
+
+  return (
+    <div className={cardCls}>
+      <h3 className={`${sectionTitle} mb-1 flex items-center gap-2`}>
+        <Layers className="h-5 w-5 text-amber" /> Slot Tempahan
+      </h3>
+      <p className="mb-4 font-sans text-xs text-muted">
+        Setiap tempahan dicop dengan slot. Buka slot baharu bila pusingan tempahan sebelum ini sudah
+        selesai — senarai &amp; Pivot supplier bermula kosong, tempahan lama berpindah ke arkib.{" "}
+        <strong className="text-paper/80">Tiada data dipadam.</strong>
+      </p>
+
+      <div className="mb-4 rounded-lg border border-line bg-ink/40 px-3 py-2">
+        <p className="font-sans text-xs text-muted">Slot semasa — tempahan baharu masuk ke sini</p>
+        {current ? (
+          <p className="font-sans text-sm font-semibold text-paper">
+            {current.label}{" "}
+            <span className="font-normal text-muted">· dibuka {tarikh(current.opened_at)}</span>
+          </p>
+        ) : (
+          <p className="font-sans text-sm font-semibold text-amber">
+            {currentBatch ?? "Belum ditetapkan — jalankan migrasi 20260819_shop_slots.sql dahulu."}
+          </p>
+        )}
+      </div>
+
+      <label className={labelCls}>Nama slot baharu</label>
+      <input
+        className={inputCls}
+        value={label}
+        placeholder={`Slot ${batches.length + 1} · Jersi ${new Date().getFullYear()}`}
+        onChange={(e) => {
+          setLabel(e.target.value);
+          setConfirming(false);
+          clearStatus();
+        }}
+      />
+      {id && (
+        <p className="mt-1 font-sans text-xs text-muted">
+          ID: <code className="text-paper/80">{id}</code>
+          {reopening ? " — ID ini sudah wujud; slot itu akan DIBUKA SEMULA, bukan dicipta baharu." : ""}
+        </p>
+      )}
+
+      {!confirming ? (
+        <div className="mt-4 flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            disabled={saving || id.length < 2}
+            className={btnCls}
+          >
+            Buka Slot Baharu
+          </button>
+          <RowStatus status={status} clear={clearStatus} />
+        </div>
+      ) : (
+        <div className="mt-4 rounded-lg border border-amber/40 bg-amber/5 p-3">
+          <p className="mb-2 font-sans text-sm font-semibold text-paper">Sahkan buka slot baharu?</p>
+          <ul className="mb-3 flex list-disc flex-col gap-1 pl-5 font-sans text-xs text-paper/80">
+            <li>Slot semasa{current ? ` (${current.label})` : ""} ditutup &amp; masuk arkib.</li>
+            <li>Tempahan baharu dicop <code className="text-amber">{id}</code>.</li>
+            <li>Tempahan sedia ada kekal — boleh dilihat bila-bila melalui pemilih Slot.</li>
+            <li>Harga, variasi &amp; diskaun TIDAK berubah — kemas kini di bawah selepas ini.</li>
+          </ul>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={open} disabled={saving} className={btnCls}>
+              {saving ? "…" : "Ya, buka slot"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              disabled={saving}
+              className="rounded-full border border-line px-4 py-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted hover:border-amber hover:text-amber"
+            >
+              Batal
+            </button>
+            <RowStatus status={status} clear={clearStatus} />
+          </div>
+        </div>
+      )}
+
+      {batches.length > 0 && (
+        <div className="mt-5 border-t border-line pt-4">
+          <p className="mb-2 flex items-center gap-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            <Archive className="h-3.5 w-3.5" /> Arkib slot
+          </p>
+          <ul className="flex flex-col gap-1">
+            {batches.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center gap-2 font-sans text-xs text-paper/80">
+                <span className="font-semibold">{b.label}</span>
+                <span className="text-muted">
+                  {tarikh(b.opened_at)}
+                  {b.closed_at ? ` → ${tarikh(b.closed_at)}` : ""}
+                </span>
+                {b.id === currentBatch && (
+                  <span className="rounded-full bg-amber/20 px-2 py-0.5 font-semibold text-amber">semasa</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="mt-5 border-t border-line pt-4">
+        <p className="mb-2 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+          Senarai semak selepas buka slot
+        </p>
+        <ol className="flex list-decimal flex-col gap-1 pl-5 font-sans text-xs text-muted">
+          <li>Ambil <strong className="text-paper/80">Backup JSON</strong> di panel Tempahan (kalau belum).</li>
+          <li>Variasi jersi musim lepas: matikan (butang Aktif), jangan padam — rekod lama merujuknya.</li>
+          <li>Jersi yang tamat pusingan: turunkan ke Legasi Jersi, tanda &ldquo;boleh beli&rdquo; jika ada stok.</li>
+          <li>Semak harga asas, caj saiz/cetak, peraturan diskaun, kadar pos &amp; QR DuitNow.</li>
+          <li>Buka <code>/tempahan</code> sebagai orang awam dan buat satu tempahan ujian.</li>
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+/* ──────────────── Penyelenggaraan — fail bukti yatim di Storage ────────────
+   Bukti bayaran dimuat naik sebelum baris tempahan wujud, jadi borang yang
+   gagal separuh jalan meninggalkan fail tanpa pemilik. pg_cron pula tak boleh
+   sentuh Storage bila ia membuang tempahan. Pratonton dahulu, baru buang.   */
+const megabait = (b: number) => `${(b / 1024 / 1024).toFixed(1)} MB`;
+
+type Scan = { orphans: number; bytes: number; scanned: number; skippedTooNew: number; capped?: boolean };
+
+function MaintenanceCard() {
+  const [busy, setBusy] = useState(false);
+  const [scan, setScan] = useState<Scan | null>(null);
+  const [done, setDone] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+
+  const call = async (method: "GET" | "POST") => {
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/portal/admin/shop-cleanup", { method });
+      const json = await res.json();
+      if (!res.ok || !json.ok) throw new Error(json.error || "Gagal.");
+      return json;
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Gagal.");
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const check = async () => {
+    setDone(null);
+    setConfirming(false);
+    const json = await call("GET");
+    if (json) setScan(json as Scan);
+  };
+
+  const purge = async () => {
+    const json = await call("POST");
+    if (json) {
+      setDone(`${json.deleted} fail dibuang (${megabait(Number(json.bytes) || 0)}).`);
+      setScan(null);
+      setConfirming(false);
+    }
+  };
+
+  return (
+    <div className={cardCls}>
+      <h3 className={`${sectionTitle} mb-1 flex items-center gap-2`}>
+        <Brush className="h-5 w-5 text-amber" /> Penyelenggaraan Storan
+      </h3>
+      <p className="mb-4 font-sans text-xs text-muted">
+        Buang fail bukti bayaran yang tiada tempahan merujuknya. Fail dalam Tong Sampah dan fail
+        kurang 24 jam dilindungi; gambar produk &amp; QR tidak disentuh langsung.
+      </p>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button type="button" onClick={check} disabled={busy} className={btnCls}>
+          {busy && !confirming ? "…" : "Semak Fail Yatim"}
+        </button>
+        {done && <span className="font-sans text-xs font-semibold text-green-400">{done}</span>}
+        {err && <span className="font-sans text-xs font-semibold text-red-400">{err}</span>}
+      </div>
+
+      {scan && (
+        <div className="mt-3 rounded-lg border border-line bg-ink/40 px-3 py-2 font-sans text-xs text-paper/80">
+          <p>
+            {scan.scanned} fail diperiksa · <strong className="text-amber">{scan.orphans} yatim</strong> (
+            {megabait(scan.bytes)}) · {scan.skippedTooNew} dilangkau kerana terlalu baharu.
+          </p>
+          {scan.capped && (
+            <p className="mt-1 text-amber">
+              Had imbasan dicapai — jalankan sekali lagi selepas buang untuk memeriksa fail selebihnya.
+            </p>
+          )}
+          {scan.orphans > 0 &&
+            (confirming ? (
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <span className="font-semibold text-paper">Buang {scan.orphans} fail? Tak boleh diundur.</span>
+                <button
+                  type="button"
+                  onClick={purge}
+                  disabled={busy}
+                  className="rounded-full border border-red-500/50 px-4 py-1.5 font-sans text-xs font-semibold text-red-400 hover:bg-red-500/10 disabled:opacity-60"
+                >
+                  {busy ? "…" : "Ya, buang"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirming(false)}
+                  disabled={busy}
+                  className="font-sans text-xs font-semibold text-muted hover:text-amber"
+                >
+                  Batal
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirming(true)}
+                className="mt-2 rounded-full border border-line px-4 py-1.5 font-sans text-xs font-semibold text-muted hover:border-red-500/50 hover:text-red-400"
+              >
+                Buang {scan.orphans} fail yatim
+              </button>
+            ))}
+        </div>
+      )}
     </div>
   );
 }

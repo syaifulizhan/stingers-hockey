@@ -287,3 +287,104 @@ select cron.schedule(
       where deleted_at is not null
         and deleted_at < now() - interval '3 days'$$
 );
+
+-- ============================================================================
+-- SLOT TEMPAHAN (batch) — buka slot baharu tanpa memadam yang lama.
+-- Butiran penuh & nota pra-terbang: supabase/migrations/20260819_shop_slots.sql
+-- ============================================================================
+create table if not exists public.shop_batches (
+  id         text primary key,
+  label      text not null,
+  opened_at  timestamptz not null default now(),
+  closed_at  timestamptz
+);
+alter table public.shop_batches enable row level security;
+drop policy if exists shop_batches_select on public.shop_batches;
+create policy shop_batches_select on public.shop_batches for select to authenticated
+  using (public.is_admin());
+drop policy if exists shop_batches_write on public.shop_batches;
+create policy shop_batches_write on public.shop_batches for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+grant select, insert, update, delete on public.shop_batches to authenticated;
+
+alter table public.shop_orders   add column if not exists batch text;
+alter table public.shop_settings add column if not exists current_batch text;
+create index if not exists shop_orders_batch_idx on public.shop_orders (batch);
+
+-- Cop slot dalam DB supaya setiap laluan insert dapat penanda yang betul.
+create or replace function public.stamp_order_batch()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  -- Bukan admin (termasuk borang awam yang guna anon key) TIDAK boleh memilih
+  -- slotnya sendiri — kalau tidak, sesiapa yang bercakap terus dengan Supabase
+  -- boleh menyuntik tempahan ke dalam arkib slot lama.
+  if new.batch is null or btrim(new.batch) = '' or not public.is_admin() then
+    select current_batch into new.batch from public.shop_settings where id = 1;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists trg_stamp_order_batch on public.shop_orders;
+create trigger trg_stamp_order_batch
+  before insert on public.shop_orders
+  for each row execute function public.stamp_order_batch();
+
+-- Backfill sekali sahaja: tempahan sedia ada = 'slot-1'.
+do $$
+declare v_cur text;
+begin
+  select current_batch into v_cur from public.shop_settings where id = 1;
+  if v_cur is null then
+    insert into public.shop_batches (id, label, opened_at)
+    values ('slot-1', 'Slot 1 · tempahan terdahulu',
+            coalesce((select min(created_at) from public.shop_orders), now()))
+    on conflict (id) do nothing;
+    update public.shop_orders set batch = 'slot-1' where batch is null;
+    update public.shop_settings set current_batch = 'slot-1' where id = 1;
+  end if;
+end $$;
+
+-- Buka slot baharu secara atomik (tutup semasa → cipta baharu → tukar penanda).
+create or replace function public.open_shop_slot(p_id text, p_label text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_id    text := btrim(coalesce(p_id, ''));
+  v_label text := btrim(coalesce(p_label, ''));
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin boleh buka slot tempahan.';
+  end if;
+  if v_id = '' then
+    raise exception 'ID slot tidak boleh kosong.';
+  end if;
+  if v_id !~ '^[a-z0-9][a-z0-9-]{0,58}[a-z0-9]$' then
+    raise exception 'ID slot mesti huruf kecil, nombor & sengkang sahaja.';
+  end if;
+
+  update public.shop_batches set closed_at = now()
+   where id = (select current_batch from public.shop_settings where id = 1)
+     and closed_at is null;
+
+  insert into public.shop_batches (id, label)
+  values (v_id, coalesce(nullif(v_label, ''), v_id))
+  on conflict (id) do update set label = excluded.label, closed_at = null;
+
+  update public.shop_settings set current_batch = v_id where id = 1;
+end;
+$$;
+grant execute on function public.open_shop_slot(text, text) to authenticated;
+
+-- Notifikasi tempahan ikut tempahan ke kubur (ref_id tiada foreign key), jadi
+-- purge pg_cron tidak lagi meninggalkan notifikasi yatim.
+create or replace function public.cleanup_order_notifications()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  delete from public.notifications
+   where ref_type = 'order' and ref_id = old.id::text;
+  return old;
+end;
+$$;
+drop trigger if exists trg_cleanup_order_notifications on public.shop_orders;
+create trigger trg_cleanup_order_notifications
+  after delete on public.shop_orders
+  for each row execute function public.cleanup_order_notifications();
