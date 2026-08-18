@@ -84,7 +84,7 @@ begin
     insert into public.shop_batches (id, label, opened_at)
     values (
       'slot-1',
-      'Slot 1 · tempahan terdahulu',
+      'Slot 1 - tempahan terdahulu',
       coalesce((select min(created_at) from public.shop_orders), now())
     )
     on conflict (id) do nothing;
