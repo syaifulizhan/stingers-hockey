@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Users, Newspaper, ClipboardList, CalendarCheck, Inbox, Star, Activity, Swords, Trophy, ShoppingBag, CheckSquare } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach, isAdmin } from "@/lib/portal-auth";
+import { requireCoachPage } from "@/lib/portal-guard";
 import { memberName, preferredName } from "@/lib/names";
 import { assessmentAverage } from "@/lib/assessments";
 import { generateReport } from "@/lib/report";
@@ -24,7 +25,7 @@ import CoachSummary from "@/components/portal/coach/CoachSummary";
 import ShopAdmin from "@/components/portal/coach/ShopAdmin";
 import OrderReview from "@/components/portal/coach/OrderReview";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
-import ApprovalPanel from "@/components/portal/coach/ApprovalPanel";
+import AllowlistManager from "@/components/portal/admin/AllowlistManager";
 import CoachTabs from "@/components/portal/coach/CoachTabs";
 
 type Member = {
@@ -74,8 +75,9 @@ export const dynamic = "force-dynamic";
 
 export default async function CoachPage() {
   // Pengawal: hanya coach/admin boleh masuk.
-  const role = await getMyRole();
-  if (!isCoach(role)) redirect("/portal/dashboard");
+  // GATE: log masuk + diluluskan + peranan jurulatih/admin.
+  const access = await requireCoachPage();
+  const role = access.role;
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
@@ -629,12 +631,13 @@ export default async function CoachPage() {
             content: (
               <section>
                 <h2 className={sectionTitle}>
-                  <CheckSquare className="h-4 w-4" /> Kelulusan Pendaftaran
+                  <CheckSquare className="h-4 w-4" /> Allowlist Portal
                 </h2>
-                <p className="text-muted mb-4 font-sans text-sm">
-                  Luluskan atau tolak cubaan sign up baharu
+                <p className="text-muted mb-6 font-sans text-sm">
+                  Pra-luluskan emel, atau luluskan/tolak sign up baharu.
+                  Sesiapa yang tiada di sini TIDAK boleh masuk portal.
                 </p>
-                <ApprovalPanel />
+                <AllowlistManager />
               </section>
             ),
           },

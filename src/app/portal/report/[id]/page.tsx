@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireApprovedPage } from "@/lib/portal-guard";
 import { buildReportData } from "@/lib/build-report";
 import ReportDocument from "@/components/portal/ReportDocument";
 import PrintBar from "@/components/portal/PrintButton";
@@ -13,6 +14,7 @@ export default async function ReportPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireApprovedPage();
   const { id } = await params;
   const supabase = await createServerSupabase();
   const data = await buildReportData(supabase, id);

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireApprovedApi } from "@/lib/portal-guard";
 
 type NotifRow = {
   id: string;
@@ -12,6 +13,10 @@ type NotifRow = {
 
 // GET — senarai notifikasi + bilangan belum dibaca.
 export async function GET() {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireApprovedApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -38,6 +43,10 @@ export async function GET() {
 
 // POST — tanda semua notifikasi sebagai sudah dibaca (kemas kini masa terakhir lihat).
 export async function POST() {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireApprovedApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });

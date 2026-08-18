@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { clerkClient } from "@clerk/nextjs/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isAdmin } from "@/lib/portal-auth";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Segerak SEMUA pengguna Clerk → jadual Supabase `users`.
 // Berguna untuk masukkan ahli yang dah sign up di Clerk tetapi belum pernah
 // buka portal (jadi belum ada baris). HANYA admin boleh jalankan.
 // ignoreDuplicates: TIDAK menimpa profil sedia ada.
 export async function POST() {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const role = await getMyRole();
   if (!isAdmin(role)) {
     return NextResponse.json(

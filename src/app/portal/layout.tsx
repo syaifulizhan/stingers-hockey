@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
-import { PortalApprovalGuard } from "@/components/PortalApprovalGuard";
 
+// Kelulusan allowlist dikuatkuasakan di SERVER (src/lib/portal-guard.ts),
+// bukan di sini. Guard klien yang lama boleh dipintas dari DevTools dan
+// berjalan SELEPAS komponen server sudah pun menghantar data.
+//
 // Metadata khusus portal. noindex supaya portal tak muncul di Google.
 // ClerkProvider kini di root layout (laman utama pun perlu tahu status login).
 export const metadata: Metadata = {
@@ -13,7 +16,7 @@ export default function PortalLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="min-h-screen bg-ink text-paper">
-      <PortalApprovalGuard>{children}</PortalApprovalGuard>
+      {children}
     </div>
   );
 }

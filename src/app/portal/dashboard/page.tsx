@@ -2,7 +2,7 @@ import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { Newspaper, ClipboardList, CalendarCheck, ChevronRight, Activity, Swords, Trophy } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
-import { ensureUserRow } from "@/lib/portal-auth";
+import { requireApprovedPage } from "@/lib/portal-guard";
 import PlayerTaskList from "@/components/portal/PlayerTaskList";
 import PortalNav from "@/components/portal/PortalNav";
 import AssessmentScores from "@/components/portal/AssessmentScores";
@@ -67,8 +67,9 @@ type AttendanceRow = {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  // Cipta baris ahli kalau belum ada (nampak di panel jurulatih serta-merta).
-  await ensureUserRow();
+  // GATE: wajib log masuk DAN diluluskan admin. Redirect jika tidak.
+  // Ini berlaku SEBELUM sebarang data disentuh — tiada kebocoran RSC.
+  await requireApprovedPage();
 
   const user = await currentUser();
   const supabase = await createServerSupabase();

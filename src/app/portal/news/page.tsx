@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, Newspaper, ChevronRight } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireApprovedPage } from "@/lib/portal-guard";
 import SmartImg from "@/components/SmartImg";
 
 type NewsRow = {
@@ -12,6 +13,7 @@ type NewsRow = {
 };
 
 export default async function PortalNewsArchivePage() {
+  await requireApprovedPage();
   const supabase = await createServerSupabase();
   const { data } = await supabase
     .from("news")

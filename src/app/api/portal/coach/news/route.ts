@@ -6,6 +6,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { sendPush } from "@/lib/push";
 import { makeSlug } from "@/lib/slug";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Pastikan slug unik (tambah -2, -3, … jika bertindih).
 async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<string> {
@@ -27,6 +28,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -123,6 +128,10 @@ const editSchema = z.object({
 });
 
 export async function PATCH(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -153,6 +162,10 @@ export async function PATCH(request: Request) {
 
 // Padam berita (RLS: hanya coach/admin).
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });

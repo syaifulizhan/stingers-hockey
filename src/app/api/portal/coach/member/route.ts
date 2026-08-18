@@ -3,6 +3,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isAdmin } from "@/lib/portal-auth";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Admin kemas kini nama sebenar pemain (display_name) & penanda penjaga gol.
 const schema = z.object({
@@ -12,6 +13,10 @@ const schema = z.object({
 });
 
 export async function PATCH(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isAdmin(await getMyRole())) {
     return NextResponse.json(
       { ok: false, error: "Hanya admin boleh edit." },
@@ -54,6 +59,10 @@ export async function PATCH(request: Request) {
 
 // Padam ahli SECARA KEKAL — akaun Clerk + semua data Supabase. Admin sahaja.
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!isAdmin(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya admin boleh padam." }, { status: 403 });
