@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { requireApprovedPage } from "@/lib/portal-guard";
 import NewsImageCarousel from "@/components/NewsImageCarousel";
 
 type NewsRow = {
@@ -18,6 +19,7 @@ export default async function NewsDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireApprovedPage();
   const { id } = await params;
   const supabase = await createServerSupabase();
 

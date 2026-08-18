@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isAdmin } from "@/lib/portal-auth";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Lantik/turunkan peranan ahli. HANYA admin (lapisan pertama di sini;
 // trigger DB protect_user_role ialah lapisan kedua yang menguatkuasakan).
@@ -11,6 +12,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const role = await getMyRole();
   if (!isAdmin(role)) {
     return NextResponse.json(

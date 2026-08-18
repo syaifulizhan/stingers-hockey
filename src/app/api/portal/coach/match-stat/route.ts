@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach } from "@/lib/portal-auth";
 import { ALL_MATCH_KEYS } from "@/lib/match";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Jurulatih/admin rekod prestasi seorang pemain untuk satu perlawanan.
 const schema = z.object({
@@ -13,6 +14,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya jurulatih/admin." }, { status: 403 });
   }
@@ -50,6 +55,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   if (!isCoach(await getMyRole())) {
     return NextResponse.json({ ok: false, error: "Hanya jurulatih/admin." }, { status: 403 });
   }
