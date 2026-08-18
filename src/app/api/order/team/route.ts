@@ -181,6 +181,9 @@ export async function POST(req: Request) {
   const postage = posOn && d.delivery === "pos" ? computePostage(totalQty, settings) : 0;
 
   const categories = new Set(items.map((i) => i.category));
+  // `batch` sengaja tidak dihantar dari sini — trigger DB trg_stamp_order_batch
+  // mengecopnya dari shop_settings.current_batch. Satu sumber kebenaran, jadi
+  // laluan insert lain (SQL Editor, skrip) tak boleh terlepas cop slot.
   const { error } = await supabase.from("shop_orders").insert({
     category: categories.size === 1 ? [...categories][0] : "pakej",
     full_name: d.full_name.toUpperCase(),

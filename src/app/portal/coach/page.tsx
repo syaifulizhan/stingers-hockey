@@ -393,21 +393,28 @@ export default async function CoachPage() {
   let shopEditions: Record<string, unknown>[] = [];
   let shopOrders: Record<string, unknown>[] = [];
   let shopDiscounts: Record<string, unknown>[] = [];
-  let shopSettings = { pakej_discount_percent: 0, pakej_min_items: 2 };
+  let shopBatches: Record<string, unknown>[] = [];
+  let shopSettings = {
+    pakej_discount_percent: 0,
+    pakej_min_items: 2,
+    current_batch: null as string | null,
+  };
   if (admin) {
-    const [pRes, vRes, eRes, sRes, oRes, dRes] = await Promise.all([
+    const [pRes, vRes, eRes, sRes, oRes, dRes, bRes] = await Promise.all([
       supabase.from("shop_products").select("*"),
       supabase.from("shop_variants").select("*").order("sort_order", { ascending: true }),
       supabase.from("jersey_editions").select("*").order("sort_order", { ascending: true }),
       supabase.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
       supabase.from("shop_orders").select("*").order("created_at", { ascending: false }),
       supabase.from("shop_discounts").select("*").order("sort_order", { ascending: true }),
+      supabase.from("shop_batches").select("*").order("opened_at", { ascending: false }),
     ]);
     shopProducts = (pRes.data ?? []) as Record<string, unknown>[];
     shopVariants = (vRes.data ?? []) as Record<string, unknown>[];
     shopEditions = (eRes.data ?? []) as Record<string, unknown>[];
     shopOrders = (oRes.data ?? []) as Record<string, unknown>[];
     shopDiscounts = (dRes.data ?? []) as Record<string, unknown>[];
+    shopBatches = (bRes.data ?? []) as Record<string, unknown>[];
     if (sRes.data) shopSettings = sRes.data as typeof shopSettings;
   }
 
@@ -649,13 +656,22 @@ export default async function CoachPage() {
                       <h2 className={sectionTitle}>
                         <ShoppingBag className="h-4 w-4" /> Urus Tempahan Pasukan
                       </h2>
-                      <OrderReview orders={shopOrders as never} />
+                      {/* key = slot semasa: bila slot baharu dibuka, panel ini
+                          dipasang semula supaya pemilih terus menunjuk slot
+                          baharu, bukan slot lama yang tersangkut dalam state. */}
+                      <OrderReview
+                        key={shopSettings.current_batch ?? "tanpa-slot"}
+                        orders={shopOrders as never}
+                        batches={shopBatches as never}
+                        currentBatch={shopSettings.current_batch ?? null}
+                      />
                       <ShopAdmin
                         products={shopProducts as never}
                         variants={shopVariants as never}
                         editions={shopEditions as never}
                         settings={shopSettings}
                         discounts={shopDiscounts as never}
+                        batches={shopBatches as never}
                       />
                     </section>
                   ),

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Check, X, Trash2, Table2, Download, Pencil, RotateCcw } from "lucide-react";
+import { Check, X, Trash2, Table2, Download, Pencil, RotateCcw, Archive, Database } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { KID_SIZES, ADULT_SIZES, ringgit } from "@/lib/shop";
 
@@ -14,13 +14,26 @@ const daysLeft = (deletedAt: string) =>
   Math.max(0, Math.ceil((new Date(deletedAt).getTime() + GRACE_DAYS * 86400000 - Date.now()) / 86400000));
 
 const csv = (s: unknown) => `"${String(s ?? "").replace(/"/g, '""')}"`;
-const downloadCsvFile = (lines: string[], name: string) => {
-  const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+const saveBlob = (blob: Blob, name: string) => {
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  a.href = url;
   a.download = name;
   a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 };
+const downloadCsvFile = (lines: string[], name: string) =>
+  saveBlob(new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" }), name);
+
+// Nama fail yang selamat: 'Slot 2 · Jersi 2026/27' → 'slot-2-jersi-2026-27'.
+const slugify = (s: string) =>
+  s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "slot";
+const today = () => new Date().toISOString().slice(0, 10);
+
+// Kunci khas penapis slot. Tempahan tanpa slot TIDAK pernah disembunyikan —
+// ia dapat kumpulannya sendiri supaya tiada rekod hilang dari pandangan.
+const ALL_SLOTS = "__semua__";
+const NO_SLOT = "__tiada__";
 
 type Item = {
   category: string;
@@ -54,7 +67,9 @@ type Order = {
   status: string;
   created_at: string;
   deleted_at?: string | null;
+  batch?: string | null;
 };
+type Batch = { id: string; label: string; opened_at: string; closed_at: string | null };
 
 const STATUS: Record<string, { label: string; cls: string }> = {
   menunggu_semakan: { label: "Menunggu Semakan", cls: "bg-amber/20 text-amber" },
@@ -62,10 +77,21 @@ const STATUS: Record<string, { label: string; cls: string }> = {
   ditolak: { label: "Ditolak", cls: "bg-red-500/20 text-red-400" },
 };
 
-export default function OrderReview({ orders }: { orders: Order[] }) {
+export default function OrderReview({
+  orders,
+  batches = [],
+  currentBatch = null,
+}: {
+  orders: Order[];
+  batches?: Batch[];
+  currentBatch?: string | null;
+}) {
   const router = useRouter();
   const supabase = useSupabase();
   const [filter, setFilter] = useState("menunggu_semakan");
+  // Slot yang sedang dilihat. Lalai = slot semasa, jadi membuka panel selepas
+  // slot baharu dibuka memberi skrin bersih tanpa memadam apa-apa.
+  const [slot, setSlot] = useState<string>(currentBatch ?? ALL_SLOTS);
   // busyId = id tempahan yang sedang diproses → hanya kad itu malap (tiada
   // kelipan pada kad lain).
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -101,8 +127,50 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
     [orders, removedIds, statusOverride, softDeleted]
   );
 
-  // Tempahan aktif (bukan di tong sampah) — sumber untuk senarai, Pivot & Susun.
-  const activeOrders = useMemo(() => withOverrides.filter((o) => !o.deleted_at), [withOverrides]);
+  const slotOf = (o: Order) => (o.batch?.trim() ? o.batch.trim() : NO_SLOT);
+
+  // Pilihan slot + bilangan tempahan aktif setiap satu. Slot yang wujud dalam
+  // data tetapi tiada dalam jadual shop_batches tetap disenaraikan — data tak
+  // pernah jatuh keluar dari senarai kerana metadata tak lengkap.
+  const slotOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const o of withOverrides) {
+      if (o.deleted_at) continue;
+      const k = slotOf(o);
+      counts.set(k, (counts.get(k) ?? 0) + 1);
+    }
+    const known = new Set(batches.map((b) => b.id));
+    const opts = batches.map((b) => ({
+      id: b.id,
+      label: b.label || b.id,
+      count: counts.get(b.id) ?? 0,
+      closed: !!b.closed_at,
+    }));
+    for (const k of counts.keys()) {
+      if (k === NO_SLOT || known.has(k)) continue;
+      opts.push({ id: k, label: k, count: counts.get(k) ?? 0, closed: false });
+    }
+    if (counts.has(NO_SLOT)) {
+      opts.push({ id: NO_SLOT, label: "Tanpa slot", count: counts.get(NO_SLOT) ?? 0, closed: false });
+    }
+    return opts;
+  }, [withOverrides, batches]);
+
+  const inSlot = (o: Order) => slot === ALL_SLOTS || slotOf(o) === slot;
+  const slotLabel = (id: string | null | undefined) =>
+    slotOptions.find((o) => o.id === (id?.trim() || NO_SLOT))?.label ?? id ?? "Tanpa slot";
+  const selected = slotOptions.find((o) => o.id === slot);
+  const viewingArchive = slot !== ALL_SLOTS && !!currentBatch && slot !== currentBatch;
+  const slotTag = slot === ALL_SLOTS ? "semua-slot" : slugify(selected?.label ?? slot);
+
+  // Tempahan aktif (bukan di tong sampah, dalam slot yang dipilih) — sumber
+  // untuk senarai, Pivot & Senarai Susun. Inilah yang menghalang tempahan slot
+  // lama daripada masuk ke dalam pivot supplier untuk slot baharu.
+  const activeOrders = useMemo(
+    () => withOverrides.filter((o) => !o.deleted_at && inSlot(o)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- inSlot terbitan slot
+    [withOverrides, slot]
+  );
   const trashedOrders = useMemo(
     () =>
       withOverrides
@@ -196,6 +264,8 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
       window.alert("Gagal buang tempahan.");
       return;
     }
+    // Jaring kedua sahaja — trigger DB trg_cleanup_order_notifications yang
+    // menjamin notifikasi ikut tempahan, termasuk bila pg_cron yang membuang.
     await supabase.from("notifications").delete().eq("ref_type", "order").eq("ref_id", o.id);
     setBusyId(null);
     setRemovedIds((s) => new Set(s).add(o.id));
@@ -211,7 +281,23 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
         lines.push([o.full_name, o.phone, it.label, it.size, it.qty, it.print_name ?? "", it.print_number ?? ""].map(csv).join(","));
       }
     }
-    downloadCsvFile(lines, `susun-pelanggan-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsvFile(lines, `susun-pelanggan-${slotTag}-${today()}.csv`);
+  };
+
+  // Backup PENUH — setiap slot, termasuk Tong Sampah, dengan struktur `items`
+  // utuh (CSV meratakan item, jadi ia bukan backup). Ambil ini sebelum apa-apa
+  // pembersihan; ia satu-satunya salinan yang boleh memulihkan rekod tempahan.
+  const downloadJsonBackup = () => {
+    const payload = {
+      exported_at: new Date().toISOString(),
+      count: orders.length,
+      slots: batches,
+      orders,
+    };
+    saveBlob(
+      new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }),
+      `backup-tempahan-${today()}.json`
+    );
   };
 
   return (
@@ -248,6 +334,14 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
           )}
           <button
             type="button"
+            onClick={downloadJsonBackup}
+            title="Semua slot, termasuk Tong Sampah — simpan sebelum sebarang pembersihan."
+            className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
+          >
+            <Database className="h-3.5 w-3.5" /> Backup JSON
+          </button>
+          <button
+            type="button"
             onClick={downloadCustomerCsv}
             className="inline-flex items-center gap-1.5 rounded-full border border-line px-3 py-1 font-sans text-xs font-semibold text-paper hover:border-amber hover:text-amber"
           >
@@ -263,7 +357,39 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
         </div>
       </div>
 
-      {showPivot && <Pivot orders={activeOrders} />}
+      {slotOptions.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-line bg-bg-soft/40 px-3 py-2">
+          <label htmlFor="slot-tempahan" className="font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+            Slot
+          </label>
+          <select
+            id="slot-tempahan"
+            value={slot}
+            onChange={(e) => setSlot(e.target.value)}
+            className="rounded-lg border border-line bg-ink px-2.5 py-1.5 font-sans text-xs font-semibold text-paper outline-none focus:border-amber"
+          >
+            {slotOptions.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+                {o.id === currentBatch ? " · semasa" : o.closed ? " · ditutup" : ""} ({o.count})
+              </option>
+            ))}
+            <option value={ALL_SLOTS}>Semua slot ({withOverrides.filter((o) => !o.deleted_at).length})</option>
+          </select>
+          {viewingArchive && (
+            <span className="inline-flex items-center gap-1 font-sans text-xs text-muted">
+              <Archive className="h-3.5 w-3.5" /> Arkib — Senarai Susun & Pivot di bawah mengikut slot ini.
+            </span>
+          )}
+          {slot === ALL_SLOTS && slotOptions.length > 1 && (
+            <span className="font-sans text-xs text-amber">
+              Semua slot bercampur — pilih satu slot sebelum jana Pivot untuk supplier.
+            </span>
+          )}
+        </div>
+      )}
+
+      {showPivot && <Pivot orders={activeOrders} tag={slotTag} />}
 
       {showTrash && trashedOrders.length > 0 && (
         <div className="mb-4 rounded-xl border border-red-500/30 bg-red-500/5 p-4">
@@ -281,6 +407,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                   <p className="truncate font-sans text-sm font-semibold text-paper">{o.full_name}</p>
                   <p className="font-sans text-xs text-muted">
                     {o.phone}
+                    {slotOptions.length > 1 ? ` · ${slotLabel(o.batch)}` : ""}
                     {o.deleted_at
                       ? ` · dipadam ${new Date(o.deleted_at).toLocaleDateString("ms-MY", { day: "numeric", month: "short" })} · ${daysLeft(o.deleted_at)} hari lagi`
                       : ""}
@@ -309,7 +436,7 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
       )}
 
       {shown.length === 0 ? (
-        <p className="font-sans text-sm text-muted">Tiada tempahan dalam kategori ini.</p>
+        <p className="font-sans text-sm text-muted">Tiada tempahan dalam kategori/slot ini.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {shown.map((o) => {
@@ -329,9 +456,16 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
                       })}
                     </p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${st.cls}`}>
-                    {st.label}
-                  </span>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <span className={`rounded-full px-2.5 py-1 font-sans text-xs font-semibold ${st.cls}`}>
+                      {st.label}
+                    </span>
+                    {slot === ALL_SLOTS && slotOptions.length > 1 && (
+                      <span className="rounded-full border border-line px-2 py-0.5 font-sans text-[0.65rem] text-muted">
+                        {slotLabel(o.batch)}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <ul className="mt-3 flex flex-col gap-1 border-t border-line pt-3">
@@ -408,7 +542,8 @@ export default function OrderReview({ orders }: { orders: Order[] }) {
 }
 
 /* ───────── Pivot untuk supplier (tempahan DISAHKAN sahaja) ───────── */
-function Pivot({ orders }: { orders: Order[] }) {
+function Pivot({ orders, tag }: { orders: Order[]; tag: string }) {
+  // `tag` = slug slot sahaja; tarikh ditambah semasa klik supaya render tulen.
   const confirmed = orders.filter((o) => o.status === "disahkan");
 
   // Jersi: kumpul ikut Reka Bentuk · Lengan · Material × Saiz.
@@ -445,11 +580,7 @@ function Pivot({ orders }: { orders: Order[] }) {
     lines.push(`Cetak nama: ${namePrint}`);
     lines.push(`Cetak nombor: ${numberPrint}`);
     lines.push(`Jumlah (RM): ${grandRM.toFixed(2)}`);
-    const blob = new Blob(["﻿" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `pivot-jersi-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
+    downloadCsvFile(lines, `pivot-jersi-${tag}-${today()}.csv`);
   };
 
   // Hustle Gear (baharu) — ikut saiz sahaja (standardize).
@@ -466,7 +597,7 @@ function Pivot({ orders }: { orders: Order[] }) {
     const lines = [["Saiz", "Kuantiti"].join(",")];
     for (const s of hSizes) lines.push([s, hustleSizes.get(s) ?? 0].join(","));
     lines.push(["JUMLAH", hTotal].join(","));
-    downloadCsvFile(lines, `pivot-hustle-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsvFile(lines, `pivot-hustle-${tag}-${today()}.csv`);
   };
 
   // Koleksi lama (jersi_lama + hustle_lama) — kumpul IKUT EDISI (artwork beda),
@@ -503,7 +634,7 @@ function Pivot({ orders }: { orders: Order[] }) {
     lines.push("");
     lines.push(`Cetak nama: ${lamaNamePrint}`);
     lines.push(`Cetak nombor: ${lamaNumberPrint}`);
-    downloadCsvFile(lines, `pivot-koleksi-lama-${new Date().toISOString().slice(0, 10)}.csv`);
+    downloadCsvFile(lines, `pivot-koleksi-lama-${tag}-${today()}.csv`);
   };
 
   return (
