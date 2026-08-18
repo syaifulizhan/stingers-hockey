@@ -5,6 +5,7 @@ import { createServerSupabase } from "@/lib/supabase/server";
 import { sendPush } from "@/lib/push";
 import { pushImageToDrive, todayMY } from "@/lib/drive";
 import { preferredName } from "@/lib/names";
+import { requireCoachApi } from "@/lib/portal-guard";
 
 // Coach kemas kini status hantaran ahli (semak / minta ulang).
 const schema = z.object({
@@ -13,6 +14,10 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
@@ -120,6 +125,10 @@ export async function POST(request: Request) {
 
 // Coach padam hantaran ahli (RLS: is_coach dibenarkan).
 export async function DELETE(request: Request) {
+  // GATE ALLOWLIST — akaun mesti diluluskan admin sebelum apa-apa data disentuh.
+  const gate = await requireCoachApi();
+  if (!gate.ok) return gate.response;
+
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ ok: false, error: "Sila log masuk." }, { status: 401 });
