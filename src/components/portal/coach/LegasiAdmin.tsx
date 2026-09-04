@@ -29,6 +29,8 @@ export type LegasiRow = {
   card_back: string | null;
   status: "draft" | "published";
   published_at: string | null;
+  archived_at?: string | null;
+  legacy_versions?: { version_no: number; captured_at: string }[] | null;
 };
 
 const input =
@@ -43,16 +45,21 @@ export default function LegasiAdmin({ records }: { records: LegasiRow[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="rounded-xl border border-line bg-bg-soft p-5">
-        <h2 className="font-sans text-base font-semibold text-paper">Dewan Legasi</h2>
+        <h2 className="font-sans text-base font-semibold text-paper">Hall of Honour</h2>
         <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
           Rekod kekal untuk pemain yang mewakili di peringkat lebih tinggi. Semua rekod bermula
           sebagai <strong className="text-paper">draf</strong> dan tidak kelihatan awam sehingga
           ditekan Terbitkan — sekatan itu dikuatkuasakan di pangkalan data, bukan sekadar di skrin
           ini.
         </p>
+        <p className="mt-2 font-sans text-sm leading-relaxed text-muted">
+          Rekod yang sudah tersiar <strong className="text-paper">boleh disunting</strong> bila-bila
+          masa — pemain naik ke peringkat lebih tinggi, cerita diperbaiki, gambar ditambah. Setiap
+          versi yang pernah tersiar disimpan kekal, jadi menyunting tidak pernah memadam sejarah.
+        </p>
         <p className="mt-2 font-sans text-xs leading-relaxed text-muted">
-          Slug ialah alamat kekal yang dicetak pada kad fizikal. Selepas sesuatu rekod diterbitkan,
-          slugnya dikunci.
+          Yang dikunci hanyalah slug: ia alamat yang dicetak pada kad fizikal. Setiap penerbitan
+          juga menghantar salinan ke Internet Archive.
         </p>
       </div>
 
@@ -154,12 +161,15 @@ function RekodEditor({
         setRalat(json.error ?? "Gagal menyimpan.");
         return;
       }
+      const arkibNota = json.arkib?.ok ? " Salinan arkib dihantar." : "";
       onSelesai(
         status === "published"
-          ? `${f.fullName} kini tersiar di hoki.my/legasi/${f.slug}`
+          ? `${f.fullName} kini tersiar di hoki.my/legasi/${f.slug}.${arkibNota}`
           : status === "draft"
             ? `${f.fullName} ditarik balik ke draf.`
-            : "Draf disimpan.",
+            : tersiar
+              ? `Versi baharu ${f.fullName} tersimpan — versi lama dikekalkan.${arkibNota}`
+              : "Draf disimpan.",
       );
     } catch {
       setRalat("Gagal menghubungi pelayan.");
@@ -178,6 +188,10 @@ function RekodEditor({
           <p className="truncate font-sans text-sm font-semibold text-paper">{row.full_name}</p>
           <p className="mt-0.5 font-sans text-xs text-muted">
             {row.record_no} · {row.cohort} · /legasi/{row.slug}
+            {row.legacy_versions && row.legacy_versions.length > 1
+              ? ` · v${Math.max(...row.legacy_versions.map((v) => v.version_no))}`
+              : ""}
+            {row.archived_at ? " · diarkib" : ""}
           </p>
         </div>
         <span
@@ -433,7 +447,7 @@ function RekodEditor({
               disabled={sibuk}
               className="rounded-lg border border-line px-4 py-2 font-sans text-sm text-paper hover:border-amber hover:text-amber disabled:opacity-50"
             >
-              {sibuk ? "Menyimpan…" : "Simpan draf"}
+              {sibuk ? "Menyimpan…" : tersiar ? "Simpan versi baharu" : "Simpan draf"}
             </button>
 
             {tersiar ? (
@@ -463,7 +477,15 @@ function RekodEditor({
             </Link>
           </div>
 
-          {!tersiar && (
+          {tersiar ? (
+            <p className="mt-3 font-sans text-xs leading-relaxed text-muted">
+              Rekod ini tersiar. Menyimpan akan mencipta versi baharu — versi sebelumnya kekal
+              tersimpan selamanya dan boleh dilihat pada halaman awam.
+              {row.archived_at
+                ? ` Salinan arkib terakhir: ${new Date(row.archived_at).toLocaleDateString("ms-MY")}.`
+                : ""}
+            </p>
+          ) : (
             <p className="mt-3 font-sans text-xs text-muted">
               Draf ini tidak kelihatan oleh sesiapa di luar portal. Sesiapa yang mengimbas QR
               sekarang akan melihat halaman &ldquo;belum tersedia&rdquo;, bukan ralat.

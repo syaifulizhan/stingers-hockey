@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Bekukan rekod Dewan Legasi yang sudah tersiar ke dalam repo.
+ * Bekukan rekod Hall of Honour yang sudah tersiar ke dalam repo.
  *
  * Inilah langkah yang menjadikan rekod itu kekal. Pangkalan data ialah tempat
  * admin menyunting; fail yang dijana di sini ialah salinan yang hidup dalam
@@ -48,7 +48,8 @@ const { data, error } = await supabase
   .select(
     "slug, record_no, cohort, full_name, name_first, name_last, result, category, event, " +
       "school, story, quote_text, quote_by, journey, photos, hero_image, card_front, " +
-      "card_back, published_at",
+      "card_back, published_at, archived_at, archive_url, " +
+      "legacy_versions(version_no, captured_at)",
   )
   .eq("status", "published")
   .order("cohort", { ascending: false })
@@ -56,6 +57,11 @@ const { data, error } = await supabase
 
 if (error) {
   console.error("✗ Gagal membaca legacy_records:", error.message);
+  if (/legacy_versions|archived_at|archive_url/.test(error.message)) {
+    console.error(
+      "  Nampaknya migrasi 20260905_legasi_versi_arkib.sql belum dijalankan.",
+    );
+  }
   process.exit(1);
 }
 
@@ -79,6 +85,13 @@ const records = (data ?? []).map((r) => ({
   cardFront: r.card_front ?? null,
   cardBack: r.card_back ?? null,
   publishedAt: r.published_at ?? null,
+  // Sejarah versi dibekukan bersama rekod. Setiap kali skrip ini dijalankan
+  // dan hasilnya dikomit, git sendiri menjadi lapisan sejarah kedua.
+  revisions: (r.legacy_versions ?? [])
+    .map((v) => ({ versionNo: v.version_no, capturedAt: v.captured_at }))
+    .sort((a, b) => b.versionNo - a.versionNo),
+  archivedAt: r.archived_at ?? null,
+  archiveUrl: r.archive_url ?? null,
 }));
 
 // Snapshot kosong hampir pasti bermakna DB tidak dapat dihubungi atau migrasi
@@ -99,7 +112,7 @@ const isi = `// DIJANA AUTOMATIK — jangan sunting tangan.
 // Jalankan: node scripts/beku-legasi.mjs
 //
 // Salinan beku setiap rekod yang SUDAH diterbitkan. Ini yang menyelamatkan
-// Dewan Legasi bila pangkalan data tidak lagi menjawab.
+// Hall of Honour bila pangkalan data tidak lagi menjawab.
 import type { LegacyRecord } from "@/lib/legasi-types";
 
 export const SNAPSHOT: LegacyRecord[] = ${JSON.stringify(records, null, 2)};
@@ -111,7 +124,10 @@ export const SNAPSHOT_AT: string | null = ${JSON.stringify(new Date().toISOStrin
 writeFileSync(OUT, isi);
 
 console.log(`✓ ${records.length} rekod tersiar dibekukan ke ${OUT}`);
-for (const r of records) console.log(`   ${r.recordNo}  ${r.fullName}  →  /legasi/${r.slug}`);
+for (const r of records) {
+  const versi = r.revisions.length ? `  v${r.revisions[0].versionNo}` : "";
+  console.log(`   ${r.recordNo}  ${r.fullName}  →  /legasi/${r.slug}${versi}`);
+}
 if (records.length === 0) {
   console.log("   (belum ada rekod tersiar — jalankan semula selepas menekan Terbitkan)");
 }

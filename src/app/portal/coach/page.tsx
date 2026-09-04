@@ -115,7 +115,7 @@ export default async function CoachPage() {
         .from("achievements")
         .select("id, season_id, category, award, player_id, event")
         .order("created_at", { ascending: false }),
-      // Dewan Legasi — draf DAN tersiar. Kalau migrasi belum dijalankan,
+      // Hall of Honour — draf DAN tersiar. Kalau migrasi belum dijalankan,
       // Supabase memulangkan ralat dalam hasil (bukan lempar), jadi tabnya
       // sekadar kosong dan portal tetap berfungsi.
       supabase
@@ -123,7 +123,8 @@ export default async function CoachPage() {
         .select(
           "id, slug, record_no, cohort, full_name, name_first, name_last, result, category, " +
             "event, school, story, quote_text, quote_by, journey, photos, hero_image, " +
-            "card_front, card_back, status, published_at",
+            "card_front, card_back, status, published_at, archived_at, " +
+            "legacy_versions(version_no, captured_at)",
         )
         .order("cohort", { ascending: false })
         .order("record_no", { ascending: true }),
@@ -631,7 +632,7 @@ export default async function CoachPage() {
             content: (
               <section>
                 <h2 className={sectionTitle}>
-                  <Trophy className="h-4 w-4" /> Dewan Legasi
+                  <Trophy className="h-4 w-4" /> Hall of Honour
                 </h2>
                 <LegasiAdmin records={legasiRecords} />
               </section>

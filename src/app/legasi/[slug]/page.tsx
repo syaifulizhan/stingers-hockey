@@ -16,11 +16,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const r = await getRecordBySlug(slug);
-  if (!r) return { title: "Dewan Legasi — Stingers Hockey" };
+  if (!r) return { title: "Hall of Honour — Stingers Hockey" };
 
   const tajuk = [r.fullName, r.result, r.event].filter(Boolean).join(" · ");
   return {
-    title: `${r.fullName} — Dewan Legasi Stingers Hockey`,
+    title: `${r.fullName} — Hall of Honour Stingers Hockey`,
     description: tajuk,
     alternates: { canonical: legacyUrl(r.slug) },
     openGraph: {

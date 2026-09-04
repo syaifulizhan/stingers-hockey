@@ -5,7 +5,8 @@ import Reveal from "@/components/ui/Reveal";
 import SmartImg from "@/components/SmartImg";
 import DragMarquee from "@/components/ui/DragMarquee";
 import { useLang } from "@/lib/i18n";
-import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
+import { type LegacyRecord } from "@/lib/legasi";
+import { waybackUrl } from "@/lib/legasi-arkib-url";
 
 export default function ProfilLegasiView({ r }: { r: LegacyRecord }) {
   const { lang, t } = useLang();
@@ -37,7 +38,7 @@ export default function ProfilLegasiView({ r }: { r: LegacyRecord }) {
             href="/legasi"
             className="font-sans text-xs font-semibold uppercase tracking-widest text-amber transition-opacity hover:opacity-70"
           >
-            ← {t("Dewan Legasi", "Hall of Legacy")}
+            ← Hall of Honour
           </Link>
 
           <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
@@ -207,17 +208,67 @@ export default function ProfilLegasiView({ r }: { r: LegacyRecord }) {
                 )}`
               : ""}
             {" · "}
-            {t("Dewan Legasi Stingers Hockey", "Stingers Hockey Hall of Legacy")}
+            {t("Hall of Honour Stingers Hockey", "Stingers Hockey Hall of Honour")}
           </p>
+
+          {/* Rekod ini hidup: ia dikemas kini bila perjalanan pemain berkembang,
+              dan setiap versi yang pernah tersiar disimpan selamanya. */}
+          {r.revisions.length > 1 && (
+            <details className="mt-5 max-w-3xl">
+              <summary className="cursor-pointer font-sans text-xs uppercase tracking-wider text-amber-deep transition-colors hover:text-amber">
+                {t(
+                  `Rekod ini dikemas kini ${r.revisions.length - 1} kali`,
+                  `This record has been updated ${r.revisions.length - 1} times`,
+                )}
+              </summary>
+              <ul className="mt-3 border-t border-line">
+                {r.revisions.map((v) => (
+                  <li
+                    key={v.versionNo}
+                    className="flex items-baseline justify-between gap-4 border-b border-line py-2"
+                  >
+                    <span className="font-sans text-xs text-muted">
+                      {t("Versi", "Version")} {v.versionNo}
+                      {v.versionNo === 1 ? ` · ${t("asal", "original")}` : ""}
+                    </span>
+                    <span className="font-sans text-xs text-muted/70">
+                      {new Date(v.capturedAt).toLocaleDateString(locale, {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-3 font-sans text-xs leading-relaxed text-muted/70">
+                {t(
+                  "Setiap versi yang pernah tersiar disimpan selamanya. Rekod ini boleh berkembang — bila pemain ini mencapai lebih tinggi, kad yang sama akan membawa cerita yang lebih besar.",
+                  "Every published version is kept forever. This record can grow — when this player reaches further, the same card will carry a bigger story.",
+                )}
+              </p>
+            </details>
+          )}
           <p className="mt-4 max-w-3xl font-sans text-sm leading-relaxed text-muted">
             {t(
               "Alamat ini dicetak pada kad fizikal dan tidak akan berubah.",
               "This address is printed on the physical card and will not change.",
             )}{" "}
-            {t("Salinan arkib", "Archive copy")}:{" "}
-            <span className="break-all text-muted/80">
-              web.archive.org/web/*/{legacyUrl(r.slug).replace("https://", "")}
-            </span>
+            <a
+              href={r.archiveUrl ?? waybackUrl(r.slug)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-amber-deep underline-offset-2 transition-colors hover:text-amber hover:underline"
+            >
+              {t("Salinan arkib", "Archive copy")}
+            </a>
+            {r.archivedAt
+              ? ` · ${t("diarkib", "archived")} ${new Date(r.archivedAt).toLocaleDateString(locale, {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}`
+              : ""}
           </p>
         </div>
       </footer>

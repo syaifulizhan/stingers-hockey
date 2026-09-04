@@ -1,4 +1,4 @@
-// Bentuk data Dewan Legasi. Diasingkan daripada legasi.ts supaya fail
+// Bentuk data Hall of Honour. Diasingkan daripada legasi.ts supaya fail
 // snapshot yang dijana automatik boleh mengimportnya tanpa kitaran import.
 
 export type LegacyJourneyStep = {
@@ -6,6 +6,12 @@ export type LegacyJourneyStep = {
   what: string;
   /** Peringkat kemuncak — dipaparkan dengan aksen amber. */
   peak?: boolean;
+};
+
+/** Satu versi yang pernah tersiar. Sejarah ini tidak pernah dipadam. */
+export type LegacyRevision = {
+  versionNo: number;
+  capturedAt: string;
 };
 
 export type LegacyRecord = {
@@ -29,4 +35,9 @@ export type LegacyRecord = {
   cardFront: string | null;
   cardBack: string | null;
   publishedAt: string | null;
+  /** Setiap versi yang pernah tersiar, terbaharu dahulu. */
+  revisions: LegacyRevision[];
+  /** Bila alamat ini terakhir dihantar ke Internet Archive. */
+  archivedAt: string | null;
+  archiveUrl: string | null;
 };

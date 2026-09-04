@@ -1,5 +1,5 @@
 // ============================================================================
-// DEWAN LEGASI — alamat kekal dan penolong paparan
+// HALL OF HONOUR — alamat kekal dan penolong paparan
 //
 // Pembahagian yang menjadikan rekod ini bertahan:
 //
