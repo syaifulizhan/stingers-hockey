@@ -33,8 +33,13 @@ export type LegasiRow = {
   legacy_versions?: { version_no: number; captured_at: string }[] | null;
 };
 
-const input =
-  "w-full rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper placeholder:text-muted/60 focus:border-amber focus:outline-none";
+// Lebar SENGAJA diasingkan daripada gaya asas. Versi awal menyimpan `w-full`
+// di dalam `input`, jadi `${input} w-24` menghasilkan dua utiliti lebar yang
+// bercanggah — `w-full` menang, medan tahun mengembang, dan medan keterangan
+// dipicit sehingga hilang pada skrin sempit.
+const inputBase =
+  "rounded-lg border border-line bg-ink px-3 py-2 font-sans text-sm text-paper placeholder:text-muted/60 focus:border-amber focus:outline-none";
+const input = `w-full ${inputBase}`;
 const label = "font-sans text-xs font-semibold uppercase tracking-wider text-muted";
 
 export default function LegasiAdmin({ records }: { records: LegasiRow[] }) {
@@ -331,10 +336,15 @@ function RekodEditor({
             <p className={label}>Perjalanan</p>
             <div className="mt-2 flex flex-col gap-2">
               {journey.map((s, i) => (
-                <div key={i} className="flex items-center gap-2">
+                <div
+                  key={i}
+                  className="flex flex-col gap-2 rounded-lg border border-line p-3 sm:flex-row sm:items-center sm:border-0 sm:p-0"
+                >
                   <input
-                    className={`${input} w-24 shrink-0`}
+                    className={`${inputBase} w-full sm:w-24 sm:shrink-0`}
                     placeholder="2026"
+                    inputMode="numeric"
+                    aria-label="Tahun"
                     value={s.year}
                     onChange={(e) => {
                       const next = [...journey];
@@ -345,6 +355,7 @@ function RekodEditor({
                   <input
                     className={input}
                     placeholder="Johan · Kejohanan Hoki MSSM"
+                    aria-label="Keterangan langkah"
                     value={s.what}
                     onChange={(e) => {
                       const next = [...journey];
@@ -352,27 +363,31 @@ function RekodEditor({
                       setJourney(next);
                     }}
                   />
-                  <button
-                    type="button"
-                    title="Tandakan sebagai kemuncak"
-                    onClick={() => {
-                      const next = [...journey];
-                      next[i] = { ...s, peak: !s.peak };
-                      setJourney(next);
-                    }}
-                    className={`shrink-0 rounded-lg border px-3 py-2 font-sans text-xs ${
-                      s.peak ? "border-amber text-amber" : "border-line text-muted"
-                    }`}
-                  >
-                    ◆
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setJourney(journey.filter((_, j) => j !== i))}
-                    className="shrink-0 rounded-lg border border-line px-3 py-2 text-muted hover:text-red-400"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      aria-pressed={!!s.peak}
+                      title="Tandakan sebagai kemuncak — dipaparkan dengan aksen amber"
+                      onClick={() => {
+                        const next = [...journey];
+                        next[i] = { ...s, peak: !s.peak };
+                        setJourney(next);
+                      }}
+                      className={`flex-1 rounded-lg border px-3 py-2 font-sans text-xs sm:flex-none ${
+                        s.peak ? "border-amber text-amber" : "border-line text-muted"
+                      }`}
+                    >
+                      ◆<span className="ml-1.5 sm:hidden">Kemuncak</span>
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Buang langkah ini"
+                      onClick={() => setJourney(journey.filter((_, j) => j !== i))}
+                      className="flex-1 rounded-lg border border-line px-3 py-2 text-muted hover:text-red-400 sm:flex-none"
+                    >
+                      <Trash2 className="mx-auto h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
               <button
