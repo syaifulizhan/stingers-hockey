@@ -151,14 +151,23 @@ function RekodEditor({
           id: row.id,
           ...f,
           cohort: Number(f.cohort),
-          journey,
+          // Baris yang belum diisi langsung tidak perlu dihantar.
+          journey: journey.filter((l) => l.year.trim() !== "" || l.what.trim() !== ""),
           photos,
           ...(status ? { status } : {}),
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.ok) {
-        setRalat(json.error ?? "Gagal menyimpan.");
+        // 422 memulangkan `errors` per-medan, bukan `error`. Versi awal hanya
+        // membaca `error`, jadi kegagalan pengesahan kelihatan seperti
+        // "Gagal menyimpan." tanpa memberitahu medan mana yang salah.
+        const perMedan = json.errors
+          ? Object.entries(json.errors as Record<string, string[]>)
+              .map(([medan, pesan]) => `${medan}: ${(pesan ?? []).join(", ")}`)
+              .join(" · ")
+          : null;
+        setRalat(json.error ?? perMedan ?? "Gagal menyimpan.");
         return;
       }
       const arkibNota = json.arkib?.ok ? " Salinan arkib dihantar." : "";
@@ -469,12 +478,21 @@ function RekodEditor({
             )}
 
             <Link
-              href={`/legasi/${row.slug}`}
+              href={`/portal/coach/legasi/${row.slug}`}
               target="_blank"
-              className="ml-auto inline-flex items-center gap-1.5 font-sans text-xs text-muted hover:text-amber"
+              className="ml-auto inline-flex items-center gap-1.5 font-sans text-xs font-semibold text-amber hover:underline"
             >
-              Lihat halaman <ExternalLink className="h-3.5 w-3.5" />
+              <Eye className="h-3.5 w-3.5" /> Pratonton halaman
             </Link>
+            {tersiar && (
+              <Link
+                href={`/legasi/${row.slug}`}
+                target="_blank"
+                className="inline-flex items-center gap-1.5 font-sans text-xs text-muted hover:text-amber"
+              >
+                Halaman sebenar <ExternalLink className="h-3.5 w-3.5" />
+              </Link>
+            )}
           </div>
 
           {tersiar ? (
