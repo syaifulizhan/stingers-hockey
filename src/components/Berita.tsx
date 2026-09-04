@@ -17,7 +17,7 @@ export default async function Berita() {
     .from("news")
     .select("id, title, body, image_url, published_at, slug")
     .order("published_at", { ascending: false })
-    .limit(3);
+    .limit(9); // jalur bergerak — beri lebih banyak kad untuk digelung
 
   const news = (data ?? []) as unknown as NewsRow[];
   if (news.length === 0) return null; // tiada berita → jangan papar seksyen
