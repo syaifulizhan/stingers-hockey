@@ -21,11 +21,19 @@ import { arkibkanSatu } from "@/lib/legasi-arkib";
 // menyunting tidak pernah memadam sejarah — ia menambah lapisan.
 // ============================================================================
 
+// Draf ialah kerja separuh siap — itu maksudnya draf. Jadi baris perjalanan
+// yang belum lengkap TIDAK menolak simpanan; ia cuma disaring keluar. Ketat
+// hanya berlaku pada saat menerbitkan, di mana ia benar-benar bermakna.
 const langkahSchema = z.object({
-  year: z.string().trim().min(1),
-  what: z.string().trim().min(1),
+  year: z.string().trim().default(""),
+  what: z.string().trim().default(""),
   peak: z.boolean().optional().default(false),
 });
+
+/** Buang baris perjalanan yang langsung kosong. */
+function bersihkanJourney(rows: z.infer<typeof langkahSchema>[]) {
+  return rows.filter((r) => r.year.trim() !== "" || r.what.trim() !== "");
+}
 
 const asasSchema = z.object({
   slug: z
@@ -81,7 +89,7 @@ function toRow(d: Partial<z.infer<typeof asasSchema>>): Payload {
   set("hero_image", d.heroImage);
   set("card_front", d.cardFront);
   set("card_back", d.cardBack);
-  if (d.journey !== undefined) row.journey = d.journey;
+  if (d.journey !== undefined) row.journey = bersihkanJourney(d.journey);
   if (d.photos !== undefined) row.photos = d.photos;
   return row;
 }
@@ -188,6 +196,22 @@ export async function PATCH(request: Request) {
       },
       { status: 409 },
     );
+  }
+
+  // Ketat hanya di sini: sesuatu yang menjadi rekod kekal patut lengkap.
+  if (status === "published") {
+    const langkah = bersihkanJourney(fields.journey ?? []);
+    const cacat = langkah.find((l) => !l.year.trim() || !l.what.trim());
+    if (cacat) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Setiap langkah perjalanan perlu tahun dan keterangan sebelum boleh diterbitkan. Buang baris yang tidak digunakan.",
+        },
+        { status: 422 },
+      );
+    }
   }
 
   const row = toRow(fields);
