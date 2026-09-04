@@ -117,10 +117,6 @@ export const SNAPSHOT: LegacyRecord[] = [
     "publishedAt": "2026-09-04T19:27:31.693+00:00",
     "revisions": [
       {
-        "versionNo": 2,
-        "capturedAt": "2026-09-04T19:27:40.413623+00:00"
-      },
-      {
         "versionNo": 1,
         "capturedAt": "2026-09-04T19:27:31.727773+00:00"
       }
@@ -131,4 +127,4 @@ export const SNAPSHOT: LegacyRecord[] = [
 ];
 
 /** Cap masa fail ini dijana terakhir. */
-export const SNAPSHOT_AT: string | null = "2026-09-04T19:39:21.940Z";
+export const SNAPSHOT_AT: string | null = "2026-09-04T19:43:39.173Z";
