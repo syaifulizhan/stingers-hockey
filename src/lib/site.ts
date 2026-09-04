@@ -6,6 +6,7 @@ export const navLinks = [
   { label: "Logo", labelEn: "Logo", href: "/#logo" },
   { label: "Jersi", labelEn: "Jersey", href: "/#jersi" },
   { label: "Berita", labelEn: "News", href: "/berita" },
+  { label: "Legasi", labelEn: "Legacy", href: "/legasi" },
   { label: "Live", labelEn: "Live", href: "/live" },
   { label: "Keputusan", labelEn: "Results", href: "/keputusan" },
   { label: "Tempahan", labelEn: "Order", href: "/tempahan" },
