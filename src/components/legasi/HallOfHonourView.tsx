@@ -42,7 +42,7 @@ function KadLegasi({ r }: { r: LegacyRecord }) {
   );
 }
 
-export default function DewanLegasiView({ records }: { records: LegacyRecord[] }) {
+export default function HallOfHonourView({ records }: { records: LegacyRecord[] }) {
   const { t } = useLang();
   const kohort = byCohort(records);
   const tahunSeterusnya = (kohort[0]?.[0] ?? new Date().getFullYear()) + 1;
@@ -57,14 +57,14 @@ export default function DewanLegasiView({ records }: { records: LegacyRecord[] }
         </Reveal>
         <Reveal delay={0.1}>
           <h1 className="display mt-5 text-5xl text-paper sm:text-7xl">
-            {t("Dewan", "Hall of")} <span className="text-amber">{t("Legasi", "Legacy")}</span>
+            Hall of Honour
           </h1>
         </Reveal>
         <Reveal delay={0.15}>
           <p className="mt-6 max-w-2xl font-sans text-base leading-relaxed text-muted">
             {t(
-              "Mereka yang membawa nama Stingers keluar dari padang ini. Setiap rekod di sini kekal selamanya — alamatnya tidak pernah berubah.",
-              "Those who carried the Stingers name beyond this field. Every record here is permanent — its address never changes.",
+              "Mereka yang membawa nama Stingers keluar dari padang ini, akan kekal namanya di sini.",
+              "Those who carried the Stingers name beyond this field. Their names stay here.",
             )}
           </p>
         </Reveal>

@@ -4,15 +4,21 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requireCoachApi } from "@/lib/portal-guard";
+import { arkibkanSatu } from "@/lib/legasi-arkib";
 
 // ============================================================================
-// Dewan Legasi — cipta, sunting, terbit.
+// Hall of Honour — cipta, sunting, terbit.
 //
 // Draf tidak pernah kelihatan awam: RLS membenarkan kunci awam melihat hanya
 // baris berstatus 'published'. Butang Terbitkan di sini ialah SATU-SATUNYA
 // jalan sesuatu rekod menjadi awam.
 //
 // Slug tidak boleh diubah selepas diterbitkan — ia sudah dicetak pada kad.
+//
+// Rekod TERSIAR boleh disunting bila-bila masa: seorang pemain naik ke
+// peringkat lebih tinggi, cerita diperbaiki, gambar ditambah. Setiap versi
+// yang pernah tersiar disimpan kekal oleh trigger DB (legacy_versions), jadi
+// menyunting tidak pernah memadam sejarah — ia menambah lapisan.
 // ============================================================================
 
 const langkahSchema = z.object({
@@ -213,7 +219,23 @@ export async function PATCH(request: Request) {
   segarkan(sedia.slug);
   if (data?.slug && data.slug !== sedia.slug) segarkan(data.slug);
 
-  return NextResponse.json({ ok: true, record: data });
+  // Hantar salinan ke Internet Archive setiap kali sesuatu menjadi tersiar
+  // atau rekod tersiar disunting. Kegagalan arkib tidak menjejaskan
+  // penerbitan — cron harian akan mencuba lagi.
+  const kiniTersiar = (status ?? sedia.status) === "published";
+  let arkib: { ok: boolean; archiveUrl?: string } | null = null;
+  if (kiniTersiar && data?.slug) {
+    const h = await arkibkanSatu(data.slug, 12_000);
+    arkib = { ok: h.ok, archiveUrl: h.archiveUrl };
+    if (h.ok) {
+      await supabase
+        .from("legacy_records")
+        .update({ archived_at: new Date().toISOString(), archive_url: h.archiveUrl })
+        .eq("id", id);
+    }
+  }
+
+  return NextResponse.json({ ok: true, record: data, arkib });
 }
 
 /** Padam — hanya draf. Rekod tersiar ialah rekod kekal. */

@@ -21,7 +21,7 @@ export default function TiadaRekodView({
   return (
     <section className="mx-auto max-w-3xl px-6 py-28">
       <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-        {t("Dewan Legasi", "Hall of Legacy")}
+        Hall of Honour
       </span>
       <h1 className="display mt-5 text-4xl text-paper sm:text-5xl">
         {t("Rekod ini belum tersedia", "This record isn't available yet")}
@@ -64,7 +64,7 @@ export default function TiadaRekodView({
         href="/legasi"
         className="mt-12 inline-block rounded-full border border-amber px-7 py-3 font-sans text-sm font-semibold uppercase tracking-wider text-amber transition-colors hover:bg-amber hover:text-ink"
       >
-        {t("Lihat Dewan Legasi →", "View the Hall of Legacy →")}
+        {t("Lihat Hall of Honour →", "View the Hall of Honour →")}
       </Link>
     </section>
   );
