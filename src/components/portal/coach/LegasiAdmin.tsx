@@ -3,7 +3,17 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Trash2, Upload, X, Eye, EyeOff, ExternalLink } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Upload,
+  X,
+  Eye,
+  EyeOff,
+  ExternalLink,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
 
@@ -143,6 +153,21 @@ function RekodEditor({
       .upload(path, kecil, { upsert: false, contentType: kecil.type });
     if (error) throw new Error("Gagal muat naik gambar.");
     return supabase.storage.from("legasi").getPublicUrl(path).data.publicUrl;
+  };
+
+  /**
+   * Alihkan satu langkah naik atau turun.
+   *
+   * Susunan disimpan sebagai susunan array, jadi menyusun semula tidak
+   * menyentuh kandungan langsung — tersilap susun tidak lagi bermakna
+   * memadam dan menaip semula.
+   */
+  const alihLangkah = (dari: number, ke: number) => {
+    if (ke < 0 || ke >= journey.length) return;
+    const next = [...journey];
+    const [diangkat] = next.splice(dari, 1);
+    next.splice(ke, 0, diangkat);
+    setJourney(next);
   };
 
   const hantar = async (status?: "draft" | "published") => {
@@ -364,6 +389,29 @@ function RekodEditor({
                     }}
                   />
                   <div className="flex shrink-0 gap-2">
+                    <div className="flex shrink-0 overflow-hidden rounded-lg border border-line">
+                      <button
+                        type="button"
+                        aria-label="Alih langkah ini ke atas"
+                        title="Alih ke atas"
+                        disabled={i === 0}
+                        onClick={() => alihLangkah(i, i - 1)}
+                        className="px-2.5 py-2 text-muted transition-colors enabled:hover:text-amber disabled:opacity-25"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                      <span className="w-px self-stretch bg-line" aria-hidden />
+                      <button
+                        type="button"
+                        aria-label="Alih langkah ini ke bawah"
+                        title="Alih ke bawah"
+                        disabled={i === journey.length - 1}
+                        onClick={() => alihLangkah(i, i + 1)}
+                        className="px-2.5 py-2 text-muted transition-colors enabled:hover:text-amber disabled:opacity-25"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
+                    </div>
                     <button
                       type="button"
                       aria-pressed={!!s.peak}
