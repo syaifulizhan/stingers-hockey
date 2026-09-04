@@ -34,6 +34,7 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
   const paused = useRef(false); // hover / fokus papan kekunci
   const visible = useRef(true); // seksyen dalam viewport?
   const velocity = useRef(0); // baki halaju selepas lontaran
+  const wheelIdleAt = useRef(0); // hanyut ditahan sehingga cap masa ini (swipe trackpad)
   const drag = useRef({
     active: false,
     startX: 0,
@@ -116,7 +117,7 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
           velocity.current *= Math.exp(-dt * 3.2);
           wrap();
           apply();
-        } else if (!paused.current && !reduced) {
+        } else if (!paused.current && !reduced && now >= wheelIdleAt.current) {
           velocity.current = 0;
           offset.current -= SPEED * dt;
           wrap();
@@ -129,6 +130,30 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
 
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
+  }, [wrap, apply]);
+
+  // Swipe dua jari pada trackpad. React melekatkan `wheel` secara passive,
+  // jadi listener native diperlukan untuk preventDefault.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      // Hanya rampas gerakan mendatar; skrol menegak halaman kekal milik pelayar.
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      // deltaMode 1 = baris, 2 = halaman; tukar ke piksel anggaran.
+      const unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? el.clientWidth : 1;
+      offset.current -= e.deltaX * unit;
+      velocity.current = 0;
+      // Beri masa untuk swipe seterusnya sebelum hanyut automatik menyambung.
+      wheelIdleAt.current = performance.now() + 700;
+      wrap();
+      apply();
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
   }, [wrap, apply]);
 
   // --- Tarik dengan tetikus / jari -------------------------------------
@@ -264,7 +289,7 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
           onBlurCapture={() => {
             paused.current = false;
           }}
-          className="mt-10 cursor-grab overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_5%,#000_95%,transparent)] [touch-action:pan-y] active:cursor-grabbing"
+          className="mt-10 cursor-grab overflow-hidden overscroll-x-contain [mask-image:linear-gradient(to_right,transparent,#000_5%,#000_95%,transparent)] [touch-action:pan-y] active:cursor-grabbing"
         >
           <div ref={trackRef} className="flex w-max select-none will-change-transform">
             {Array.from({ length: copies }, (_, c) => (
