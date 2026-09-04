@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Share2, Link2, Check, X as XIcon } from "lucide-react";
 import { useLang } from "@/lib/i18n";
 
@@ -34,14 +34,31 @@ function XBrandIcon({ className }: { className?: string }) {
   );
 }
 
-export default function ShareButton({ title, heading }: { title: string; heading?: string }) {
+export default function ShareButton({
+  title,
+  heading,
+  /**
+   * Alamat yang hendak dikongsi. Biarkan kosong untuk berkongsi halaman
+   * semasa. Berikan nilai apabila halaman semasa BUKAN alamat awam yang
+   * betul — contohnya skrin pratonton dalam portal, yang URL-nya bergate
+   * dan tidak berguna kepada penerima.
+   */
+  url: urlProp,
+}: {
+  title: string;
+  heading?: string;
+  url?: string;
+}) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Ambil URL sebenar selepas mount (elak nilai SSR "hoki.my").
-  const [url, setUrl] = useState("");
-  useEffect(() => setUrl(window.location.href), []);
+  // Alamat dikira semasa render, bukan disimpan dalam state melalui effect.
+  // Semasa SSR ia kosong, tetapi pautan kongsi hanya dirender selepas panel
+  // dibuka oleh klik pengguna — jadi ia tidak pernah kosong bila dilihat,
+  // dan tiada ketidakpadanan hidrasi.
+  const url =
+    urlProp ?? (typeof window !== "undefined" ? window.location.href : "");
   const e = encodeURIComponent;
 
   const targets = [
@@ -52,7 +69,7 @@ export default function ShareButton({ title, heading }: { title: string; heading
   ];
 
   const copy = async () => {
-    const link = (typeof window !== "undefined" && window.location.href) || url;
+    const link = url;
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -63,7 +80,7 @@ export default function ShareButton({ title, heading }: { title: string; heading
   };
 
   const nativeShare = async () => {
-    const link = (typeof window !== "undefined" && window.location.href) || url;
+    const link = url;
     try {
       await navigator.share?.({ title, url: link });
       setOpen(false);

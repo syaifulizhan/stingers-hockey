@@ -5,12 +5,24 @@ import Reveal from "@/components/ui/Reveal";
 import SmartImg from "@/components/SmartImg";
 import DragMarquee from "@/components/ui/DragMarquee";
 import { useLang } from "@/lib/i18n";
-import { type LegacyRecord } from "@/lib/legasi";
+import ShareButton from "@/components/ShareButton";
+import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
 import { waybackUrl } from "@/lib/legasi-arkib-url";
 
-export default function ProfilLegasiView({ r }: { r: LegacyRecord }) {
+export default function ProfilLegasiView({
+  r,
+  /** Skrin pratonton portal — rekod mungkin masih draf, jadi jangan tawar kongsi. */
+  preview = false,
+}: {
+  r: LegacyRecord;
+  preview?: boolean;
+}) {
   const { lang, t } = useLang();
   const locale = lang === "en" ? "en-MY" : "ms-MY";
+
+  // Tajuk perkongsian membawa pencapaian, bukan sekadar nama — itu yang
+  // bermakna apabila pautan muncul dalam sembang keluarga.
+  const tajukKongsi = [r.fullName, r.result, r.event].filter(Boolean).join(" · ");
 
   const gambar = r.photos.slice(0, 7);
   const kad = [r.cardFront, r.cardBack].filter(Boolean) as string[];
@@ -72,6 +84,19 @@ export default function ProfilLegasiView({ r }: { r: LegacyRecord }) {
                   {t("Rekod", "Record")} {r.recordNo}
                 </p>
               </Reveal>
+              {!preview && (
+                <Reveal delay={0.24}>
+                  <div className="mt-7">
+                    <ShareButton
+                      title={tajukKongsi}
+                      heading={t("Kongsi rekod ini", "Share this record")}
+                      // Alamat kanonik, bukan URL semasa — supaya pautan yang
+                      // dikongsi sentiasa alamat kekal yang dicetak pada kad.
+                      url={legacyUrl(r.slug)}
+                    />
+                  </div>
+                </Reveal>
+              )}
             </div>
 
             {r.heroImage && (

@@ -152,7 +152,7 @@ export default async function PratontonLegasiPage({
         </div>
       </div>
 
-      <ProfilLegasiView r={record} />
+      <ProfilLegasiView r={record} preview />
     </>
   );
 }

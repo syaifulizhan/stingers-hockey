@@ -4,6 +4,7 @@ import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
 import SmartImg from "@/components/SmartImg";
 import { useLang } from "@/lib/i18n";
+import ShareButton from "@/components/ShareButton";
 import { byCohort, type LegacyRecord } from "@/lib/legasi";
 
 function KadLegasi({ r }: { r: LegacyRecord }) {
@@ -67,6 +68,18 @@ export default function HallOfHonourView({ records }: { records: LegacyRecord[] 
               "Those who carried the Stingers name beyond this field. Their names stay here.",
             )}
           </p>
+        </Reveal>
+        <Reveal delay={0.2}>
+          <div className="mt-8">
+            <ShareButton
+              title={t(
+                "Hall of Honour — Stingers Hockey",
+                "Hall of Honour — Stingers Hockey",
+              )}
+              heading={t("Kongsi Hall of Honour", "Share the Hall of Honour")}
+              url="https://hoki.my/legasi"
+            />
+          </div>
         </Reveal>
 
         {kohort.length === 0 ? (
