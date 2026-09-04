@@ -22,6 +22,7 @@ import MatchPanel from "@/components/portal/coach/MatchPanel";
 import AchievementsPanel from "@/components/portal/coach/AchievementsPanel";
 import CoachSummary from "@/components/portal/coach/CoachSummary";
 import ShopAdmin from "@/components/portal/coach/ShopAdmin";
+import LegasiAdmin, { type LegasiRow } from "@/components/portal/coach/LegasiAdmin";
 import OrderReview from "@/components/portal/coach/OrderReview";
 import ReportPanel from "@/components/portal/coach/ReportPanel";
 import AllowlistManager from "@/components/portal/admin/AllowlistManager";
@@ -80,7 +81,7 @@ export default async function CoachPage() {
   const admin = isAdmin(role);
 
   const supabase = await createServerSupabase();
-  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, seasonsRes, matchesRes, matchStatsRes, achievementsRes] =
+  const [membersRes, newsRes, tasksRes, sessionsRes, attendanceRes, subsRes, allSubsRes, assessmentsRes, fitnessRes, seasonsRes, matchesRes, matchStatsRes, achievementsRes, legasiRes] =
     await Promise.all([
       supabase
         .from("users")
@@ -114,10 +115,23 @@ export default async function CoachPage() {
         .from("achievements")
         .select("id, season_id, category, award, player_id, event")
         .order("created_at", { ascending: false }),
+      // Dewan Legasi — draf DAN tersiar. Kalau migrasi belum dijalankan,
+      // Supabase memulangkan ralat dalam hasil (bukan lempar), jadi tabnya
+      // sekadar kosong dan portal tetap berfungsi.
+      supabase
+        .from("legacy_records")
+        .select(
+          "id, slug, record_no, cohort, full_name, name_first, name_last, result, category, " +
+            "event, school, story, quote_text, quote_by, journey, photos, hero_image, " +
+            "card_front, card_back, status, published_at",
+        )
+        .order("cohort", { ascending: false })
+        .order("record_no", { ascending: true }),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];
   const news = (newsRes.data ?? []) as unknown as NewsRow[];
+  const legasiRecords = (legasiRes.data ?? []) as unknown as LegasiRow[];
   const tasks = (tasksRes.data ?? []) as unknown as TaskRow[];
   const sessions = (sessionsRes.data ?? []) as unknown as SessionRow[];
   const attendance = (attendanceRes.data ?? []) as unknown as AttendanceRow[];
@@ -608,6 +622,18 @@ export default async function CoachPage() {
                   seasons={seasons}
                   achievements={achievements}
                 />
+              </section>
+            ),
+          },
+          {
+            id: "legasi",
+            label: "Legasi",
+            content: (
+              <section>
+                <h2 className={sectionTitle}>
+                  <Trophy className="h-4 w-4" /> Dewan Legasi
+                </h2>
+                <LegasiAdmin records={legasiRecords} />
               </section>
             ),
           },
