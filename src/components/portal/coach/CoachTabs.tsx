@@ -27,7 +27,7 @@ export default function CoachTabs({ tabs }: { tabs: Tab[] }) {
 
   return (
     <div className="mt-6">
-      <div className="sticky top-0 z-30 -mx-6 flex gap-1 overflow-x-auto border-b border-line bg-ink/95 px-6 py-2.5 backdrop-blur">
+      <div className="sticky top-0 top-safe z-30 -mx-6 flex gap-1 overflow-x-auto border-b border-line bg-ink/95 px-6 py-2.5 backdrop-blur">
         {tabs.map((t) => (
           <button
             key={t.id}

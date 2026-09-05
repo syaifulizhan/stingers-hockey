@@ -17,6 +17,7 @@ type NewsRow = {
   image_urls: string[] | null;
   published_at: string;
   slug: string | null;
+  translations?: { en?: Record<string, string> } | null;
 };
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -29,7 +30,7 @@ async function queryNews(
   // Cuba dengan image_urls dahulu; jika kolum belum wujud dalam DB, cuba tanpa.
   const full = await supabase
     .from("news")
-    .select("id, title, body, image_url, image_urls, published_at, slug")
+    .select("id, title, body, image_url, image_urls, published_at, slug, translations")
     .eq(field, value)
     .maybeSingle();
   if (full.data) return full.data as NewsRow;
@@ -37,7 +38,7 @@ async function queryNews(
   if (full.error) {
     const fallback = await supabase
       .from("news")
-      .select("id, title, body, image_url, published_at, slug")
+      .select("id, title, body, image_url, published_at, slug, translations")
       .eq(field, value)
       .maybeSingle();
     if (fallback.data) return { ...fallback.data, image_urls: null } as NewsRow;

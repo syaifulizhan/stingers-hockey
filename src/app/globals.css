@@ -57,6 +57,31 @@ body::before {
 }
 
 @layer utilities {
+  /* ── Kawasan selamat (notch & Dynamic Island) ──────────────────────────
+     Laman ini menetapkan viewportFit: "cover" dan dipasang sebagai PWA
+     standalone, jadi kandungan web memanjang KE BAWAH Dynamic Island. Itu
+     yang memberikan skrin penuh tanpa jalur hitam — dan ia bermakna setiap
+     elemen yang dilekatkan ke bahagian atas mesti menolak dirinya turun
+     sendiri, jika tidak ia terselindung di sebalik pulau itu.
+
+     Dilaporkan pada iPhone: pil BM/EN dalam laci menu tersembunyi di
+     belakang Dynamic Island. Laci itu mempunyai p-6 tetapi tiada inset.
+
+     Guna .pt-safe untuk padding, .top-safe apabila elemen itu diposisikan
+     dengan `top`. Pada peranti tanpa notch env() menilai 0, jadi ia tidak
+     mengubah apa-apa di sana. */
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+  .pt-safe-6 {
+    padding-top: calc(1.5rem + env(safe-area-inset-top));
+  }
+  .pb-safe-6 {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+  }
+  .top-safe {
+    top: env(safe-area-inset-top);
+  }
   /* Outline / stroked display text */
   .text-outline {
     -webkit-text-stroke: 2px var(--paper);
