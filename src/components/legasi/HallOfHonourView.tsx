@@ -6,14 +6,24 @@ import SmartImg from "@/components/SmartImg";
 import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { byCohort, type LegacyRecord } from "@/lib/legasi";
+import { takrif, tertinggiTiapKohort, warnaAksen } from "@/lib/legasi-tier";
 
-function KadLegasi({ r }: { r: LegacyRecord }) {
-  const { t } = useLang();
+function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
+  const { t, lang } = useLang();
+  const p = takrif(r.tier);
+  const aksen = warnaAksen(r.tier);
+
   return (
     <Link
       href={`/legasi/${r.slug}`}
+      // Warna peringkat diterapkan sebagai gaya inline, bukan kelas Tailwind:
+      // nama kelas dinamik tidak wujud dalam binaan akhir kerana Tailwind
+      // mengimbas kod sumber secara statik.
+      style={{ borderColor: p ? p.lembut : undefined }}
       className="group flex h-full w-full flex-col overflow-hidden rounded-2xl border border-line bg-bg-soft transition-colors hover:border-amber/60"
     >
+      {/* Jalur peringkat — isyarat pertama yang dilihat mata, sebelum membaca. */}
+      {p && <span aria-hidden className="h-1 w-full shrink-0" style={{ background: aksen }} />}
       {r.heroImage ? (
         <SmartImg src={r.heroImage} alt={r.fullName} className="aspect-[3/4] w-full object-cover" />
       ) : (
@@ -24,8 +34,29 @@ function KadLegasi({ r }: { r: LegacyRecord }) {
         </div>
       )}
       <div className="flex flex-1 flex-col p-5">
+        {p && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {/* Label bertulis berada di sebelah warna, bukan digantikan olehnya.
+                Warna sahaja tidak boleh menjadi satu-satunya cara membaca
+                peringkat sesuatu rekod. */}
+            <span
+              className="rounded-full px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-widest"
+              style={{ background: p.lembut, color: aksen }}
+            >
+              {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
+            </span>
+            {tertinggi && (
+              <span className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
+                ▲ {t("Tertinggi kohort", "Highest of cohort")}
+              </span>
+            )}
+          </div>
+        )}
         {r.result && (
-          <p className="font-sans text-xs font-semibold uppercase tracking-widest text-amber">
+          <p
+            className="font-sans text-xs font-semibold uppercase tracking-widest"
+            style={{ color: aksen }}
+          >
             ◆ {r.result}
           </p>
         )}
@@ -35,7 +66,7 @@ function KadLegasi({ r }: { r: LegacyRecord }) {
         {r.category && (
           <p className="mt-1 font-sans text-xs uppercase tracking-wider text-muted">{r.category}</p>
         )}
-        <p className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-wider text-amber-deep">
+        <p className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-wider text-muted">
           {t("Rekod", "Record")} {r.recordNo}
         </p>
       </div>
@@ -46,6 +77,7 @@ function KadLegasi({ r }: { r: LegacyRecord }) {
 export default function HallOfHonourView({ records }: { records: LegacyRecord[] }) {
   const { t } = useLang();
   const kohort = byCohort(records);
+  const tertinggi = tertinggiTiapKohort(records);
   const tahunSeterusnya = (kohort[0]?.[0] ?? new Date().getFullYear()) + 1;
 
   return (
@@ -132,7 +164,7 @@ export default function HallOfHonourView({ records }: { records: LegacyRecord[] 
               <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {senarai.map((r, i) => (
                   <Reveal key={r.slug} delay={0.15 + i * 0.08}>
-                    <KadLegasi r={r} />
+                    <KadLegasi r={r} tertinggi={tertinggi.has(r.slug)} />
                   </Reveal>
                 ))}
               </div>

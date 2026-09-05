@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
+import { PERINGKAT, TIER, type LegacyTier } from "@/lib/legasi-tier";
 
 export type LegasiRow = {
   id: string;
@@ -35,6 +36,7 @@ export type LegasiRow = {
   journey: { year: string; what: string; peak?: boolean }[] | null;
   photos: string[] | null;
   hero_image: string | null;
+  tier?: LegacyTier | null;
   card_front: string | null;
   card_back: string | null;
   status: "draft" | "published";
@@ -337,6 +339,7 @@ function RekodEditor({
     story: row.story ?? "",
     quoteText: row.quote_text ?? "",
     quoteBy: row.quote_by ?? "",
+    tier: (row.tier ?? "") as LegacyTier | "",
     heroImage: row.hero_image ?? "",
     cardFront: row.card_front ?? "",
     cardBack: row.card_back ?? "",
@@ -513,6 +516,30 @@ function RekodEditor({
                 value={f.school}
                 onChange={(e) => setF({ ...f, school: e.target.value })}
               />
+            </Medan>
+            <Medan label="Peringkat tertinggi dicapai" nota="Menentukan warna kad">
+              <select
+                className={input}
+                value={f.tier}
+                onChange={(e) => setF({ ...f, tier: e.target.value as LegacyTier | "" })}
+              >
+                <option value="">— Belum ditetapkan —</option>
+                {PERINGKAT.map((k) => (
+                  <option key={k} value={k}>
+                    {TIER[k].nama} ({TIER[k].ringkas})
+                  </option>
+                ))}
+              </select>
+              {f.tier && (
+                <p className="mt-2 flex items-center gap-2 font-sans text-xs text-muted">
+                  <span
+                    aria-hidden
+                    className="inline-block h-3 w-6 rounded-sm"
+                    style={{ background: TIER[f.tier].warna }}
+                  />
+                  Kad akan membawa warna ini.
+                </p>
+              )}
             </Medan>
             <Medan label="Nombor rekod">
               <input

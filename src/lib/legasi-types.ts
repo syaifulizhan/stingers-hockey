@@ -1,6 +1,8 @@
 // Bentuk data Hall of Honour. Diasingkan daripada legasi.ts supaya fail
 // snapshot yang dijana automatik boleh mengimportnya tanpa kitaran import.
 
+import type { LegacyTier } from "@/lib/legasi-tier";
+
 export type LegacyJourneyStep = {
   year: string;
   what: string;
@@ -34,6 +36,16 @@ export type LegacyRecord = {
   heroImage: string | null;
   cardFront: string | null;
   cardBack: string | null;
+  /**
+   * Setinggi mana nama ini dibawa. Null bermakna belum ditetapkan — rekod itu
+   * kekal dengan rupa amber asalnya sehingga admin memilih peringkatnya.
+   *
+   * OPSYENAL dengan sengaja. Fail snapshot beku ialah artifak kekal: salinan
+   * yang ditulis sebelum lajur ini wujud mesti terus menaip-semak selamanya,
+   * jika tidak keseluruhan jaringan keselamatan runtuh apabila skema
+   * berkembang.
+   */
+  tier?: LegacyTier | null;
   publishedAt: string | null;
   /** Setiap versi yang pernah tersiar, terbaharu dahulu. */
   revisions: LegacyRevision[];

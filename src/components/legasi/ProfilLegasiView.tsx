@@ -8,6 +8,7 @@ import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
 import { waybackUrl } from "@/lib/legasi-arkib-url";
+import { takrif, warnaAksen } from "@/lib/legasi-tier";
 
 export default function ProfilLegasiView({
   r,
@@ -23,6 +24,9 @@ export default function ProfilLegasiView({
   // Tajuk perkongsian membawa pencapaian, bukan sekadar nama — itu yang
   // bermakna apabila pautan muncul dalam sembang keluarga.
   const tajukKongsi = [r.fullName, r.result, r.event].filter(Boolean).join(" · ");
+
+  const p = takrif(r.tier);
+  const aksen = warnaAksen(r.tier);
 
   const gambar = r.photos.slice(0, 7);
   const kad = [r.cardFront, r.cardBack].filter(Boolean) as string[];
@@ -56,8 +60,21 @@ export default function ProfilLegasiView({
           <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
             <div className="flex-1">
               <Reveal>
+                {p && (
+                  <p className="mb-4">
+                    <span
+                      className="inline-block rounded-full px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em]"
+                      style={{ background: p.lembut, color: aksen }}
+                    >
+                      {t("Peringkat", "Level")} {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
+                    </span>
+                  </p>
+                )}
                 {r.result && (
-                  <p className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
+                  <p
+                    className="font-sans text-sm font-semibold uppercase tracking-[0.3em]"
+                    style={{ color: aksen }}
+                  >
                     ◆ {r.result}
                     {r.event ? ` · ${r.event}` : ""}
                   </p>
