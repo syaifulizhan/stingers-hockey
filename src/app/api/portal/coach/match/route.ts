@@ -4,6 +4,15 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { getMyRole, isCoach } from "@/lib/portal-auth";
 import { requireCoachApi } from "@/lib/portal-guard";
+import { beritahuEnjinCarian } from "@/lib/indexnow";
+// Keputusan perlawanan menukar apa yang /live dan /keputusan paparkan, jadi
+// enjin carian perlu diberitahu. Halaman itu `force-dynamic` — sentiasa segar
+// untuk manusia — tetapi kesegaran sahaja tidak memanggil sesiapa; tanpa ping
+// ini, skor baharu menunggu perangkak singgah dengan sendirinya.
+//
+// Statistik pemain dan pencapaian TIDAK diping: ia menyentuh dua halaman yang
+// sama, berpuluh kali untuk satu perlawanan. Menghantar alamat yang sama
+// berulang kali tanpa perubahan bererti ialah cara isyarat ini diabaikan.
 
 const base = {
   opponent: z.string().trim().min(1, { message: "Nama lawan diperlukan." }).max(120),
@@ -65,6 +74,7 @@ export async function POST(request: Request) {
     console.error("[coach/match] gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal cipta perlawanan." }, { status: 500 });
   }
+  beritahuEnjinCarian(["/live", "/keputusan"]);
   return NextResponse.json({ ok: true });
 }
 
@@ -92,6 +102,7 @@ export async function PATCH(request: Request) {
     console.error("[coach/match] edit gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini." }, { status: 500 });
   }
+  beritahuEnjinCarian(["/live", "/keputusan"]);
   return NextResponse.json({ ok: true });
 }
 
@@ -111,5 +122,6 @@ export async function DELETE(request: Request) {
     console.error("[coach/match] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 500 });
   }
+  beritahuEnjinCarian(["/live", "/keputusan"]);
   return NextResponse.json({ ok: true });
 }
