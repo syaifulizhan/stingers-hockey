@@ -1,4 +1,5 @@
 import "server-only";
+import { dariKamus, medanPendek, terlaluPendek } from "@/lib/kamus";
 
 // ============================================================================
 // TERJEMAHAN AUTOMATIK — Bahasa Melayu ke Bahasa Inggeris.
@@ -60,110 +61,6 @@ const GLOSARI = [
   "a/l",
   "a/p",
 ];
-
-// ============================================================================
-// KAMUS ISTILAH PENDEK — diterjemah di sini, bukan melalui perkhidmatan.
-//
-// MyMemory ialah memori terjemahan: untuk rentetan yang sangat pendek ia
-// memulangkan segmen manusia paling hampir yang pernah dilihatnya, dan
-// segmen itu boleh datang dari domain yang langsung tiada kaitan. Diperhati
-// pada data sebenar: "JOHAN" pulang sebagai "SPM Outstanding Student A".
-// Bukan terjemahan yang lemah - jawapan dari dokumen orang lain.
-//
-// Keputusan dan kategori sukan sekolah ialah set tertutup dan berformula,
-// jadi ia diterjemah di sini dengan tepat, serta-merta dan tanpa kuota.
-// Apa yang tiada dalam senarai ini dan terlalu pendek untuk dipercayai
-// akan kekal dalam bahasa Melayu, dan itu jawapan yang betul: "JOHAN" yang
-// tidak diterjemah masih boleh difahami; "SPM Outstanding Student A" tidak.
-// ============================================================================
-
-const KAMUS: Record<string, string> = {
-  "johan": "Champion",
-  "naib johan": "Runner-Up",
-  "tempat kedua": "Second Place",
-  "tempat ketiga": "Third Place",
-  "tempat keempat": "Fourth Place",
-  "kapten": "Captain",
-  "penjaring terbanyak": "Top Scorer",
-  "pemain terbaik": "Best Player",
-  "penjaga gol terbaik": "Best Goalkeeper",
-  "saringan": "Qualifier",
-  "separuh akhir": "Semi-Final",
-  "suku akhir": "Quarter-Final",
-  "akhir": "Final",
-  "peserta": "Participant",
-  "lelaki": "Boys",
-  "perempuan": "Girls",
-  "bawah 12": "Under 12",
-  "bawah 15": "Under 15",
-  "bawah 18": "Under 18",
-  "12 tahun": "Under 12",
-  "15 tahun": "Under 15",
-  "18 tahun": "Under 18",
-  "kejohanan hoki": "Hockey Championship",
-  "kejohanan": "Championship",
-  "piala": "Cup",
-  "terbuka": "Open",
-};
-
-/**
- * Adakah rentetan ini cukup pendek untuk kamus dipercayai?
- *
- * Kamus direka untuk medan berformula: "JOHAN", "Lelaki 12 Tahun - Selangor".
- * Ia MESTI TIDAK menyentuh prosa. Versi pertama tidak mempunyai pengawal ini,
- * dan laluan pemisahnya memecah keseluruhan badan artikel pada sengkang,
- * menggantikan beberapa perkataan, dan memulangkan hasilnya sebagai
- * "terjemahan" - sepuluh daripada dua belas artikel disimpan sebagai teks
- * Melayu yang hampir tidak berubah. Kamus hanya berpeluang pada rentetan
- * pendek satu baris.
- */
-function medanPendek(teks: string): boolean {
-  const t = teks.trim();
-  return !t.includes("\n") && t.length <= 60 && t.split(/\s+/).length <= 8;
-}
-
-/**
- * Cuba terjemah rentetan pendek daripada kamus tempatan.
- *
- * Memulangkan null apabila ia tidak boleh dilakukan dengan yakin. Pemanggil
- * kemudian memutuskan sama ada hendak bertanya kepada perkhidmatan atau
- * mengekalkan bahasa Melayu.
- */
-function dariKamus(teks: string): string | null {
-  const bersih = teks.trim().replace(/\s+/g, " ");
-  const terus = KAMUS[bersih.toLowerCase()];
-  if (terus) return bersih === bersih.toUpperCase() ? terus.toUpperCase() : terus;
-
-  // Rentetan berbentuk "Lelaki 12 Tahun - Selangor": setiap bahagian dicuba
-  // secara berasingan, dan bahagian yang tidak dikenali dikekalkan seadanya
-  // kerana ia hampir selalunya nama tempat.
-  const pemisah = /\s*[·|\-–—]\s*/;
-  if (pemisah.test(bersih)) {
-    const bahagian = bersih.split(pemisah);
-    const keluar = bahagian.map((b) => {
-      const k = KAMUS[b.trim().toLowerCase()];
-      if (k) return b === b.toUpperCase() ? k.toUpperCase() : k;
-      // Frasa dalam bahagian: "Lelaki 12 Tahun" -> "Boys Under 12"
-      let sisa = b.trim();
-      let berubah = false;
-      for (const [ms, en] of Object.entries(KAMUS).sort((a, b2) => b2[0].length - a[0].length)) {
-        const re = new RegExp(`\\b${ms.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
-        if (re.test(sisa)) {
-          sisa = sisa.replace(re, en);
-          berubah = true;
-        }
-      }
-      return berubah ? sisa : b.trim();
-    });
-    if (keluar.some((k, i) => k !== bahagian[i].trim())) return keluar.join(" · ");
-  }
-  return null;
-}
-
-/** Terlalu pendek untuk dipercayai daripada memori terjemahan. */
-function terlaluPendek(teks: string): boolean {
-  return teks.trim().split(/\s+/).length <= 3;
-}
 
 /** Bahagi teks kepada kepingan di bawah had, memotong pada sempadan ayat. */
 function kepingkan(teks: string): string[] {

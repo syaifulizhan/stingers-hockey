@@ -1,4 +1,8 @@
+"use client";
+
 import { matchResult } from "@/lib/match";
+import { useLang } from "@/lib/i18n";
+import { istilah } from "@/lib/kamus";
 
 export type LiveMatch = {
   id: string;
@@ -112,6 +116,13 @@ export default function SeasonResultView({
   achievements?: LiveAchievement[];
   showLatest?: boolean;
 }) {
+  const { lang } = useLang();
+  // Kategori dan kejohanan diterjemah dari kamus tempatan — serta-merta dan
+  // tanpa kuota. Lawan dan tempat SENGAJA tidak disentuh: "SK Seri Selangor"
+  // ialah nama sekolah dan "SSNS, Seksyen 11, Shah Alam" ialah alamat.
+  // Menterjemahkannya bukan membantu sesiapa, ia merosakkan maklumat.
+  const bm = (t: string | null) => istilah(t, lang);
+
   const nameById = new Map(players.map((p) => [p.clerk_user_id, p.name || "Ahli"]));
   const ids = new Set(matches.map((m) => m.id));
   const rec = record(matches);
@@ -154,8 +165,8 @@ export default function SeasonResultView({
             <span className="display text-2xl text-paper sm:text-3xl">{latest.opponent}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-2 font-sans text-xs text-muted">
-            {latest.competition && <span>{latest.competition}</span>}
-            {latest.category && <span>· {latest.category}</span>}
+            {latest.competition && <span>{bm(latest.competition)}</span>}
+            {latest.category && <span>· {bm(latest.category)}</span>}
             {latest.match_date && <span>· {latest.match_date}</span>}
             {latest.venue && <span>· {latest.venue}</span>}
             <ResultBadge our={latest.our_score} opp={latest.opp_score} />
@@ -234,7 +245,9 @@ export default function SeasonResultView({
                 </span>
               </div>
               <p className="mt-1 font-sans text-xs text-muted">
-                {[m.competition, m.category, m.match_date, m.venue].filter(Boolean).join(" · ")}
+                {[bm(m.competition), bm(m.category), m.match_date, m.venue]
+                  .filter(Boolean)
+                  .join(" · ")}
               </p>
               {scorers.length > 0 && (
                 <p className="mt-1.5 font-sans text-xs text-paper/80">⚽ {scorers.join(", ")}</p>
