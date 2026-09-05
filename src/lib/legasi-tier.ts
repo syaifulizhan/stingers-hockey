@@ -38,7 +38,14 @@ export type TakrifPeringkat = {
   /** Label pada kad. */
   nama: string;
   namaEn: string;
-  /** Badan yang menganjurkan pada paras itu — konteks untuk ibu bapa. */
+  /**
+   * Badan yang menganjurkan pada paras itu.
+   *
+   * HANYA untuk dropdown admin, sebagai panduan memilih. Ia TIDAK dipaparkan
+   * pada kad awam: "KEBANGSAAN · MSSM / SUKMA" menimbulkan soalan yang kad itu
+   * tidak cuba jawab, dan pembaca mula tertanya sama ada MSSM dan SUKMA itu
+   * dua perkara berbeza. Kad hanya menyatakan setinggi mana nama itu dibawa.
+   */
   ringkas: string;
   /** Tinggi pada tangga. Lebih besar lebih tinggi. */
   aras: number;

@@ -47,7 +47,7 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
                   : { background: p.lembut, color: aksen }
               }
             >
-              {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
+              {lang === "en" ? p.namaEn : p.nama}
             </span>
             {tertinggi && (
               <span className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
