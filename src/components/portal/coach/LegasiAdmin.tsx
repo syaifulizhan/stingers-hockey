@@ -214,12 +214,20 @@ function TambahRekod({
 
   if (!buka) {
     return (
+      // Amber dan tebal, bukan garis putus kelabu.
+      //
+      // Versi pertama menggunakan sempadan putus-putus dengan teks `text-muted`,
+      // dan ia terhimpit antara panel maklumat di atas dan kad rekod di bawah.
+      // Ia hilang begitu sahaja - dilaporkan sebagai "butang tambah tak ada".
+      // Butang itu memang ada; ia cuma tidak kelihatan seperti sesuatu yang
+      // boleh ditekan. Menambah rekod ialah tindakan utama pada skrin ini, dan
+      // ia patut kelihatan begitu.
       <button
         type="button"
         onClick={() => setBuka(true)}
-        className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-dashed border-line px-4 py-2.5 font-sans text-sm text-muted hover:border-amber hover:text-amber"
+        className="inline-flex w-fit items-center gap-2 rounded-lg border-2 border-amber/70 bg-amber/10 px-5 py-3 font-sans text-sm font-semibold text-amber transition-colors hover:bg-amber hover:text-ink"
       >
-        <Plus className="h-4 w-4" /> Tambah rekod baharu
+        <Plus className="h-4.5 w-4.5" /> Tambah rekod baharu
       </button>
     );
   }
