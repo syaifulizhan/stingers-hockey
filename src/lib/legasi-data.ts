@@ -27,6 +27,7 @@ type Row = {
   journey: unknown;
   photos: unknown;
   hero_image: string | null;
+  tier?: string | null;
   card_front: string | null;
   card_back: string | null;
   published_at: string | null;
@@ -38,7 +39,7 @@ type Row = {
 const COLUMNS =
   "slug, record_no, cohort, full_name, name_first, name_last, result, category, " +
   "event, school, story, quote_text, quote_by, journey, photos, hero_image, " +
-  "card_front, card_back, published_at, archived_at, archive_url, " +
+  "tier, card_front, card_back, published_at, archived_at, archive_url, " +
   // Sejarah setiap versi yang pernah tersiar — dibaca bersama rekod supaya
   // halaman boleh menunjukkan bahawa rekod ini hidup dan berkembang.
   "legacy_versions(version_no, captured_at)";
@@ -67,6 +68,9 @@ function toRecord(row: Row): LegacyRecord {
     journey: Array.isArray(row.journey) ? (row.journey as LegacyRecord["journey"]) : [],
     photos: Array.isArray(row.photos) ? (row.photos as string[]) : [],
     heroImage: row.hero_image,
+    // Lajur `tier` mungkin belum wujud (COLUMNS_ASAS tidak memintanya), dan
+    // rekod snapshot lama tidak membawanya. Kedua-duanya bermakna null.
+    tier: (row.tier as LegacyRecord["tier"]) ?? null,
     cardFront: row.card_front,
     cardBack: row.card_back,
     publishedAt: row.published_at,

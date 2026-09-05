@@ -46,7 +46,7 @@ const supabase = createClient(url, key, { auth: { persistSession: false } });
 const { data, error } = await supabase
   .from("legacy_records")
   .select(
-    "slug, record_no, cohort, full_name, name_first, name_last, result, category, event, " +
+    "slug, record_no, cohort, full_name, name_first, name_last, result, category, event, tier, " +
       "school, story, quote_text, quote_by, journey, photos, hero_image, card_front, " +
       "card_back, published_at, archived_at, archive_url, " +
       "legacy_versions(version_no, captured_at)",
@@ -73,6 +73,7 @@ const records = (data ?? []).map((r) => ({
   nameFirst: r.name_first || r.full_name,
   nameLast: r.name_last || "",
   result: r.result ?? null,
+  tier: r.tier ?? null,
   category: r.category ?? null,
   event: r.event ?? null,
   school: r.school ?? null,
