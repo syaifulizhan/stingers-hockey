@@ -10,6 +10,9 @@ alter table public.legacy_records
   add constraint legacy_records_tier_check
   check (tier is null or tier in ('daerah', 'negeri', 'kebangsaan', 'negara'));
 
+alter table public.legacy_records
+  disable trigger trg_capture_legacy_version;
+
 update public.legacy_records
    set tier = 'kebangsaan'
  where tier is null
@@ -25,6 +28,9 @@ update public.legacy_records
    set tier = 'daerah'
  where tier is null
    and (event ilike '%MSSD%' or result ilike '%MSSD%');
+
+alter table public.legacy_records
+  enable trigger trg_capture_legacy_version;
 
 select 'SEMAK - peringkat setiap rekod' as penanda;
 
