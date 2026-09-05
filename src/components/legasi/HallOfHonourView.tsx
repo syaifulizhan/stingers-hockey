@@ -82,6 +82,30 @@ export default function HallOfHonourView({ records }: { records: LegacyRecord[] 
           </div>
         </Reveal>
 
+        {/* Tahun hadapan berada di ATAS, kerana kohort disusun terbaharu dahulu.
+            Sebelum ini blok ini dirender selepas gelung kohort — dengan satu
+            kohort sahaja ia kebetulan kelihatan betul, tetapi sebaik kohort
+            lama ditambah, halaman berbunyi 2026 → 2019 → "menunggu 2027" di
+            bahagian paling bawah. Garis masa mesti mengalir satu arah. */}
+        {kohort.length > 0 && (
+          <Reveal delay={0.2}>
+            <div className="mt-16">
+              <div className="flex items-center gap-6">
+                <span className="display text-4xl text-muted sm:text-5xl">{tahunSeterusnya}</span>
+                <span className="h-px flex-1 bg-line" />
+              </div>
+              <div className="mt-8 rounded-2xl border border-dashed border-line px-8 py-14 text-center">
+                <p className="font-sans text-sm text-muted">
+                  {t(
+                    "Dinding ini menunggu nama seterusnya.",
+                    "This wall is waiting for the next name.",
+                  )}
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        )}
+
         {kohort.length === 0 ? (
           <Reveal delay={0.2}>
             <div className="mt-16 rounded-2xl border border-dashed border-line px-8 py-20 text-center">
@@ -116,24 +140,6 @@ export default function HallOfHonourView({ records }: { records: LegacyRecord[] 
           ))
         )}
 
-        {kohort.length > 0 && (
-          <Reveal delay={0.2}>
-            <div className="mt-16">
-              <div className="flex items-center gap-6">
-                <span className="display text-4xl text-muted sm:text-5xl">{tahunSeterusnya}</span>
-                <span className="h-px flex-1 bg-line" />
-              </div>
-              <div className="mt-8 rounded-2xl border border-dashed border-line px-8 py-14 text-center">
-                <p className="font-sans text-sm text-muted">
-                  {t(
-                    "Dinding ini menunggu nama seterusnya.",
-                    "This wall is waiting for the next name.",
-                  )}
-                </p>
-              </div>
-            </div>
-          </Reveal>
-        )}
       </div>
     </section>
   );

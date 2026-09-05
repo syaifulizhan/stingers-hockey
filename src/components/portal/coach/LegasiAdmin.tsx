@@ -84,6 +84,14 @@ export default function LegasiAdmin({ records }: { records: LegasiRow[] }) {
         </p>
       )}
 
+      <TambahRekod
+        records={records}
+        onSelesai={(m) => {
+          setPesan(m);
+          router.refresh();
+        }}
+      />
+
       {records.map((r) => (
         <RekodEditor
           key={r.id}
@@ -99,10 +107,206 @@ export default function LegasiAdmin({ records }: { records: LegasiRow[] }) {
 
       {records.length === 0 && (
         <p className="rounded-xl border border-dashed border-line px-5 py-10 text-center font-sans text-sm text-muted">
-          Belum ada rekod. Jalankan migrasi <code className="text-amber">20260904_dewan_legasi.sql</code>{" "}
-          untuk memasukkan dua penerima pertama sebagai draf.
+          Belum ada rekod. Tekan <strong className="text-paper">Tambah rekod baharu</strong> di atas
+          untuk mencipta yang pertama.
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Cipta rekod baharu.
+ *
+ * KENAPA IA HANYA MEMINTA EMPAT MEDAN. Laluan POST mencipta rekod sebagai
+ * DRAF, sentiasa — tiada cara untuk borang ini menerbitkan sesuatu. Jadi ia
+ * hanya perlu perkara yang mesti unik dan kekal (slug, nombor rekod) dan
+ * cukup untuk mengenali baris itu dalam senarai. Segala yang lain — cerita,
+ * perjalanan, gambar — diisi dalam editor penuh selepas baris wujud.
+ *
+ * Gambar TIDAK boleh dimuat naik di sini: laluan storan ialah `<slug>/…`,
+ * jadi slug mesti wujud dahulu. Itulah sebab dua langkah, bukan satu.
+ *
+ * Kohort menerima tahun lampau. Menambah kohort lama tidak mengganggu apa-apa:
+ * halaman awam mengumpul ikut tahun dan menyusun terbaharu dahulu, jadi
+ * angkatan lama muncul sebagai seksyennya sendiri di bawah yang terkini.
+ */
+function TambahRekod({
+  records,
+  onSelesai,
+}: {
+  records: LegasiRow[];
+  onSelesai: (pesan: string) => void;
+}) {
+  const [buka, setBuka] = useState(false);
+  const [sibuk, setSibuk] = useState(false);
+  const [ralat, setRalat] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [cohort, setCohort] = useState(new Date().getFullYear());
+  // Cadangan diikuti sehingga admin menaip sendiri. Selepas itu taipan mereka
+  // menang — cadangan tidak boleh menulis ganti apa yang orang sengaja tulis.
+  const [slug, setSlug] = useState("");
+  const [slugDisunting, setSlugDisunting] = useState(false);
+  const [recordNo, setRecordNo] = useState("");
+  const [noDisunting, setNoDisunting] = useState(false);
+
+  const cadangSlug = (nama: string) =>
+    nama
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .split(/\s+/)
+      .filter((w) => !["bin", "binti", "bt", "a/l", "a/p"].includes(w))
+      .slice(0, 2)
+      .join("-");
+
+  // Nombor seterusnya dalam kohort itu: SH-2026-03 selepas -01 dan -02.
+  const cadangNo = (tahun: number) => {
+    const dalamKohort = records.filter((r) => r.cohort === tahun);
+    return `SH-${tahun}-${String(dalamKohort.length + 1).padStart(2, "0")}`;
+  };
+
+  const slugAkhir = slugDisunting ? slug : cadangSlug(fullName);
+  const noAkhir = noDisunting ? recordNo : cadangNo(cohort);
+
+  const cipta = async () => {
+    setSibuk(true);
+    setRalat(null);
+    try {
+      const res = await fetch("/api/portal/coach/legasi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName.trim(),
+          slug: slugAkhir,
+          recordNo: noAkhir,
+          cohort: Number(cohort),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.ok) {
+        const perMedan = json.errors
+          ? Object.entries(json.errors as Record<string, string[]>)
+              .map(([medan, pesan]) => `${medan}: ${(pesan ?? []).join(", ")}`)
+              .join(" · ")
+          : null;
+        setRalat(json.error ?? perMedan ?? "Gagal mencipta rekod.");
+        return;
+      }
+      onSelesai(`Draf ${fullName.trim()} dicipta. Buka untuk mengisi cerita dan gambar.`);
+      setFullName("");
+      setSlug("");
+      setSlugDisunting(false);
+      setRecordNo("");
+      setNoDisunting(false);
+      setBuka(false);
+    } catch {
+      setRalat("Gagal menghubungi pelayan.");
+    } finally {
+      setSibuk(false);
+    }
+  };
+
+  const boleh = fullName.trim().length > 0 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugAkhir);
+
+  if (!buka) {
+    return (
+      <button
+        type="button"
+        onClick={() => setBuka(true)}
+        className="inline-flex w-fit items-center gap-1.5 rounded-lg border border-dashed border-line px-4 py-2.5 font-sans text-sm text-muted hover:border-amber hover:text-amber"
+      >
+        <Plus className="h-4 w-4" /> Tambah rekod baharu
+      </button>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-amber/40 bg-bg-soft p-5">
+      <div className="flex items-center justify-between gap-4">
+        <h3 className="font-sans text-sm font-semibold text-paper">Rekod baharu</h3>
+        <button
+          type="button"
+          onClick={() => setBuka(false)}
+          aria-label="Batal"
+          className="text-muted hover:text-paper"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {ralat && (
+        <p className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 font-sans text-sm text-red-300">
+          {ralat}
+        </p>
+      )}
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Medan label="Nama penuh (rasmi)">
+          <input
+            className={input}
+            autoFocus
+            placeholder="Nama seperti pada kad pengenalan"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+          />
+        </Medan>
+        <Medan label="Tahun kohort" nota="Tahun lampau dibenarkan">
+          <input
+            type="number"
+            className={input}
+            value={cohort}
+            onChange={(e) => {
+              setCohort(Number(e.target.value));
+            }}
+          />
+        </Medan>
+        <Medan label="Slug (alamat kekal)" nota="Tidak boleh diubah selepas terbit">
+          <input
+            className={input}
+            placeholder="nama-pemain"
+            value={slugAkhir}
+            onChange={(e) => {
+              setSlugDisunting(true);
+              setSlug(e.target.value);
+            }}
+          />
+        </Medan>
+        <Medan label="Nombor rekod">
+          <input
+            className={input}
+            value={noAkhir}
+            onChange={(e) => {
+              setNoDisunting(true);
+              setRecordNo(e.target.value);
+            }}
+          />
+        </Medan>
+      </div>
+
+      <p className="mt-4 font-sans text-xs leading-relaxed text-muted">
+        Alamat kekalnya akan menjadi{" "}
+        <code className="text-amber">hoki.my/legasi/{slugAkhir || "…"}</code>. Inilah yang dicetak
+        pada kad QR, jadi ia dikunci sebaik rekod diterbitkan — semak sekarang, bukan nanti. Rekod
+        ini bermula sebagai draf dan tidak kelihatan awam sehingga awak menekan Terbitkan.
+      </p>
+
+      <div className="mt-5 flex items-center gap-3 border-t border-line pt-4">
+        <button
+          onClick={cipta}
+          disabled={sibuk || !boleh}
+          className="rounded-lg bg-amber px-4 py-2 font-sans text-sm font-semibold text-ink hover:bg-amber-deep disabled:opacity-40"
+        >
+          {sibuk ? "Mencipta…" : "Cipta draf"}
+        </button>
+        <button
+          onClick={() => setBuka(false)}
+          className="font-sans text-sm text-muted hover:text-paper"
+        >
+          Batal
+        </button>
+      </div>
     </div>
   );
 }
