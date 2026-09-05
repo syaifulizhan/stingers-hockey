@@ -13,7 +13,8 @@ alter table public.legacy_records
 update public.legacy_records
    set tier = 'kebangsaan'
  where tier is null
-   and (event ilike '%MSSM%' or result ilike '%MSSM%');
+   and (event ilike '%MSSM%' or result ilike '%MSSM%'
+        or event ilike '%SUKMA%' or result ilike '%SUKMA%');
 
 update public.legacy_records
    set tier = 'negeri'

@@ -41,7 +41,11 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
                 peringkat sesuatu rekod. */}
             <span
               className="rounded-full px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-widest"
-              style={{ background: p.lembut, color: aksen }}
+              style={
+                p.padat
+                  ? { background: aksen, color: p.atasWarna }
+                  : { background: p.lembut, color: aksen }
+              }
             >
               {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
             </span>
