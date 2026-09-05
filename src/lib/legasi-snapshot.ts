@@ -14,6 +14,7 @@ export const SNAPSHOT: LegacyRecord[] = [
     "nameFirst": "KAMA NIZAR",
     "nameLast": "ZAHIN",
     "result": "JOHAN",
+    "tier": "kebangsaan",
     "category": "Lelaki 12 Tahun - Selangor",
     "event": "Kejohanan Hoki MSSM 2026",
     "school": "SK Taman Desaminium",
@@ -123,8 +124,75 @@ export const SNAPSHOT: LegacyRecord[] = [
     ],
     "archivedAt": "2026-09-04T19:27:40.392+00:00",
     "archiveUrl": "https://web.archive.org/web/20260904175640/https://hoki.my/legasi/kama-nizar-zahin"
+  },
+  {
+    "slug": "adelia-khadeeja",
+    "recordNo": "SH-2026-02",
+    "cohort": 2026,
+    "fullName": "Adelia Khadeeja binti Mohd Iszham",
+    "nameFirst": "ADELIA",
+    "nameLast": "KHADEEJA",
+    "result": "TEMPAT KETIGA",
+    "tier": "kebangsaan",
+    "category": "Perempuan 12 Tahun - Selangor",
+    "event": "Kejohanan Hoki MSSM 2026",
+    "school": "SK Taman Desaminium",
+    "story": "ADELIА KHADEEJA BINTI MOHD ISZHAM\n\nDikenali sebagai Deeja\n\nPerjalanan Deeja dalam hoki memperlihatkan perkembangan seorang pemain muda yang semakin matang dari tahun ke tahun. Pada 2025, beliau membantu pasukannya muncul sebagai Naib Johan KATMO U11, sebelum melangkah lebih jauh pada tahun 2026 dengan membawa pasukan ke Naib Johan Kejohanan Hoki MSSD. Di pentas terbuka pula, Deeja terus menunjukkan daya saingnya apabila membantu pasukan meraih Johan Plate Kejohanan Terbuka MyStaGe. Kemuncak perjalanan awalnya hadir apabila Deeja berjaya membawa nama Selangor ke pentas Kejohanan Hoki MSSM 2026 dan menamatkan saingan di Tempat Ketiga. Daripada seorang pemain muda yang sedang membina asas, Deeja kini semakin dikenali sebagai antara bakat Stingers yang mempunyai ketenangan, semangat bersaing dan potensi untuk terus melangkah lebih jauh dalam arena hoki. 🏑✨",
+    "quoteText": "Deeja mungkin kelihatan tenang di atas padang, tetapi sumbangannya kepada pasukan sangat besar. Dia antara pemain yang paling banyak menyumbang skor dalam perlawanan dan sentiasa tahu bagaimana untuk berada di tempat yang tepat pada waktu yang tepat. Apa yang saya suka tentang Deeja ialah dia tidak bermain untuk mengejar perhatian, tetapi permainan dan jaringan yang dihasilkannya sendiri membuatkan dia menonjol. Dari semasa ke semasa, dia semakin yakin, semakin matang dan semakin berani mengambil peluang. Bagi saya, Deeja mempunyai naluri menjaringkan gol yang istimewa, dan kalau dia terus bekerja seperti ini, perjalanan dia untuk pergi lebih jauh semakin cerah.",
+    "quoteBy": "Coach Ekhwan Shukor",
+    "journey": [
+      {
+        "peak": true,
+        "what": "Tempat Ke-3 • Kejohanan Hoki MSSM",
+        "year": "2026"
+      },
+      {
+        "peak": false,
+        "what": "Naib Johan • Kejohanan Hoki MSSD",
+        "year": "2026"
+      },
+      {
+        "peak": false,
+        "what": "Johan Plate • Kejohanan Terbuka MyStaGe",
+        "year": "2026"
+      },
+      {
+        "peak": false,
+        "what": "Naib Johan • KATMO U11",
+        "year": "2025"
+      }
+    ],
+    "photos": [
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/a37cbbc3-1ae7-44c7-b448-a64ef8851704.jpeg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/8e553a3b-a995-4165-97d2-b8bacaa08726.jpeg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/c87ff3c1-2fbb-4d48-8cec-643d9ddf679d.jpg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/e2533c78-8f7d-4f1b-9981-ce2a55755f1e.jpg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/3b2b3121-7b93-455b-8947-3bff2445c3f0.jpg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/b0062aec-b9b9-409c-92a0-96555f24d79e.jpg",
+      "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/cd79fa2c-bd89-412b-87f4-6d7a2f6eee5d.jpeg"
+    ],
+    "heroImage": "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/7e508b0b-9bac-41e9-919c-3de75094c7b9.jpg",
+    "cardFront": "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/8267358d-f7ff-44c2-bc17-20a22e91dcb1.jpg",
+    "cardBack": "https://hrukhwijmsnlcjneacrk.supabase.co/storage/v1/object/public/legasi/adelia-khadeeja/31811f68-e504-40ba-9945-288a137c9ad3.jpg",
+    "publishedAt": "2026-09-05T01:09:34.724+00:00",
+    "revisions": [
+      {
+        "versionNo": 3,
+        "capturedAt": "2026-09-05T07:06:21.046586+00:00"
+      },
+      {
+        "versionNo": 2,
+        "capturedAt": "2026-09-05T02:23:09.862524+00:00"
+      },
+      {
+        "versionNo": 1,
+        "capturedAt": "2026-09-05T01:09:34.702936+00:00"
+      }
+    ],
+    "archivedAt": "2026-09-05T07:06:28.124+00:00",
+    "archiveUrl": "https://web.archive.org/web/20260905062024/https://hoki.my/legasi/adelia-khadeeja"
   }
 ];
 
 /** Cap masa fail ini dijana terakhir. */
-export const SNAPSHOT_AT: string | null = "2026-09-04T19:43:39.173Z";
+export const SNAPSHOT_AT: string | null = "2026-09-05T13:19:11.366Z";
