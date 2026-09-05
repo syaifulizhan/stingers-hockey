@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { pilih } from "@/lib/pilih-bahasa";
 import ShareButton from "@/components/ShareButton";
 import NewsImageCarousel from "@/components/NewsImageCarousel";
 
@@ -13,11 +14,16 @@ type NewsRow = {
   image_url: string | null;
   image_urls: string[] | null;
   published_at: string;
+  translations?: { en?: Record<string, string> } | null;
 };
 
 export default function BeritaArticle({ news }: { news: NewsRow }) {
   const { lang, t } = useLang();
   const locale = lang === "en" ? "en-MY" : "ms-MY";
+
+  // Teks Inggeris bila ada, teks Melayu bila tiada. Tiada keadaan ketiga.
+  const tajuk = pilih(lang, news.title, news.translations, "title");
+  const isi = pilih(lang, news.body, news.translations, "body");
 
   const gallery: string[] =
     news.image_urls && news.image_urls.length > 0
@@ -36,7 +42,7 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
       </Link>
 
       <h1 className="display mt-6 text-4xl leading-tight text-paper sm:text-5xl">
-        {news.title}
+        {tajuk}
       </h1>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <p className="font-sans text-sm text-muted">
@@ -46,14 +52,14 @@ export default function BeritaArticle({ news }: { news: NewsRow }) {
             year: "numeric",
           })}
         </p>
-        <ShareButton title={news.title} />
+        <ShareButton title={tajuk} />
       </div>
 
-      <NewsImageCarousel images={gallery} title={news.title} />
+      <NewsImageCarousel images={gallery} title={tajuk} />
 
-      {news.body && (
+      {isi && (
         <div className="mt-6 whitespace-pre-wrap font-sans text-base leading-relaxed text-paper/90">
-          {news.body}
+          {isi}
         </div>
       )}
     </article>

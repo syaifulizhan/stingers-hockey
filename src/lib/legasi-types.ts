@@ -52,6 +52,11 @@ export type LegacyRecord = {
    * mesti terus sah.
    */
   stage?: LegacyStage | null;
+  /**
+   * Versi bahasa lain, { en: { medan: "teks" } }. Dijana mesin daripada teks
+   * Melayu semasa terbit. Medan yang hilang bermakna jatuh balik ke Melayu.
+   */
+  translations?: { en?: Record<string, string> } | null;
   publishedAt: string | null;
   /** Setiap versi yang pernah tersiar, terbaharu dahulu. */
   revisions: LegacyRevision[];

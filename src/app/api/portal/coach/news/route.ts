@@ -8,6 +8,7 @@ import { makeSlug } from "@/lib/slug";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireCoachApi } from "@/lib/portal-guard";
 import { beritahuEnjinCarian } from "@/lib/indexnow";
+import { simpanTerjemahanBerita } from "@/lib/simpan-terjemahan";
 
 // Pastikan slug unik (tambah -2, -3, … jika bertindih).
 async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<string> {
@@ -122,6 +123,12 @@ export async function POST(request: Request) {
   // berita bernilai pada hari ia terbit; diindeks tiga hari kemudian bermakna
   // terlepas keseluruhan tempoh orang mencarinya.
   beritahuEnjinCarian(["/", "/berita", `/berita/${slug}`]);
+  // Terjemahan berjalan SELEPAS balasan, seperti IndexNow. Ia mengambil
+  // beberapa saat untuk artikel panjang, dan jurulatih tidak sepatutnya
+  // menunggu mesin terjemahan sebelum melihat beritanya tersiar.
+  if (data?.id) {
+    simpanTerjemahanBerita(data.id, { title: parsed.data.title, body: parsed.data.body || null });
+  }
 
   return NextResponse.json({ ok: true });
 }
@@ -173,6 +180,12 @@ export async function PATCH(request: Request) {
   beritahuEnjinCarian(
     slugDisunting ? ["/", "/berita", `/berita/${slugDisunting}`] : ["/", "/berita"]
   );
+  // Teks yang disunting mesti diterjemah semula, jika tidak pembaca Inggeris
+  // kekal melihat versi lama selamanya.
+  simpanTerjemahanBerita(parsed.data.id, {
+    title: parsed.data.title,
+    body: parsed.data.body || null,
+  });
   return NextResponse.json({ ok: true });
 }
 
