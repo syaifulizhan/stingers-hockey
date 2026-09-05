@@ -118,7 +118,7 @@ export default async function PratontonLegasiPage({
     <>
       {/* Pita pratonton — mesti mustahil disalah anggap sebagai halaman sebenar. */}
       <div
-        className={`sticky top-0 z-50 border-b px-6 py-3 ${
+        className={`sticky top-0 top-safe z-50 border-b px-6 py-3 ${
           draf ? "border-amber/40 bg-amber/15" : "border-line bg-bg-soft"
         }`}
       >

@@ -59,7 +59,7 @@ export default function PullToRefresh() {
   const active = refreshing || distance >= THRESHOLD;
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-center"
+      className="pointer-events-none fixed inset-x-0 top-0 z-[90] flex justify-center pt-safe"
       style={{ transform: `translateY(${distance}px)` }}
     >
       <div className="mt-3 rounded-full border border-line bg-bg-soft p-2 shadow-lg">

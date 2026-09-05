@@ -47,12 +47,9 @@ if (!service) {
 }
 const sb = createClient(url, service, { auth: { persistSession: false } });
 
-const GLOSARI = [
-  "Strike Hard. Strike Fast.", "SK Taman Desaminium", "Stingers Hockey",
-  "Hustle Gear", "Hall of Honour", "Stingers", "Hoki.my", "SKTD",
-  "MSSD", "MSSS", "MSSM", "MSSN", "SUKMA", "KATMO", "MyStaGe",
-  "binti", "bin", "a/l", "a/p",
-];
+// Sengaja pendek: MyMemory sudah mengekalkan nama khas sendiri.
+// Token yang berlebihan merosakkan kualiti dan boleh dirosakkan mesin.
+const GLOSARI = ["binti", "bin", "a/l", "a/p"];
 // Istilah pendek diterjemah dari senarai ini, bukan melalui perkhidmatan.
 // MyMemory ialah memori terjemahan: untuk rentetan sangat pendek ia
 // memulangkan segmen manusia paling hampir, yang boleh datang dari domain
@@ -95,6 +92,13 @@ function dariKamus(teks) {
 
 const terlaluPendek = (t) => t.trim().split(/\s+/).length <= 3;
 
+// Kamus hanya untuk medan berformula pendek. Tanpa pengawal ini ia memecah
+// badan artikel pada sengkang dan memulangkan teks Melayu sebagai terjemahan.
+const medanPendek = (t) => {
+  const x = t.trim();
+  return !x.includes("\n") && x.length <= 60 && x.split(/\s+/).length <= 8;
+};
+
 const MAKS = 380;
 const bait = (s) => new TextEncoder().encode(s).length;
 
@@ -112,8 +116,8 @@ function lindungi(teks, tambahan) {
 
 function pulihkan(teks, peta) {
   let h = teks;
-  peta.forEach((asal, i) => { h = h.replace(new RegExp(`XNTX\\s*${i}\\s*XNTX`, "gi"), asal); });
-  return h.replace(/XNTX\s*\d+\s*XNTX/gi, "").replace(/[^\S\n]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+  peta.forEach((asal, i) => { h = h.replace(new RegExp(`X+\\s*N\\s*T\\s*X+\\s*${i}\\s*X+\\s*N\\s*T\\s*X+`, "gi"), asal); });
+  return h.replace(/X+\s*N\s*T\s*X+\s*\d+\s*X*\s*N?\s*T?\s*X*/gi, "").replace(/[^\S\n]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 }
 
 function kepingkan(teks) {
@@ -157,8 +161,10 @@ async function satu(teks) {
 
 async function terjemah(teks, lindung = []) {
   if (!teks || !teks.trim()) return null;
-  const dari = dariKamus(teks);
-  if (dari) return dari;
+  if (medanPendek(teks)) {
+    const dari = dariKamus(teks);
+    if (dari) return dari;
+  }
   if (terlaluPendek(teks)) return null;
   const { teks: selamat, peta } = lindungi(teks, lindung);
   const keluar = [];
@@ -179,11 +185,36 @@ async function terjemah(teks, lindung = []) {
   return g || null;
 }
 
+// Tapisan terakhir sebelum apa-apa disimpan. Terjemahan mesin percuma
+// kadangkala gagal dengan cara yang kelihatan seperti berjaya: teks sumber
+// dipulangkan tidak berubah, separuh ayat sahaja diterjemah, atau mesej
+// kuota diselitkan. Apa yang tidak lulus tidak disimpan, dan halaman
+// memaparkan bahasa Melayu.
+const KATA_MELAYU = /\b(yang|dengan|untuk|adalah|telah|dalam|akan|daripada|kepada|beliau|mereka|serta|oleh|pada|ini|itu|kerana|sebagai|antara|selepas|apabila)\b/gi;
+
+function sahkan(asal, hasil) {
+  const t = (hasil || "").trim();
+  if (!t) return { lulus: false, sebab: "kosong" };
+  if (/X+\s*N\s*T\s*X+\s*\d/i.test(t)) return { lulus: false, sebab: "token bocor" };
+  if (/MYMEMORY|QUOTA|USAGE LIMIT|TRANSLATIONS FOR TODAY/i.test(t)) return { lulus: false, sebab: "mesej perkhidmatan" };
+  const ringkas = (x) => x.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (ringkas(t) === ringkas(asal)) return { lulus: false, sebab: "tidak berubah" };
+  const nisbah = t.length / Math.max(asal.length, 1);
+  if (nisbah < 0.5 || nisbah > 2.2) return { lulus: false, sebab: `panjang ganjil (${nisbah.toFixed(2)}x)` };
+  const patah = t.split(/\s+/).length;
+  const melayu = (t.match(KATA_MELAYU) || []).length;
+  if (patah >= 12 && (melayu * 100) / patah > 4) return { lulus: false, sebab: `masih BM (${melayu}/${patah})` };
+  return { lulus: true };
+}
+
 async function medan(obj, lindung = []) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
     const en = await terjemah(v, lindung);
-    if (en) out[k] = en;
+    if (!en) continue;
+    const semak = sahkan(v ?? "", en);
+    if (!semak.lulus) { console.warn(`     ✗ medan ${k} ditolak: ${semak.sebab}`); continue; }
+    out[k] = en;
   }
   return out;
 }

@@ -43,22 +43,18 @@ const MAKS_BAIT = 380;
  * dipadan sebelum "Stingers" dan tidak berakhir sebagai token separuh.
  */
 const GLOSARI = [
-  "Strike Hard. Strike Fast.",
-  "SK Taman Desaminium",
-  "Stingers Hockey",
-  "Hustle Gear",
-  "Hall of Honour",
-  "Stingers",
-  "Hoki.my",
-  "SKTD",
-  "MSSD",
-  "MSSS",
-  "MSSM",
-  "MSSN",
-  "SUKMA",
-  "KATMO",
-  "MyStaGe",
-  // Zarah nama Melayu. "binti" menjadi "bint" tanpa perlindungan ini.
+  // SENGAJA PENDEK. Versi pertama melindungi lima belas istilah — Stingers,
+  // MSSM, SUKMA, SKTD, Hoki.my dan seterusnya. Ujian menunjukkan MyMemory
+  // sudah pun mengekalkan kesemuanya tanpa bantuan, jadi token itu tidak
+  // membeli apa-apa; ia hanya membebankan setiap ayat dengan penanda.
+  //
+  // Kos sebenarnya dilihat pada data: ayat yang tebal dengan token
+  // diterjemah separuh jalan, dan satu token dirosakkan menjadi
+  // "XNTX1XXNTX" sehingga pemulihan tidak mengenalinya lagi.
+  //
+  // Yang tinggal ialah perkara yang benar-benar rosak tanpa perlindungan:
+  // zarah nama Melayu. "binti" menjadi "bint". Nama penuh pemain dihantar
+  // oleh pemanggil dan disertakan bersama senarai ini.
   "binti",
   "bin",
   "a/l",
@@ -109,6 +105,22 @@ const KAMUS: Record<string, string> = {
   "piala": "Cup",
   "terbuka": "Open",
 };
+
+/**
+ * Adakah rentetan ini cukup pendek untuk kamus dipercayai?
+ *
+ * Kamus direka untuk medan berformula: "JOHAN", "Lelaki 12 Tahun - Selangor".
+ * Ia MESTI TIDAK menyentuh prosa. Versi pertama tidak mempunyai pengawal ini,
+ * dan laluan pemisahnya memecah keseluruhan badan artikel pada sengkang,
+ * menggantikan beberapa perkataan, dan memulangkan hasilnya sebagai
+ * "terjemahan" - sepuluh daripada dua belas artikel disimpan sebagai teks
+ * Melayu yang hampir tidak berubah. Kamus hanya berpeluang pada rentetan
+ * pendek satu baris.
+ */
+function medanPendek(teks: string): boolean {
+  const t = teks.trim();
+  return !t.includes("\n") && t.length <= 60 && t.split(/\s+/).length <= 8;
+}
 
 /**
  * Cuba terjemah rentetan pendek daripada kamus tempatan.
@@ -219,7 +231,8 @@ function lindungi(teks: string, tambahan: string[]) {
 function pulihkan(teks: string, peta: string[]): string {
   let hasil = teks;
   peta.forEach((asal, i) => {
-    hasil = hasil.replace(new RegExp(`XNTX\\s*${i}\\s*XNTX`, "gi"), asal);
+    // Padanan longgar untuk token yang dirosakkan mesin.
+    hasil = hasil.replace(new RegExp(`X+\\s*N\\s*T\\s*X+\\s*${i}\\s*X+\\s*N\\s*T\\s*X+`, "gi"), asal);
   });
   // Jaring keselamatan: mana-mana token yang terlepas dibuang, kerana
   // "XNTX3XNTX" yang bocor ke halaman awam lebih teruk daripada satu
@@ -227,7 +240,11 @@ function pulihkan(teks: string, peta: string[]): string {
   // Ruang dirapikan, TETAPI baris baharu dikekalkan — sempadan perenggan
   // ialah kandungan.
   return hasil
-    .replace(/XNTX\s*\d+\s*XNTX/gi, "")
+    // Corak longgar dengan sengaja: mesin boleh menyelitkan aksara ke dalam
+    // token ("XNTX1XXNTX" diperhati pada data sebenar), dan token yang
+    // dirosakkan mesti tetap hilang. Lebih baik satu perkataan hilang
+    // daripada "XNTX1XXNTX" muncul pada halaman awam.
+    .replace(/X+\s*N\s*T\s*X+\s*\d+\s*X*\s*N?\s*T?\s*X*/gi, "")
     .replace(/[^\S\n]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
@@ -263,6 +280,62 @@ async function satuKeping(teks: string): Promise<string | null> {
   }
 }
 
+// ============================================================================
+// PENGESAHAN — tapisan terakhir sebelum apa-apa disimpan.
+//
+// Terjemahan mesin percuma kadangkala gagal dengan cara yang kelihatan
+// seperti berjaya: ia memulangkan teks sumber tidak berubah, menterjemah
+// separuh ayat sahaja, atau menyelitkan mesej kuotanya sendiri. Tanpa
+// pemeriksaan, semua itu tersimpan ke pangkalan data dan dipaparkan kepada
+// pembaca sebagai "Bahasa Inggeris".
+//
+// Ini bermakna tiada siapa perlu membaca setiap terjemahan sebelum menyiar.
+// Apa yang tidak lulus tidak disimpan, dan halaman itu memaparkan bahasa
+// Melayu — hasil yang jujur, dan bukan Inggeris yang rosak.
+// ============================================================================
+
+// Kata tugas Melayu. Kehadirannya dalam teks "Inggeris" bermakna terjemahan
+// tidak berlaku, atau hanya berlaku separuh.
+const KATA_MELAYU =
+  /\b(yang|dengan|untuk|adalah|telah|dalam|akan|daripada|kepada|beliau|mereka|serta|oleh|pada|ini|itu|kerana|sebagai|antara|selepas|apabila)\b/gi;
+
+export type Semakan = { lulus: boolean; sebab?: string };
+
+export function sahkanTerjemahan(asal: string, hasil: string): Semakan {
+  const t = hasil.trim();
+  if (!t) return { lulus: false, sebab: "kosong" };
+
+  // Token yang bocor atau dirosakkan.
+  if (/X+\s*N\s*T\s*X+\s*\d/i.test(t)) return { lulus: false, sebab: "token bocor" };
+
+  // Mesej perkhidmatan yang menyamar sebagai terjemahan.
+  if (/MYMEMORY|QUOTA|USAGE LIMIT|TRANSLATIONS FOR TODAY/i.test(t)) {
+    return { lulus: false, sebab: "mesej perkhidmatan" };
+  }
+
+  // Teks sumber dipulangkan tidak berubah.
+  const ringkas = (x: string) => x.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  if (ringkas(t) === ringkas(asal)) return { lulus: false, sebab: "tidak berubah" };
+
+  // Panjang yang tidak munasabah — terjemahan Inggeris bagi teks Melayu
+  // biasanya antara 70% dan 160% panjang asalnya.
+  const nisbah = t.length / Math.max(asal.length, 1);
+  if (nisbah < 0.5 || nisbah > 2.2) {
+    return { lulus: false, sebab: `panjang ganjil (${nisbah.toFixed(2)}x)` };
+  }
+
+  // Masih berbahasa Melayu. Diukur setiap 100 patah supaya artikel panjang
+  // tidak dihukum hanya kerana ia panjang; satu atau dua petikan Melayu
+  // dalam teks Inggeris adalah wajar dan dibenarkan.
+  const patah = t.split(/\s+/).length;
+  const melayu = (t.match(KATA_MELAYU) || []).length;
+  if (patah >= 12 && (melayu * 100) / patah > 4) {
+    return { lulus: false, sebab: `masih BM (${melayu} kata tugas / ${patah} patah)` };
+  }
+
+  return { lulus: true };
+}
+
 /**
  * Terjemah satu blok teks. Memulangkan null jika ia gagal sepenuhnya.
  *
@@ -276,9 +349,12 @@ export async function terjemah(
 ): Promise<string | null> {
   if (!teks || !teks.trim()) return null;
 
-  // Kamus dahulu. Ia tepat, serta-merta, dan tidak menggunakan kuota.
-  const dariSenarai = dariKamus(teks);
-  if (dariSenarai) return dariSenarai;
+  // Kamus dahulu, TETAPI hanya untuk medan pendek. Ia tepat, serta-merta,
+  // dan tidak menggunakan kuota — dan ia tidak boleh menyentuh prosa.
+  if (medanPendek(teks)) {
+    const dariSenarai = dariKamus(teks);
+    if (dariSenarai) return dariSenarai;
+  }
 
   // Rentetan sangat pendek yang tiada dalam kamus TIDAK dihantar ke
   // perkhidmatan: itulah tepat keadaan di mana memori terjemahan memulangkan
@@ -330,7 +406,16 @@ export async function terjemahMedan(
   const hasil: Record<string, string> = {};
   for (const [kunci, nilai] of Object.entries(medan)) {
     const en = await terjemah(nilai, lindungTambahan);
-    if (en) hasil[kunci] = en;
+    if (!en) continue;
+    // Tapisan terakhir. Medan yang tidak lulus TIDAK disimpan, jadi halaman
+    // jatuh balik ke bahasa Melayu dan tiada siapa perlu menyemaknya dengan
+    // tangan sebelum menyiar.
+    const semak = sahkanTerjemahan(nilai ?? "", en);
+    if (!semak.lulus) {
+      console.warn(`[terjemah] medan "${kunci}" ditolak: ${semak.sebab}`);
+      continue;
+    }
+    hasil[kunci] = en;
   }
   return hasil;
 }

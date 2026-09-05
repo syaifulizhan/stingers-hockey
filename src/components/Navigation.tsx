@@ -125,7 +125,7 @@ export default function Navigation() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="fixed inset-y-0 right-0 z-50 flex w-72 flex-col gap-2 border-l border-line bg-bg-soft p-6 md:hidden"
+              className="fixed inset-y-0 right-0 z-50 flex w-72 flex-col gap-2 overflow-y-auto border-l border-line bg-bg-soft p-6 pt-safe-6 pb-safe-6 md:hidden"
             >
               <div className="mb-6 flex items-center justify-between">
                 <LangToggle />
