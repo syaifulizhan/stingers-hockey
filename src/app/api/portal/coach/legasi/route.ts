@@ -6,7 +6,7 @@ import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requireCoachApi } from "@/lib/portal-guard";
 import { arkibkanSatu } from "@/lib/legasi-arkib";
-import { PERINGKAT } from "@/lib/legasi-tier";
+import { BAHAGIAN, PERINGKAT } from "@/lib/legasi-tier";
 
 // ============================================================================
 // Hall of Honour — cipta, sunting, terbit.
@@ -61,6 +61,7 @@ const asasSchema = z.object({
   // Peringkat tidak wajib: draf boleh disimpan sebelum diputuskan, dan rekod
   // lama tidak mempunyainya. "" bermakna kosongkan semula.
   tier: z.enum(PERINGKAT).optional().or(z.literal("")),
+  stage: z.enum(BAHAGIAN).optional().or(z.literal("")),
   heroImage: z.string().url().optional().or(z.literal("")),
   cardFront: z.string().url().optional().or(z.literal("")),
   cardBack: z.string().url().optional().or(z.literal("")),
@@ -92,6 +93,7 @@ function toRow(d: Partial<z.infer<typeof asasSchema>>): Payload {
   set("quote_text", d.quoteText);
   set("quote_by", d.quoteBy);
   set("tier", d.tier);
+  set("stage", d.stage);
   set("hero_image", d.heroImage);
   set("card_front", d.cardFront);
   set("card_back", d.cardBack);

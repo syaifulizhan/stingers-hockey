@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useSupabase } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/image-compress";
-import { PERINGKAT, TIER, type LegacyTier } from "@/lib/legasi-tier";
+import { BAHAGIAN, PERINGKAT, STAGE, TIER, type LegacyStage, type LegacyTier } from "@/lib/legasi-tier";
 
 export type LegasiRow = {
   id: string;
@@ -37,6 +37,7 @@ export type LegasiRow = {
   photos: string[] | null;
   hero_image: string | null;
   tier?: LegacyTier | null;
+  stage?: LegacyStage | null;
   card_front: string | null;
   card_back: string | null;
   status: "draft" | "published";
@@ -348,6 +349,7 @@ function RekodEditor({
     quoteText: row.quote_text ?? "",
     quoteBy: row.quote_by ?? "",
     tier: (row.tier ?? "") as LegacyTier | "",
+    stage: (row.stage ?? "") as LegacyStage | "",
     heroImage: row.hero_image ?? "",
     cardFront: row.card_front ?? "",
     cardBack: row.card_back ?? "",
@@ -552,11 +554,39 @@ function RekodEditor({
                   masuk ke medan Kejohanan di atas — MSSM dan SUKMA kedua-duanya
                   peringkat kebangsaan, tetapi ia dua pertandingan berbeza dan
                   rekod hanya patut menyebut yang betul-betul disertai. */}
+              {/* Sengaja TIDAK memetakan kejohanan kepada peringkat.
+                  Percubaan awal menulis "Kebangsaan merangkumi MSSM dan SUKMA"
+                  di sini, dan ia salah: SUKMA selepas menengah atau wakil U18
+                  ialah Negara, bukan Kebangsaan. Peraturan itu bergantung pada
+                  umur pemain dan pasukan yang diwakilinya, bukan pada nama
+                  kejohanan semata-mata. Jurulatih yang tahu konteks itu
+                  membuat panggilan; skrin ini tidak sepatutnya meneka. */}
               <p className="mt-2 font-sans text-xs leading-relaxed text-muted">
-                Aras sahaja. Daerah ialah MSSD, Negeri ialah MSSS, Kebangsaan
-                merangkumi MSSM dan juga SUKMA, Negara ialah pasukan kebangsaan
-                Malaysia. Nama kejohanan sebenar ditulis dalam medan{" "}
+                Aras sahaja — setinggi mana nama itu dibawa. Nama kejohanan
+                sebenar ditulis dalam medan{" "}
                 <strong className="text-paper">Kejohanan</strong>, bukan di sini.
+              </p>
+            </Medan>
+            <Medan label="Bahagian sekolah" nota="Bila ia dicapai">
+              <select
+                className={input}
+                value={f.stage}
+                onChange={(e) => setF({ ...f, stage: e.target.value as LegacyStage | "" })}
+              >
+                <option value="">— Belum ditetapkan —</option>
+                {BAHAGIAN.map((k) => (
+                  <option key={k} value={k}>
+                    {STAGE[k].nama}
+                  </option>
+                ))}
+              </select>
+              {/* Rekod tidak berhenti pada hari pemain meninggalkan SKTD. Bila
+                  dia menyertai SUKMA atau U18 selepas menengah, medan ini
+                  bergerak bersamanya, sama seperti peringkat. */}
+              <p className="mt-2 font-sans text-xs leading-relaxed text-muted">
+                Kemas kini medan ini apabila pemain maju — SUKMA atau U18 selepas
+                menengah bukan lagi pencapaian sekolah rendah, walaupun
+                peringkatnya sama.
               </p>
             </Medan>
             <Medan label="Nombor rekod">

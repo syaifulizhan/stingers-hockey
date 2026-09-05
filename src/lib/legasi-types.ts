@@ -1,7 +1,7 @@
 // Bentuk data Hall of Honour. Diasingkan daripada legasi.ts supaya fail
 // snapshot yang dijana automatik boleh mengimportnya tanpa kitaran import.
 
-import type { LegacyTier } from "@/lib/legasi-tier";
+import type { LegacyStage, LegacyTier } from "@/lib/legasi-tier";
 
 export type LegacyJourneyStep = {
   year: string;
@@ -46,6 +46,12 @@ export type LegacyRecord = {
    * berkembang.
    */
   tier?: LegacyTier | null;
+  /**
+   * Bahagian sekolah ketika pencapaian ini dicapai. Opsyenal atas sebab yang
+   * sama seperti tier: snapshot beku yang ditulis sebelum lajur ini wujud
+   * mesti terus sah.
+   */
+  stage?: LegacyStage | null;
   publishedAt: string | null;
   /** Setiap versi yang pernah tersiar, terbaharu dahulu. */
   revisions: LegacyRevision[];

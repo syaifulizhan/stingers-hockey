@@ -73,6 +73,41 @@ const isLate = (submittedAt: string, due: string | null | undefined) =>
 // Sentiasa render segar — elak Router Cache sajikan data lama selepas navigasi.
 export const dynamic = "force-dynamic";
 
+/**
+ * Hall of Honour untuk panel jurulatih — draf DAN tersiar.
+ *
+ * TANGGA JATUH BALIK, dan sebab ia perlu wujud di sini. `tier` dan `stage`
+ * ditambah pada masa berlainan, jadi pangkalan data boleh mempunyai kedua-
+ * duanya, salah satu, atau tiada. Meminta lajur yang belum wujud menyebabkan
+ * Supabase memulangkan RALAT untuk keseluruhan query — dan tab Legasi menjadi
+ * kosong sepenuhnya, bukan sekadar kehilangan satu medan.
+ *
+ * Jadi kita menuruni tangga sehingga sesuatu berjaya. Portal tidak sepatutnya
+ * gelap kerana migrasi belum dijalankan.
+ *
+ * `tier` dan `stage` MESTI diminta di sini. Tanpanya nilai tersimpan dengan
+ * betul tetapi tidak pernah dibaca semula, jadi dropdown kembali ke "Belum
+ * ditetapkan" selepas refresh dan kelihatan seperti Simpan yang gagal. Ia
+ * bukan gagal; borang cuma tidak pernah diberitahu apa yang sudah ada.
+ */
+async function bacaLegasi(supabase: Awaited<ReturnType<typeof createServerSupabase>>) {
+  const asas =
+    "id, slug, record_no, cohort, full_name, name_first, name_last, result, category, " +
+    "event, school, story, quote_text, quote_by, journey, photos, hero_image, " +
+    "card_front, card_back, status, published_at, archived_at, " +
+    "legacy_versions(version_no, captured_at)";
+
+  for (const cols of [`tier, stage, ${asas}`, `tier, ${asas}`, asas]) {
+    const res = await supabase
+      .from("legacy_records")
+      .select(cols)
+      .order("cohort", { ascending: false })
+      .order("record_no", { ascending: true });
+    if (!res.error) return res;
+  }
+  return { data: [], error: null };
+}
+
 export default async function CoachPage() {
   // Pengawal: hanya coach/admin boleh masuk.
   // GATE: log masuk + diluluskan + peranan jurulatih/admin.
@@ -115,19 +150,7 @@ export default async function CoachPage() {
         .from("achievements")
         .select("id, season_id, category, award, player_id, event")
         .order("created_at", { ascending: false }),
-      // Hall of Honour — draf DAN tersiar. Kalau migrasi belum dijalankan,
-      // Supabase memulangkan ralat dalam hasil (bukan lempar), jadi tabnya
-      // sekadar kosong dan portal tetap berfungsi.
-      supabase
-        .from("legacy_records")
-        .select(
-          "id, slug, record_no, cohort, full_name, name_first, name_last, result, category, " +
-            "event, school, story, quote_text, quote_by, journey, photos, hero_image, " +
-            "card_front, card_back, status, published_at, archived_at, " +
-            "legacy_versions(version_no, captured_at)",
-        )
-        .order("cohort", { ascending: false })
-        .order("record_no", { ascending: true }),
+      bacaLegasi(supabase),
     ]);
 
   const members = (membersRes.data ?? []) as unknown as Member[];

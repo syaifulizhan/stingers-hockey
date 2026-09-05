@@ -152,3 +152,34 @@ export function tertinggiTiapKohort(
   }
   return tertinggi;
 }
+
+// ============================================================================
+// BAHAGIAN SEKOLAH — bila dalam hidup pemain itu pencapaian ini berlaku.
+//
+// Rekod Hall of Honour tidak berhenti pada hari pemain meninggalkan SKTD.
+// Seorang pemain boleh mencapai MSSM di sekolah rendah, kemudian SUKMA atau
+// U18 selepas menengah, dan rekod yang sama dikemas kini untuk mengikutinya.
+//
+// Peringkat menjawab SETINGGI MANA. Bahagian menjawab BILA. Kedua-duanya
+// diperlukan, kerana "Kebangsaan" bermaksud perkara yang sangat berbeza bagi
+// seorang budak sepuluh tahun berbanding seorang pemain lepas sekolah — dan
+// tanpa bahagian, kedua-duanya kelihatan sama pada dinding.
+//
+// Ia berubah mengikut masa seperti peringkat, jadi ia juga kandungan yang
+// diversikan, bukan medan tetap.
+// ============================================================================
+
+export const BAHAGIAN = ["rendah", "menengah", "pasca"] as const;
+
+export type LegacyStage = (typeof BAHAGIAN)[number];
+
+export const STAGE: Record<LegacyStage, { nama: string; namaEn: string }> = {
+  rendah: { nama: "Sekolah Rendah", namaEn: "Primary School" },
+  menengah: { nama: "Sekolah Menengah", namaEn: "Secondary School" },
+  pasca: { nama: "Lepas Sekolah", namaEn: "Post-School" },
+};
+
+/** Takrif bahagian, atau null jika belum ditetapkan. */
+export function bahagian(stage: LegacyStage | null | undefined) {
+  return stage ? (STAGE[stage] ?? null) : null;
+}
