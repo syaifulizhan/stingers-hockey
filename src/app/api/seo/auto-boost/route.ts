@@ -3,6 +3,7 @@ import { canonical } from "@/lib/seo";
 import { getAllNews } from "@/lib/news-data";
 import { getPublishedRecords } from "@/lib/legasi-data";
 import { hantarIndexNow } from "@/lib/indexnow";
+import { jalankanAudit } from "@/lib/seo-audit";
 
 // ============================================================================
 // Cron SEO harian — menghantar apa yang BERUBAH kepada enjin carian.
@@ -29,6 +30,7 @@ import { hantarIndexNow } from "@/lib/indexnow";
 // ============================================================================
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 // Tetingkap "baru berubah". Cron berjalan setiap hari; 48 jam memberi satu
 // larian bertindih, jadi satu larian yang tersasar tidak menjatuhkan artikel.
@@ -54,8 +56,32 @@ async function jalankan() {
 
   const hasil = await hantarIndexNow(urls);
 
+  // Audit berjalan pada setiap larian cron. Pemeriksaan yang hanya berjalan
+  // apabila seseorang teringat untuk memanggilnya ialah pemeriksaan yang tidak
+  // berjalan — dan kerosakan SEO adalah senyap: tiada siapa perasan canonical
+  // yang hilang sehingga trafik jatuh berbulan kemudian.
+  //
+  // Audit tidak boleh menjatuhkan penghantaran IndexNow, jadi ia dibungkus.
+  let audit: Awaited<ReturnType<typeof jalankanAudit>> | null = null;
+  try {
+    audit = await jalankanAudit();
+    if (!audit.ok) {
+      // console.error supaya ia timbul sebagai ralat dalam log runtime Vercel
+      // dan bukan tenggelam dalam baris maklumat biasa.
+      console.error(
+        `[seo] ${audit.ringkasan.halamanBerMasalah}/${audit.ringkasan.halamanDiperiksa} halaman bermasalah:`,
+        JSON.stringify(audit.masalah)
+      );
+    }
+  } catch (err) {
+    console.error("[seo] audit gagal:", err);
+  }
+
   return {
     ok: hasil.ok,
+    audit: audit
+      ? { ok: audit.ok, ringkasan: audit.ringkasan, masalah: audit.masalah }
+      : { ok: null, nota: "Audit tidak dapat dijalankan pada larian ini." },
     pada: new Date().toISOString(),
     tetingkapJam: TETINGKAP_JAM,
     berubah: {
