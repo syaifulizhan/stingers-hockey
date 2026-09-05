@@ -65,6 +65,12 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
             )}
           </div>
         )}
+        {/* Irama kad: aksen kuat, detail senyap, nama kuat, detail senyap.
+            Keputusan berhuruf besar dan berwarna; kejohanan dalam huruf biasa
+            dan kelabu tepat di bawahnya. Meletakkan kedua-duanya pada satu
+            baris berhuruf besar menjadikannya membaluti tiga baris pada
+            telefon dan menenggelamkan nama pemain, iaitu perkara yang
+            sepatutnya paling menonjol pada kad ini. */}
         {r.result && (
           <p
             className="font-sans text-xs font-semibold uppercase tracking-widest"
@@ -73,13 +79,19 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
             ◆ {r.result}
           </p>
         )}
-        <h3 className="display mt-2 text-2xl leading-tight text-paper">
+        {r.event && (
+          <p className="mt-1.5 font-sans text-xs leading-snug text-muted">{r.event}</p>
+        )}
+        <h3 className="display mt-3 text-2xl leading-tight text-paper">
           {r.nameFirst} {r.nameLast}
         </h3>
         {r.category && (
           <p className="mt-1 font-sans text-xs uppercase tracking-wider text-muted">{r.category}</p>
         )}
-        <p className="mt-3 font-sans text-[11px] font-semibold uppercase tracking-wider text-muted">
+        {/* mt-auto menolak nombor rekod ke dasar kad. Tanpanya kad yang
+            cerita atau kejohanannya lebih pendek meletakkan nombornya lebih
+            tinggi, dan barisan kad kelihatan tidak sejajar. */}
+        <p className="mt-auto pt-3 font-sans text-[11px] font-semibold uppercase tracking-wider text-muted">
           {t("Rekod", "Record")} {r.recordNo}
         </p>
       </div>
