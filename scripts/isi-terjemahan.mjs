@@ -29,6 +29,8 @@ function envDariFail() {
 }
 
 const env = { ...envDariFail(), ...process.env };
+// --paksa: terjemah semula walaupun terjemahan sudah wujud.
+const PAKSA = process.argv.includes("--paksa");
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const service = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -51,6 +53,48 @@ const GLOSARI = [
   "MSSD", "MSSS", "MSSM", "MSSN", "SUKMA", "KATMO", "MyStaGe",
   "binti", "bin", "a/l", "a/p",
 ];
+// Istilah pendek diterjemah dari senarai ini, bukan melalui perkhidmatan.
+// MyMemory ialah memori terjemahan: untuk rentetan sangat pendek ia
+// memulangkan segmen manusia paling hampir, yang boleh datang dari domain
+// tidak berkaitan. Diperhati pada data sebenar: "JOHAN" pulang sebagai
+// "SPM Outstanding Student A".
+const KAMUS = {
+  "johan": "Champion", "naib johan": "Runner-Up", "tempat kedua": "Second Place",
+  "tempat ketiga": "Third Place", "tempat keempat": "Fourth Place", "kapten": "Captain",
+  "penjaring terbanyak": "Top Scorer", "pemain terbaik": "Best Player",
+  "penjaga gol terbaik": "Best Goalkeeper", "saringan": "Qualifier",
+  "separuh akhir": "Semi-Final", "suku akhir": "Quarter-Final", "akhir": "Final",
+  "peserta": "Participant", "lelaki": "Boys", "perempuan": "Girls",
+  "bawah 12": "Under 12", "bawah 15": "Under 15", "bawah 18": "Under 18",
+  "12 tahun": "Under 12", "15 tahun": "Under 15", "18 tahun": "Under 18",
+  "kejohanan hoki": "Hockey Championship", "kejohanan": "Championship",
+  "piala": "Cup", "terbuka": "Open",
+};
+
+function dariKamus(teks) {
+  const bersih = teks.trim().replace(/\s+/g, " ");
+  const terus = KAMUS[bersih.toLowerCase()];
+  if (terus) return bersih === bersih.toUpperCase() ? terus.toUpperCase() : terus;
+  const pemisah = /\s*[·|\-–—]\s*/;
+  if (pemisah.test(bersih)) {
+    const bahagian = bersih.split(pemisah);
+    const keluar = bahagian.map((b) => {
+      const k = KAMUS[b.trim().toLowerCase()];
+      if (k) return b === b.toUpperCase() ? k.toUpperCase() : k;
+      let sisa = b.trim(); let berubah = false;
+      for (const [ms, en] of Object.entries(KAMUS).sort((a, b2) => b2[0].length - a[0].length)) {
+        const re = new RegExp(`\\b${ms.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+        if (re.test(sisa)) { sisa = sisa.replace(re, en); berubah = true; }
+      }
+      return berubah ? sisa : b.trim();
+    });
+    if (keluar.some((k, i) => k !== bahagian[i].trim())) return keluar.join(" · ");
+  }
+  return null;
+}
+
+const terlaluPendek = (t) => t.trim().split(/\s+/).length <= 3;
+
 const MAKS = 380;
 const bait = (s) => new TextEncoder().encode(s).length;
 
@@ -113,6 +157,9 @@ async function satu(teks) {
 
 async function terjemah(teks, lindung = []) {
   if (!teks || !teks.trim()) return null;
+  const dari = dariKamus(teks);
+  if (dari) return dari;
+  if (terlaluPendek(teks)) return null;
   const { teks: selamat, peta } = lindungi(teks, lindung);
   const keluar = [];
   let pertama = true;
@@ -150,7 +197,7 @@ if (eB) { console.error("✗ baca berita:", eB.message); process.exit(1); }
 
 let siap = 0, langkau = 0, gagal = 0;
 for (const n of berita ?? []) {
-  if (n.translations?.en?.title) { langkau++; continue; }
+  if (!PAKSA && n.translations?.en?.title) { langkau++; continue; }
   const en = await medan({ title: n.title, body: n.body });
   if (!Object.keys(en).length) { gagal++; console.warn(`  ⚠ gagal: ${n.title.slice(0, 50)}`); continue; }
   const { error } = await sb.from("news").update({ translations: { en } }).eq("id", n.id);
@@ -169,7 +216,7 @@ if (eL) { console.error("✗ baca legasi:", eL.message); process.exit(1); }
 
 let siapL = 0, langkauL = 0, gagalL = 0;
 for (const r of legasi ?? []) {
-  if (r.translations?.en?.story) { langkauL++; continue; }
+  if (!PAKSA && r.translations?.en?.story) { langkauL++; continue; }
   const lindung = [r.full_name, r.name_first, r.name_last, r.quote_by]
     .filter(Boolean)
     .flatMap((n) => [n, ...n.split(/\s+/)])

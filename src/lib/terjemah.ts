@@ -65,6 +65,94 @@ const GLOSARI = [
   "a/p",
 ];
 
+// ============================================================================
+// KAMUS ISTILAH PENDEK — diterjemah di sini, bukan melalui perkhidmatan.
+//
+// MyMemory ialah memori terjemahan: untuk rentetan yang sangat pendek ia
+// memulangkan segmen manusia paling hampir yang pernah dilihatnya, dan
+// segmen itu boleh datang dari domain yang langsung tiada kaitan. Diperhati
+// pada data sebenar: "JOHAN" pulang sebagai "SPM Outstanding Student A".
+// Bukan terjemahan yang lemah - jawapan dari dokumen orang lain.
+//
+// Keputusan dan kategori sukan sekolah ialah set tertutup dan berformula,
+// jadi ia diterjemah di sini dengan tepat, serta-merta dan tanpa kuota.
+// Apa yang tiada dalam senarai ini dan terlalu pendek untuk dipercayai
+// akan kekal dalam bahasa Melayu, dan itu jawapan yang betul: "JOHAN" yang
+// tidak diterjemah masih boleh difahami; "SPM Outstanding Student A" tidak.
+// ============================================================================
+
+const KAMUS: Record<string, string> = {
+  "johan": "Champion",
+  "naib johan": "Runner-Up",
+  "tempat kedua": "Second Place",
+  "tempat ketiga": "Third Place",
+  "tempat keempat": "Fourth Place",
+  "kapten": "Captain",
+  "penjaring terbanyak": "Top Scorer",
+  "pemain terbaik": "Best Player",
+  "penjaga gol terbaik": "Best Goalkeeper",
+  "saringan": "Qualifier",
+  "separuh akhir": "Semi-Final",
+  "suku akhir": "Quarter-Final",
+  "akhir": "Final",
+  "peserta": "Participant",
+  "lelaki": "Boys",
+  "perempuan": "Girls",
+  "bawah 12": "Under 12",
+  "bawah 15": "Under 15",
+  "bawah 18": "Under 18",
+  "12 tahun": "Under 12",
+  "15 tahun": "Under 15",
+  "18 tahun": "Under 18",
+  "kejohanan hoki": "Hockey Championship",
+  "kejohanan": "Championship",
+  "piala": "Cup",
+  "terbuka": "Open",
+};
+
+/**
+ * Cuba terjemah rentetan pendek daripada kamus tempatan.
+ *
+ * Memulangkan null apabila ia tidak boleh dilakukan dengan yakin. Pemanggil
+ * kemudian memutuskan sama ada hendak bertanya kepada perkhidmatan atau
+ * mengekalkan bahasa Melayu.
+ */
+function dariKamus(teks: string): string | null {
+  const bersih = teks.trim().replace(/\s+/g, " ");
+  const terus = KAMUS[bersih.toLowerCase()];
+  if (terus) return bersih === bersih.toUpperCase() ? terus.toUpperCase() : terus;
+
+  // Rentetan berbentuk "Lelaki 12 Tahun - Selangor": setiap bahagian dicuba
+  // secara berasingan, dan bahagian yang tidak dikenali dikekalkan seadanya
+  // kerana ia hampir selalunya nama tempat.
+  const pemisah = /\s*[·|\-–—]\s*/;
+  if (pemisah.test(bersih)) {
+    const bahagian = bersih.split(pemisah);
+    const keluar = bahagian.map((b) => {
+      const k = KAMUS[b.trim().toLowerCase()];
+      if (k) return b === b.toUpperCase() ? k.toUpperCase() : k;
+      // Frasa dalam bahagian: "Lelaki 12 Tahun" -> "Boys Under 12"
+      let sisa = b.trim();
+      let berubah = false;
+      for (const [ms, en] of Object.entries(KAMUS).sort((a, b2) => b2[0].length - a[0].length)) {
+        const re = new RegExp(`\\b${ms.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
+        if (re.test(sisa)) {
+          sisa = sisa.replace(re, en);
+          berubah = true;
+        }
+      }
+      return berubah ? sisa : b.trim();
+    });
+    if (keluar.some((k, i) => k !== bahagian[i].trim())) return keluar.join(" · ");
+  }
+  return null;
+}
+
+/** Terlalu pendek untuk dipercayai daripada memori terjemahan. */
+function terlaluPendek(teks: string): boolean {
+  return teks.trim().split(/\s+/).length <= 3;
+}
+
 /** Bahagi teks kepada kepingan di bawah had, memotong pada sempadan ayat. */
 function kepingkan(teks: string): string[] {
   const ayat = teks.split(/(?<=[.!?])\s+/);
@@ -187,6 +275,15 @@ export async function terjemah(
   lindungTambahan: string[] = []
 ): Promise<string | null> {
   if (!teks || !teks.trim()) return null;
+
+  // Kamus dahulu. Ia tepat, serta-merta, dan tidak menggunakan kuota.
+  const dariSenarai = dariKamus(teks);
+  if (dariSenarai) return dariSenarai;
+
+  // Rentetan sangat pendek yang tiada dalam kamus TIDAK dihantar ke
+  // perkhidmatan: itulah tepat keadaan di mana memori terjemahan memulangkan
+  // segmen orang lain. Null bermakna paparan kekal dengan bahasa Melayu.
+  if (terlaluPendek(teks)) return null;
 
   const { teks: selamat, peta } = lindungi(teks, lindungTambahan);
 
