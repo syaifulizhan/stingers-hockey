@@ -33,6 +33,20 @@ export default function InstallPrompt() {
   const { t } = useLang();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
+
+  // Gesaan ini `fixed` di dasar skrin, jadi ia terapung DI ATAS kandungan dan
+  // tiada apa di bawahnya yang tahu ia ada. Dilaporkan: ia menutupi lajur
+  // navigasi footer. Elemen terapung mesti membayar ruangnya sendiri, jadi
+  // dasar halaman ditolak turun selagi ia kelihatan — dan dipulihkan sebaik
+  // ia ditutup atau app dipasang.
+  useEffect(() => {
+    if (!show) return;
+    const asal = document.body.style.paddingBottom;
+    document.body.style.paddingBottom = "5.5rem";
+    return () => {
+      document.body.style.paddingBottom = asal;
+    };
+  }, [show]);
   const [iosSheet, setIosSheet] = useState(false);
   const [ios, setIos] = useState(false);
 
