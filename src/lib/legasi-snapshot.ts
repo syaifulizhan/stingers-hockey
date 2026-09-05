@@ -15,6 +15,7 @@ export const SNAPSHOT: LegacyRecord[] = [
     "nameLast": "ZAHIN",
     "result": "JOHAN",
     "tier": "kebangsaan",
+    "stage": "rendah",
     "category": "Lelaki 12 Tahun - Selangor",
     "event": "Kejohanan Hoki MSSM 2026",
     "school": "SK Taman Desaminium",
@@ -73,12 +74,12 @@ export const SNAPSHOT: LegacyRecord[] = [
         "year": "2026"
       },
       {
-        "peak": false,
+        "peak": true,
         "what": "Tokoh Kecemerlangan Tunas Sukan",
         "year": "2025"
       },
       {
-        "peak": false,
+        "peak": true,
         "what": "Johan • KATMO U11",
         "year": "2025"
       },
@@ -118,12 +119,20 @@ export const SNAPSHOT: LegacyRecord[] = [
     "publishedAt": "2026-09-04T19:27:31.693+00:00",
     "revisions": [
       {
+        "versionNo": 3,
+        "capturedAt": "2026-09-05T14:00:28.223563+00:00"
+      },
+      {
+        "versionNo": 2,
+        "capturedAt": "2026-09-05T13:59:50.283292+00:00"
+      },
+      {
         "versionNo": 1,
         "capturedAt": "2026-09-04T19:27:31.727773+00:00"
       }
     ],
-    "archivedAt": "2026-09-04T19:27:40.392+00:00",
-    "archiveUrl": "https://web.archive.org/web/20260904175640/https://hoki.my/legasi/kama-nizar-zahin"
+    "archivedAt": "2026-09-05T15:24:38.134+00:00",
+    "archiveUrl": "https://web.archive.org/web/20260905140058/https://hoki.my/legasi/kama-nizar-zahin"
   },
   {
     "slug": "adelia-khadeeja",
@@ -134,6 +143,7 @@ export const SNAPSHOT: LegacyRecord[] = [
     "nameLast": "KHADEEJA",
     "result": "TEMPAT KETIGA",
     "tier": "kebangsaan",
+    "stage": "rendah",
     "category": "Perempuan 12 Tahun - Selangor",
     "event": "Kejohanan Hoki MSSM 2026",
     "school": "SK Taman Desaminium",
@@ -189,10 +199,10 @@ export const SNAPSHOT: LegacyRecord[] = [
         "capturedAt": "2026-09-05T01:09:34.702936+00:00"
       }
     ],
-    "archivedAt": "2026-09-05T07:06:28.124+00:00",
-    "archiveUrl": "https://web.archive.org/web/20260905062024/https://hoki.my/legasi/adelia-khadeeja"
+    "archivedAt": "2026-09-05T15:25:02.801+00:00",
+    "archiveUrl": "https://web.archive.org/web/20260905142556/https://hoki.my/legasi/adelia-khadeeja"
   }
 ];
 
 /** Cap masa fail ini dijana terakhir. */
-export const SNAPSHOT_AT: string | null = "2026-09-05T13:19:11.366Z";
+export const SNAPSHOT_AT: string | null = "2026-09-05T17:07:34.892Z";
