@@ -120,11 +120,16 @@ export default function Footer() {
             © 2026 Stingers Hockey. {t("Hak cipta terpelihara.", "All rights reserved.")}
           </p>
           <div className="flex items-center gap-3">
+            {/* Hanya profil yang mempunyai alamat sebenar. Ikon yang menghantar
+                pengunjung ke halaman utama Facebook lebih buruk daripada tiada
+                ikon langsung. */}
             {[
               { href: social.facebook, label: "Facebook", Icon: FacebookIcon },
               { href: social.instagram, label: "Instagram", Icon: InstagramIcon },
               { href: social.x, label: "X", Icon: XIcon },
-            ].map(({ href, label, Icon }) => (
+            ]
+              .filter(({ href }) => Boolean(href))
+              .map(({ href, label, Icon }) => (
               <a
                 key={label}
                 href={href}
@@ -135,7 +140,7 @@ export default function Footer() {
               >
                 <Icon className="h-4 w-4" />
               </a>
-            ))}
+              ))}
           </div>
         </div>
       </div>

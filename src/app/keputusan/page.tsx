@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import ResultsBoard from "@/components/live/ResultsBoard";
+import JsonLd from "@/components/JsonLd";
 import { createPublicSupabase } from "@/lib/supabase/public";
+import { canonical, ogHalaman, SITE_NAME } from "@/lib/seo";
+import { breadcrumbs, graf } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
-  title: "Keputusan — Stingers Hockey",
+  title: `Keputusan & Rekod Musim — ${SITE_NAME}`,
   description:
-    "Arkib keputusan season pasukan Stingers Hockey — rekod perlawanan, penjaring & assist terbanyak.",
+    "Arkib keputusan musim pasukan hoki Stingers, SK Taman Desaminium — rekod perlawanan, penjaring dan assist terbanyak setiap musim.",
+  alternates: { canonical: canonical("/keputusan") },
+  openGraph: ogHalaman({
+    title: `Keputusan & Rekod Musim — ${SITE_NAME}`,
+    description:
+      "Arkib keputusan musim pasukan hoki Stingers — rekod perlawanan setiap musim.",
+    path: "/keputusan",
+  }),
 };
 
 export const dynamic = "force-dynamic";
@@ -28,6 +38,7 @@ export default async function KeputusanPage() {
 
   return (
     <>
+      <JsonLd json={graf(breadcrumbs([{ nama: "Keputusan" }]))} />
       <Navigation />
       <main className="flex-1">
         <ResultsBoard

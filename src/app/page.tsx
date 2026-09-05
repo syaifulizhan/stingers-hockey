@@ -10,6 +10,8 @@ import Berita from "@/components/Berita";
 import LiveBanner from "@/components/LiveBanner";
 import Sponsors from "@/components/Sponsors";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
+import { faqSchema, graf } from "@/lib/jsonld";
 import { createPublicSupabase } from "@/lib/supabase/public";
 import type { Jersey } from "@/lib/jerseys";
 
@@ -45,6 +47,9 @@ export default async function Home() {
 
   return (
     <>
+      {/* FAQ hidup di sini kerana inilah halaman yang benar-benar menjawab
+          soalan-soalan ini — dalam seksyen Tentang, Latihan dan Hubungi. */}
+      <JsonLd json={graf(faqSchema)} />
       <Navigation />
       <main className="flex-1">
         <Hero />

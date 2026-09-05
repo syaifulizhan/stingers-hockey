@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import { beritahuEnjinCarian } from "@/lib/indexnow";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requireCoachApi } from "@/lib/portal-guard";
@@ -247,6 +248,13 @@ export async function PATCH(request: Request) {
   // atau rekod tersiar disunting. Kegagalan arkib tidak menjejaskan
   // penerbitan — cron harian akan mencuba lagi.
   const kiniTersiar = (status ?? sedia.status) === "published";
+  if (kiniTersiar && data?.slug) {
+    // Rekod Hall of Honour membawa nama penuh seorang pemain — itulah yang
+    // orang taip ke dalam Google. Kad fizikal dengan QR diserahkan pada hari
+    // rekod itu terbit, jadi alamat ini patut boleh dicari pada hari itu juga.
+    beritahuEnjinCarian(["/legasi", `/legasi/${data.slug}`]);
+  }
+
   let arkib: { ok: boolean; archiveUrl?: string } | null = null;
   if (kiniTersiar && data?.slug) {
     const h = await arkibkanSatu(data.slug, 12_000);

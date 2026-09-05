@@ -1,10 +1,30 @@
+import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import OrderShop from "@/components/shop/OrderShop";
+import JsonLd from "@/components/JsonLd";
 import { createPublicSupabase } from "@/lib/supabase/public";
+import { canonical, ogHalaman, SITE_NAME } from "@/lib/seo";
+import { breadcrumbs, graf } from "@/lib/jsonld";
 
 // Sentiasa segar — harga/produk boleh berubah dari panel admin.
 export const dynamic = "force-dynamic";
+
+// Halaman ini tidak mempunyai metadata langsung sebelum ini, jadi ia mewarisi
+// tajuk dan perihal laman utama. Dalam hasil carian ia kelihatan sebagai
+// pendua halaman utama — dua entri, tajuk sama, tiada satu pun menyebut jersi.
+export const metadata: Metadata = {
+  title: `Tempahan Jersi & Hustle Gear — ${SITE_NAME}`,
+  description:
+    "Tempah jersi hoki rasmi dan Hustle Gear Stingers Hockey, SK Taman Desaminium. Saiz, harga dan slot tempahan musim semasa.",
+  alternates: { canonical: canonical("/tempahan") },
+  openGraph: ogHalaman({
+    title: `Tempahan Jersi & Hustle Gear — ${SITE_NAME}`,
+    description:
+      "Tempah jersi hoki rasmi dan Hustle Gear Stingers Hockey. Saiz, harga dan slot tempahan musim semasa.",
+    path: "/tempahan",
+  }),
+};
 
 export default async function TempahanPage() {
   const supabase = createPublicSupabase();
@@ -18,6 +38,7 @@ export default async function TempahanPage() {
 
   return (
     <>
+      <JsonLd json={graf(breadcrumbs([{ nama: "Tempahan" }]))} />
       <Navigation />
       <main className="flex-1">
         <OrderShop

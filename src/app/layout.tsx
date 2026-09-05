@@ -9,7 +9,9 @@ import SplashScreen from "@/components/SplashScreen";
 import PullToRefresh from "@/components/PullToRefresh";
 import LogoutRefresh from "@/components/portal/LogoutRefresh";
 import { LanguageProvider } from "@/lib/i18n";
-import { faqSchema, organizationSchema } from "@/lib/schema";
+import JsonLd from "@/components/JsonLd";
+import { SITE_URL, SITE_NAME } from "@/lib/seo";
+import { graf, pasukanSchema, sekolahSchema, websiteSchema } from "@/lib/jsonld";
 
 // Tema Clerk (gelap + amber) — dikongsi laman utama & portal.
 const clerkAppearance = {
@@ -39,17 +41,40 @@ const archivo = Archivo({
   display: "swap",
 });
 
-const SITE_URL = process.env.NODE_ENV === "production"
-  ? "https://hoki.my"
-  : "https://stingers-hockey-r99l.vercel.app";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  applicationName: "Stingers Hockey",
+  applicationName: SITE_NAME,
   manifest: "/manifest.webmanifest",
-  title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium | Hoki.my",
+  // Alamat kanonik. Tiada satu pun halaman mengeluarkan tag ini sebelum ini,
+  // jadi setiap alamat pendua — domain .vercel.app, pautan yang membawa
+  // ?utm_source=, ?fbclid= dari perkongsian Facebook — kelihatan kepada Google
+  // sebagai halaman berasingan yang bersaing dengan yang asal. Nilai relatif
+  // diselesaikan terhadap metadataBase, dan setiap halaman menimpanya dengan
+  // alamatnya sendiri.
+  alternates: {
+    canonical: "/",
+    types: { "application/rss+xml": `${SITE_URL}/berita/rss.xml` },
+  },
+  // Benarkan pratonton gambar besar dan cuplikan penuh. Tanpa ini Google
+  // lalai kepada lakaran kecil — dan laman ini ialah laman gambar: jersi,
+  // pemain, kad Hall of Honour.
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  // 59 aksara. Versi sebelum ini 66 — Google memotong sekitar 60, jadi
+  // "| Hoki.my" tidak pernah kelihatan dalam hasil carian.
+  title: "Stingers Hockey — Pasukan Hoki SK Taman Desaminium",
+  // 152 aksara; Google memotong sekitar 155.
   description:
-    "Hoki.my — Pasukan hoki rasmi SK Taman Desaminium. Strike Hard. Strike Fast. Sertai pencarian bakat Stingers Hockey 2026. Latihan, jersi, dan berita hoki terkini.",
+    "Pasukan hoki rasmi SK Taman Desaminium, Seri Kembangan. Strike Hard. Strike Fast. Sertai pencarian bakat 2026 — latihan, jersi dan berita hoki terkini.",
   verification: {
     google: "scHV8-Ztac4CjvRJp4_cUIhsWbFl6i-yaVvi7H-jiH8",
   },
@@ -74,11 +99,11 @@ export const metadata: Metadata = {
     "pasukan hoki Seri Kembangan",
     "kejohanan hoki",
   ],
-  authors: [{ name: "Stingers Hockey" }],
+  authors: [{ name: SITE_NAME }],
   openGraph: {
     type: "website",
     locale: "ms_MY",
-    siteName: "Stingers Hockey",
+    siteName: SITE_NAME,
     title: "Stingers Hockey — Pasukan Hoki Rasmi SK Taman Desaminium",
     description:
       "Strike Hard. Strike Fast. Pasukan hoki rasmi SK Taman Desaminium sejak 2017. Sertai pencarian bakat 2026.",
@@ -99,79 +124,16 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-// JSON-LD structured data — Multiple schemas for better SEO
-const jsonLd = [
-  {
-    "@context": "https://schema.org",
-    "@type": "SportsTeam",
-    name: "Stingers Hockey",
-    sport: "Field Hockey",
-    foundingDate: "2017",
-    slogan: "Strike Hard. Strike Fast.",
-    url: SITE_URL,
-    email: "hstingers@gmail.com",
-    telephone: "+60389413905",
-    memberOf: {
-      "@type": "EducationalOrganization",
-      name: "Sekolah Kebangsaan Taman Desaminium",
-    },
-    location: {
-      "@type": "Place",
-      name: "SK Taman Desaminium",
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: "Persiaran Desaminium 1, Taman Desaminium",
-        addressLocality: "Seri Kembangan",
-        postalCode: "43300",
-        addressRegion: "Selangor",
-        addressCountry: "MY",
-      },
-    },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Hoki.my",
-        item: SITE_URL,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: "Berita",
-        item: `${SITE_URL}/berita`,
-      },
-      {
-        "@type": "ListItem",
-        position: 3,
-        name: "Live",
-        item: `${SITE_URL}/live`,
-      },
-    ],
-  },
-  faqSchema,
-  organizationSchema,
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "Stingers Hockey",
-    url: SITE_URL,
-    searchAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
-      },
-    },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${SITE_URL}/berita?search={search_term_string}`,
-    },
-  },
-];
+// Structured data peringkat laman — perkara yang benar pada SETIAP halaman.
+// Breadcrumb dan schema khusus halaman (Article, Person, FAQ) tinggal di
+// halaman masing-masing, di mana ia benar-benar menerangkan sesuatu.
+//
+// FAQPage dahulunya berada di sini, jadi ia disajikan pada /tempahan, /live
+// dan /keputusan — halaman yang tidak memaparkan satu pun soalan itu. Garis
+// panduan Google ialah markup FAQ mesti sepadan dengan FAQ yang KELIHATAN
+// pada halaman itu. Ia kini berada di laman utama sahaja, di mana jawapannya
+// benar-benar dipaparkan.
+const grafLaman = graf(pasukanSchema, sekolahSchema, websiteSchema);
 
 export default function RootLayout({
   children,
@@ -187,11 +149,7 @@ export default function RootLayout({
         className={`${anton.variable} ${archivo.variable} h-full antialiased`}
       >
         <body className="min-h-full flex flex-col bg-ink text-paper">
-          {/* JSON-LD (data, bukan skrip boleh-laku) — corak rasmi Next App Router. */}
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify({ "@context": "https://schema.org", "@graph": jsonLd }) }}
-          />
+          <JsonLd json={grafLaman} />
           <LanguageProvider>{children}</LanguageProvider>
           <PullToRefresh />
           <LogoutRefresh />
