@@ -526,7 +526,7 @@ function RekodEditor({
                 <option value="">— Belum ditetapkan —</option>
                 {PERINGKAT.map((k) => (
                   <option key={k} value={k}>
-                    {TIER[k].nama} ({TIER[k].ringkas})
+                    {TIER[k].nama}
                   </option>
                 ))}
               </select>
@@ -540,6 +540,16 @@ function RekodEditor({
                   Kad akan membawa warna ini.
                 </p>
               )}
+              {/* Panduan memilih, bukan label pada rekod. Nama kejohanan sebenar
+                  masuk ke medan Kejohanan di atas — MSSM dan SUKMA kedua-duanya
+                  peringkat kebangsaan, tetapi ia dua pertandingan berbeza dan
+                  rekod hanya patut menyebut yang betul-betul disertai. */}
+              <p className="mt-2 font-sans text-xs leading-relaxed text-muted">
+                Aras sahaja. Daerah ialah MSSD, Negeri ialah MSSS, Kebangsaan
+                merangkumi MSSM dan juga SUKMA, Negara ialah pasukan kebangsaan
+                Malaysia. Nama kejohanan sebenar ditulis dalam medan{" "}
+                <strong className="text-paper">Kejohanan</strong>, bukan di sini.
+              </p>
             </Medan>
             <Medan label="Nombor rekod">
               <input

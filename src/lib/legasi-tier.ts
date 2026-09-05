@@ -11,6 +11,14 @@
 // anak tangga tertinggi; sebelum ini ia diberikan kepada semua orang, jadi ia
 // tidak bermakna apa-apa.
 //
+// PERINGKAT BUKAN NAMA KEJOHANAN. Percubaan awal melekatkan nama badan pada
+// setiap anak tangga, dan "Kebangsaan (MSSM / SUKMA)" menyiratkan seorang
+// pemain menyertai kedua-duanya. MSSM dan SUKMA ialah dua kejohanan berbeza
+// yang kebetulan berada pada aras yang sama. Kejohanan sebenar seseorang
+// pemain sudah pun disimpan pada rekodnya sendiri, dalam medan `event` —
+// di situlah tempatnya, kerana ia berbeza bagi setiap orang. Anak tangga di
+// sini hanya menyatakan ARAS, dan tidak menamakan apa-apa pertandingan.
+//
 // PENTING: warna TIDAK PERNAH menjadi satu-satunya isyarat. Setiap kad juga
 // membawa label bertulis ("NEGERI", "NEGARA"), kerana orang yang tidak dapat
 // membezakan gangsa daripada emas masih perlu membaca rekod itu.
@@ -38,15 +46,6 @@ export type TakrifPeringkat = {
   /** Label pada kad. */
   nama: string;
   namaEn: string;
-  /**
-   * Badan yang menganjurkan pada paras itu.
-   *
-   * HANYA untuk dropdown admin, sebagai panduan memilih. Ia TIDAK dipaparkan
-   * pada kad awam: "KEBANGSAAN · MSSM / SUKMA" menimbulkan soalan yang kad itu
-   * tidak cuba jawab, dan pembaca mula tertanya sama ada MSSM dan SUKMA itu
-   * dua perkara berbeza. Kad hanya menyatakan setinggi mana nama itu dibawa.
-   */
-  ringkas: string;
   /** Tinggi pada tangga. Lebih besar lebih tinggi. */
   aras: number;
   /** Warna aksen — teks keputusan, jalur kad, sempadan. */
@@ -68,7 +67,6 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
   daerah: {
     nama: "Daerah",
     namaEn: "District",
-    ringkas: "MSSD",
     aras: 1,
     warna: "#7f8894",
     lembut: "rgba(127, 136, 148, 0.16)",
@@ -77,7 +75,6 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
   negeri: {
     nama: "Negeri",
     namaEn: "State",
-    ringkas: "MSSS",
     aras: 2,
     // Kepekatan diturunkan dari 0.549 ke 0.384: gangsa yang terlalu pekat
     // menewaskan perak walaupun jauh lebih gelap.
@@ -87,9 +84,7 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
   },
   kebangsaan: {
     nama: "Kebangsaan",
-    namaEn: "National Schools",
-    // SUKMA dikira di sini juga — ia peringkat kebangsaan, bukan sekolah.
-    ringkas: "MSSM / SUKMA",
+    namaEn: "National",
     aras: 3,
     warna: "#dfe6ee",
     lembut: "rgba(223, 230, 238, 0.14)",
@@ -97,8 +92,7 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
   },
   negara: {
     nama: "Negara",
-    namaEn: "National Team",
-    ringkas: "Malaysia",
+    namaEn: "Malaysia",
     aras: 4,
     warna: "#f5b400",
     lembut: "rgba(245, 180, 0, 0.16)",
