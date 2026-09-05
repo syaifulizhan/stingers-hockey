@@ -4,6 +4,7 @@ import { getAllNews } from "@/lib/news-data";
 import { getPublishedRecords } from "@/lib/legasi-data";
 import { hantarIndexNow } from "@/lib/indexnow";
 import { jalankanAudit } from "@/lib/seo-audit";
+import { habiskanBakiTerjemahan } from "@/lib/terjemah-baki";
 
 // ============================================================================
 // Cron SEO harian — menghantar apa yang BERUBAH kepada enjin carian.
@@ -30,7 +31,7 @@ import { jalankanAudit } from "@/lib/seo-audit";
 // ============================================================================
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 // Tetingkap "baru berubah". Cron berjalan setiap hari; 48 jam memberi satu
 // larian bertindih, jadi satu larian yang tersasar tidak menjatuhkan artikel.
@@ -56,6 +57,24 @@ async function jalankan() {
 
   const hasil = await hantarIndexNow(urls);
 
+  // Baki terjemahan dihabiskan sedikit demi sedikit setiap hari. Kandungan
+  // yang tidak dapat diterjemah semasa terbit — biasanya kerana kuota harian
+  // sudah habis pada saat itu — akan diambil di sini apabila kuota kembali.
+  // Tanpa ini, apa yang terlepas sekali akan kekal Melayu selamanya, kerana
+  // tiada apa yang akan cuba lagi.
+  let terjemahan: Awaited<ReturnType<typeof habiskanBakiTerjemahan>> | null = null;
+  try {
+    terjemahan = await habiskanBakiTerjemahan();
+    if (terjemahan.diterjemah > 0 || terjemahan.baki > 0) {
+      console.log(
+        `[terjemah] ${terjemahan.diterjemah} siap, ${terjemahan.baki} masih menunggu.`,
+      );
+    }
+  } catch (err) {
+    // Terjemahan tidak boleh menjatuhkan tugas utama cron.
+    console.error("[terjemah] baki gagal:", err);
+  }
+
   // Audit berjalan pada setiap larian cron. Pemeriksaan yang hanya berjalan
   // apabila seseorang teringat untuk memanggilnya ialah pemeriksaan yang tidak
   // berjalan — dan kerosakan SEO adalah senyap: tiada siapa perasan canonical
@@ -79,6 +98,7 @@ async function jalankan() {
 
   return {
     ok: hasil.ok,
+    terjemahan: terjemahan ?? { nota: "Tidak dapat dijalankan pada larian ini." },
     audit: audit
       ? { ok: audit.ok, ringkasan: audit.ringkasan, masalah: audit.masalah }
       : { ok: null, nota: "Audit tidak dapat dijalankan pada larian ini." },

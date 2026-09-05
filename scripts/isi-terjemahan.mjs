@@ -231,7 +231,15 @@ for (const n of berita ?? []) {
   if (!PAKSA && n.translations?.en?.title) { langkau++; continue; }
   const en = await medan({ title: n.title, body: n.body });
   if (!Object.keys(en).length) { gagal++; console.warn(`  ⚠ gagal: ${n.title.slice(0, 50)}`); continue; }
-  const { error } = await sb.from("news").update({ translations: { en } }).eq("id", n.id);
+  // GABUNG, jangan ganti. Larian yang separa berjaya — biasanya kerana kuota
+  // habis di tengah jalan — sebelum ini memadam medan yang sudah baik
+  // daripada larian terdahulu. Diperhati pada data: cerita dan petikan legasi
+  // hilang apabila hanya keputusan dan kategori sempat diterjemah.
+  const sediaN = (n.translations || {}).en || {};
+  const { error } = await sb
+    .from("news")
+    .update({ translations: { en: { ...sediaN, ...en } } })
+    .eq("id", n.id);
   if (error) { gagal++; console.warn(`  ⚠ simpan gagal: ${error.message}`); continue; }
   siap++;
   console.log(`  ✓ ${n.title.slice(0, 60)}`);
@@ -257,7 +265,11 @@ for (const r of legasi ?? []) {
     lindung,
   );
   if (!Object.keys(en).length) { gagalL++; console.warn(`  ⚠ gagal: ${r.slug}`); continue; }
-  const { error } = await sb.from("legacy_records").update({ translations: { en } }).eq("id", r.id);
+  const sediaL = (r.translations || {}).en || {};
+  const { error } = await sb
+    .from("legacy_records")
+    .update({ translations: { en: { ...sediaL, ...en } } })
+    .eq("id", r.id);
   if (error) { gagalL++; console.warn(`  ⚠ simpan gagal: ${error.message}`); continue; }
   siapL++;
   console.log(`  ✓ ${r.slug}`);
