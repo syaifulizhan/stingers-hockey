@@ -77,6 +77,10 @@ export const metadata: Metadata = {
     "Pasukan hoki rasmi SK Taman Desaminium, Seri Kembangan. Strike Hard. Strike Fast. Sertai pencarian bakat 2026 — latihan, jersi dan berita hoki terkini.",
   verification: {
     google: "scHV8-Ztac4CjvRJp4_cUIhsWbFl6i-yaVvi7H-jiH8",
+    // Bing menerima fail ATAU meta tag. Kedua-duanya dipasang: fail di
+    // public/BingSiteAuth.xml, dan tag ini. Kalau fail itu terpadam suatu
+    // hari nanti semasa mengemas public/, pengesahan tidak putus.
+    other: { "msvalidate.01": "1AA7BD7490BAC5C93E020E04394CF4F1" },
   },
   icons: {
     icon: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
