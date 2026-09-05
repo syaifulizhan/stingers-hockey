@@ -14,6 +14,20 @@
 // PENTING: warna TIDAK PERNAH menjadi satu-satunya isyarat. Setiap kad juga
 // membawa label bertulis ("NEGERI", "NEGARA"), kerana orang yang tidak dapat
 // membezakan gangsa daripada emas masih perlu membaca rekod itu.
+//
+// KENAPA EMAS TIDAK BOLEH MENANG DENGAN WARNA SAHAJA. Percubaan pertama
+// menetapkan gangsa #c9793d dan perak #c8d0da, dan gangsa kelihatan LEBIH
+// menyerlah daripada perak walaupun ia lebih gelap — kecerahan 0.264 lawan
+// 0.625. Sebabnya kepekatan: gangsa 0.549, perak 0.071. Warna panas yang
+// pekat memajukan diri; warna neutral berundur. Kecerahan sahaja tidak
+// meramalkan apa yang mata panggil "menonjol".
+//
+// Jadi tangga ini tidak bergantung pada warna sahaja untuk hierarkinya:
+//   • kepekatan gangsa diturunkan supaya ia berundur di bawah perak,
+//   • perak dicerahkan supaya ia jelas mengatasi gangsa,
+//   • dan NEGARA sahaja mendapat pil BERISI PADAT, bukan lorekan lembut.
+// Anak tangga teratas menang secara struktur, bukan pertandingan warna yang
+// boleh kalah pada skrin lain.
 // ============================================================================
 
 export const PERINGKAT = ["daerah", "negeri", "kebangsaan", "negara"] as const;
@@ -34,6 +48,13 @@ export type TakrifPeringkat = {
   lembut: string;
   /** Warna teks di ATAS `warna` bila digunakan sebagai isian pekat. */
   atasWarna: string;
+  /**
+   * Papar pil sebagai isian PADAT dan bukan lorekan lembut.
+   *
+   * Hanya anak tangga teratas. Inilah yang menjadikan hierarki tidak boleh
+   * salah baca: emas ialah satu-satunya lencana berisi pada halaman itu.
+   */
+  padat?: boolean;
 };
 
 export const TIER: Record<LegacyTier, TakrifPeringkat> = {
@@ -42,8 +63,8 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
     namaEn: "District",
     ringkas: "MSSD",
     aras: 1,
-    warna: "#8b95a1",
-    lembut: "rgba(139, 149, 161, 0.14)",
+    warna: "#7f8894",
+    lembut: "rgba(127, 136, 148, 0.16)",
     atasWarna: "#0a0a0a",
   },
   negeri: {
@@ -51,17 +72,20 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
     namaEn: "State",
     ringkas: "MSSS",
     aras: 2,
-    warna: "#c9793d",
-    lembut: "rgba(201, 121, 61, 0.16)",
+    // Kepekatan diturunkan dari 0.549 ke 0.384: gangsa yang terlalu pekat
+    // menewaskan perak walaupun jauh lebih gelap.
+    warna: "#b07a4e",
+    lembut: "rgba(176, 122, 78, 0.16)",
     atasWarna: "#0a0a0a",
   },
   kebangsaan: {
     nama: "Kebangsaan",
     namaEn: "National Schools",
-    ringkas: "MSSM",
+    // SUKMA dikira di sini juga — ia peringkat kebangsaan, bukan sekolah.
+    ringkas: "MSSM / SUKMA",
     aras: 3,
-    warna: "#c8d0da",
-    lembut: "rgba(200, 208, 218, 0.16)",
+    warna: "#dfe6ee",
+    lembut: "rgba(223, 230, 238, 0.14)",
     atasWarna: "#0a0a0a",
   },
   negara: {
@@ -72,6 +96,7 @@ export const TIER: Record<LegacyTier, TakrifPeringkat> = {
     warna: "#f5b400",
     lembut: "rgba(245, 180, 0, 0.16)",
     atasWarna: "#0a0a0a",
+    padat: true,
   },
 };
 

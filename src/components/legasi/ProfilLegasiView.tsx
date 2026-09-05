@@ -64,7 +64,11 @@ export default function ProfilLegasiView({
                   <p className="mb-4">
                     <span
                       className="inline-block rounded-full px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em]"
-                      style={{ background: p.lembut, color: aksen }}
+                      style={
+                        p.padat
+                          ? { background: aksen, color: p.atasWarna }
+                          : { background: p.lembut, color: aksen }
+                      }
                     >
                       {t("Peringkat", "Level")} {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
                     </span>
