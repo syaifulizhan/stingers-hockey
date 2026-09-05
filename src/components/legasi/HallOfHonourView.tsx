@@ -7,9 +7,13 @@ import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { byCohort, type LegacyRecord } from "@/lib/legasi";
 import { bahagian, takrif, tertinggiTiapKohort, warnaAksen } from "@/lib/legasi-tier";
+import { pilih } from "@/lib/pilih-bahasa";
 
 function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
   const { t, lang } = useLang();
+  const keputusan = pilih(lang, r.result, r.translations, "result");
+  const kejohanan = pilih(lang, r.event, r.translations, "event");
+  const kategori = pilih(lang, r.category, r.translations, "category");
   const p = takrif(r.tier);
   const bhg = bahagian(r.stage);
   const aksen = warnaAksen(r.tier);
@@ -76,17 +80,17 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
             className="font-sans text-xs font-semibold uppercase tracking-widest"
             style={{ color: aksen }}
           >
-            ◆ {r.result}
+            ◆ {keputusan}
           </p>
         )}
         {r.event && (
-          <p className="mt-1.5 font-sans text-xs leading-snug text-muted">{r.event}</p>
+          <p className="mt-1.5 font-sans text-xs leading-snug text-muted">{kejohanan}</p>
         )}
         <h3 className="display mt-3 text-2xl leading-tight text-paper">
           {r.nameFirst} {r.nameLast}
         </h3>
         {r.category && (
-          <p className="mt-1 font-sans text-xs uppercase tracking-wider text-muted">{r.category}</p>
+          <p className="mt-1 font-sans text-xs uppercase tracking-wider text-muted">{kategori}</p>
         )}
         {/* mt-auto menolak nombor rekod ke dasar kad. Tanpanya kad yang
             cerita atau kejohanannya lebih pendek meletakkan nombornya lebih

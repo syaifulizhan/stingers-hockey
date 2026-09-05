@@ -4,12 +4,14 @@ import Link from "next/link";
 import Reveal from "@/components/ui/Reveal";
 import DragMarquee from "@/components/ui/DragMarquee";
 import { useLang } from "@/lib/i18n";
+import { pilih } from "@/lib/pilih-bahasa";
 import SmartImg from "@/components/SmartImg";
 
 type NewsRow = {
   id: string;
   title: string;
   body: string | null;
+  translations?: { en?: Record<string, string> } | null;
   image_url: string | null;
   published_at: string;
   slug: string | null;
@@ -29,7 +31,7 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
       {n.image_url ? (
         <SmartImg
           src={n.image_url}
-          alt={n.title}
+          alt={pilih(lang, n.title, n.translations, "title")}
           draggable={false}
           className="aspect-video w-full object-cover"
         />
@@ -45,11 +47,11 @@ export default function BeritaView({ news }: { news: NewsRow[] }) {
           })}
         </p>
         <h3 className="mt-1.5 line-clamp-2 font-sans text-sm font-semibold leading-snug text-paper">
-          {n.title}
+          {pilih(lang, n.title, n.translations, "title")}
         </h3>
         {n.body && (
           <p className="mt-1.5 line-clamp-2 font-sans text-xs leading-relaxed text-muted">
-            {n.body}
+            {pilih(lang, n.body, n.translations, "body")}
           </p>
         )}
         <span className="mt-3 font-sans text-xs font-semibold text-amber">

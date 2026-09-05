@@ -9,6 +9,7 @@ import ShareButton from "@/components/ShareButton";
 import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
 import { waybackUrl } from "@/lib/legasi-arkib-url";
 import { bahagian, takrif, warnaAksen } from "@/lib/legasi-tier";
+import { pilih } from "@/lib/pilih-bahasa";
 
 export default function ProfilLegasiView({
   r,
@@ -23,10 +24,17 @@ export default function ProfilLegasiView({
 
   // Tajuk perkongsian membawa pencapaian, bukan sekadar nama — itu yang
   // bermakna apabila pautan muncul dalam sembang keluarga.
-  const tajukKongsi = [r.fullName, r.result, r.event].filter(Boolean).join(" · ");
 
   const p = takrif(r.tier);
   const bhg = bahagian(r.stage);
+  const keputusan = pilih(lang, r.result, r.translations, "result");
+  const kejohanan = pilih(lang, r.event, r.translations, "event");
+  const cerita = pilih(lang, r.story, r.translations, "story");
+  const petikan = pilih(lang, r.quoteText, r.translations, "quoteText");
+
+  // Tajuk perkongsian membawa pencapaian, bukan sekadar nama — dan ia
+  // mengikut bahasa yang sedang dibaca.
+  const tajukKongsi = [r.fullName, keputusan, kejohanan].filter(Boolean).join(" · ");
   const aksen = warnaAksen(r.tier);
 
   const gambar = r.photos.slice(0, 7);
@@ -88,8 +96,8 @@ export default function ProfilLegasiView({
                     className="font-sans text-sm font-semibold uppercase tracking-[0.3em]"
                     style={{ color: aksen }}
                   >
-                    ◆ {r.result}
-                    {r.event ? ` · ${r.event}` : ""}
+                    ◆ {keputusan}
+                    {kejohanan ? ` · ${kejohanan}` : ""}
                   </p>
                 )}
               </Reveal>
@@ -154,7 +162,7 @@ export default function ProfilLegasiView({
                   {t("Jalan Ke Sana", "The Road There")}
                 </h2>
                 <div className="mt-5 space-y-4">
-                  {r.story.split(/\n\s*\n/).map((para, i) => (
+                  {cerita.split(/\n\s*\n/).map((para, i) => (
                     <p key={i} className="font-sans text-base leading-relaxed text-muted">
                       {para}
                     </p>
@@ -166,7 +174,7 @@ export default function ProfilLegasiView({
             {r.quoteText && (
               <Reveal delay={0.1}>
                 <blockquote className="mt-10 border-l-[3px] border-amber pl-6">
-                  <p className="font-sans text-lg leading-relaxed text-paper">{r.quoteText}</p>
+                  <p className="font-sans text-lg leading-relaxed text-paper">{petikan}</p>
                   {r.quoteBy && (
                     <footer className="mt-3 font-sans text-sm text-muted">— {r.quoteBy}</footer>
                   )}

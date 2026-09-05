@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { beritahuEnjinCarian } from "@/lib/indexnow";
+import { simpanTerjemahanLegasi } from "@/lib/simpan-terjemahan";
 import { z } from "zod";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { requireCoachApi } from "@/lib/portal-guard";
@@ -234,7 +235,11 @@ export async function PATCH(request: Request) {
     .from("legacy_records")
     .update(row)
     .eq("id", id)
-    .select("id, slug, status")
+    // Medan sumber terjemahan diambil dari baris yang BARU disimpan, bukan
+    // dari borang. PATCH ialah kemas kini separa: apa yang tidak dihantar
+    // kekal seperti sedia ada, dan menterjemah borang bermakna menterjemah
+    // lubang.
+    .select("id, slug, status, full_name, name_first, name_last, story, quote_text, quote_by, result, category, event")
     .single();
 
   if (error) {
@@ -260,6 +265,20 @@ export async function PATCH(request: Request) {
     // orang taip ke dalam Google. Kad fizikal dengan QR diserahkan pada hari
     // rekod itu terbit, jadi alamat ini patut boleh dicari pada hari itu juga.
     beritahuEnjinCarian(["/legasi", `/legasi/${data.slug}`]);
+    // Rekod tersiar sahaja diterjemah. Draf tidak kelihatan awam, jadi
+    // menterjemahnya membakar kuota untuk teks yang mungkin ditulis semula
+    // sebelum sesiapa membacanya.
+    simpanTerjemahanLegasi(data.id, data.slug, {
+      fullName: data.full_name,
+      nameFirst: data.name_first,
+      nameLast: data.name_last,
+      story: data.story,
+      quoteText: data.quote_text,
+      quoteBy: data.quote_by,
+      result: data.result,
+      category: data.category,
+      event: data.event,
+    });
   }
 
   let arkib: { ok: boolean; archiveUrl?: string } | null = null;

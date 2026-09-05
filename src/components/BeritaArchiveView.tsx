@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { useLang } from "@/lib/i18n";
+import { pilih } from "@/lib/pilih-bahasa";
 import SmartImg from "@/components/SmartImg";
 
 type NewsRow = {
@@ -12,6 +13,7 @@ type NewsRow = {
   image_url: string | null;
   published_at: string;
   slug: string | null;
+  translations?: { en?: Record<string, string> } | null;
 };
 
 export default function BeritaArchiveView({ news }: { news: NewsRow[] }) {
@@ -57,7 +59,7 @@ export default function BeritaArchiveView({ news }: { news: NewsRow[] }) {
               {n.image_url ? (
                 <SmartImg
                   src={n.image_url}
-                  alt={n.title}
+                  alt={pilih(lang, n.title, n.translations, "title")}
                   className="aspect-video w-full object-cover"
                 />
               ) : (
@@ -72,11 +74,11 @@ export default function BeritaArchiveView({ news }: { news: NewsRow[] }) {
                   })}
                 </p>
                 <h2 className="mt-2 font-sans text-lg font-semibold text-paper">
-                  {n.title}
+                  {pilih(lang, n.title, n.translations, "title")}
                 </h2>
                 {n.body && (
                   <p className="mt-2 line-clamp-2 font-sans text-sm text-muted">
-                    {n.body}
+                    {pilih(lang, n.body, n.translations, "body")}
                   </p>
                 )}
                 <span className="mt-4 font-sans text-sm font-semibold text-amber">

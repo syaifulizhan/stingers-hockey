@@ -19,6 +19,7 @@ export type NewsListItem = {
   body: string | null;
   imageUrl: string | null;
   publishedAt: string;
+  translations?: { en?: Record<string, string> } | null;
 };
 
 /**
@@ -31,7 +32,7 @@ export const getAllNews = cache(async (): Promise<NewsListItem[]> => {
   const supabase = createPublicSupabase();
   const { data, error } = await supabase
     .from("news")
-    .select("id, title, body, image_url, published_at, slug")
+    .select("id, title, body, image_url, published_at, slug, translations")
     .order("published_at", { ascending: false });
 
   // DB senyap (projek dijeda, kunci diputar) tidak boleh meruntuhkan sitemap.
@@ -47,5 +48,6 @@ export const getAllNews = cache(async (): Promise<NewsListItem[]> => {
       body: (r.body as string | null) ?? null,
       imageUrl: (r.image_url as string | null) ?? null,
       publishedAt: r.published_at as string,
+      translations: (r as { translations?: NewsListItem["translations"] }).translations ?? null,
     }));
 });
