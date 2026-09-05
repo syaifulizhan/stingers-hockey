@@ -8,7 +8,7 @@ import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
 import { waybackUrl } from "@/lib/legasi-arkib-url";
-import { takrif, warnaAksen } from "@/lib/legasi-tier";
+import { bahagian, takrif, warnaAksen } from "@/lib/legasi-tier";
 
 export default function ProfilLegasiView({
   r,
@@ -26,6 +26,7 @@ export default function ProfilLegasiView({
   const tajukKongsi = [r.fullName, r.result, r.event].filter(Boolean).join(" · ");
 
   const p = takrif(r.tier);
+  const bhg = bahagian(r.stage);
   const aksen = warnaAksen(r.tier);
 
   const gambar = r.photos.slice(0, 7);
@@ -60,9 +61,9 @@ export default function ProfilLegasiView({
           <div className="mt-10 flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-16">
             <div className="flex-1">
               <Reveal>
-                {p && (
-                  <p className="mb-4">
-                    <span
+                {(p || bhg) && (
+                  <p className="mb-4 flex flex-wrap items-center gap-3">
+                    {p && <span
                       className="inline-block rounded-full px-3 py-1.5 font-sans text-[11px] font-bold uppercase tracking-[0.2em]"
                       style={
                         p.padat
@@ -71,7 +72,15 @@ export default function ProfilLegasiView({
                       }
                     >
                       {t("Peringkat", "Level")} {lang === "en" ? p.namaEn : p.nama}
-                    </span>
+                    </span>}
+                    {/* Bila ia dicapai. Rekod ini mengikut pemain melepasi
+                        sekolah rendah, jadi peringkat sahaja tidak memberitahu
+                        keseluruhan cerita. */}
+                    {bhg && (
+                      <span className="font-sans text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">
+                        {lang === "en" ? bhg.namaEn : bhg.nama}
+                      </span>
+                    )}
                   </p>
                 )}
                 {r.result && (

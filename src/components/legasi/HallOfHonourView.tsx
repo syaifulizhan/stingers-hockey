@@ -6,11 +6,12 @@ import SmartImg from "@/components/SmartImg";
 import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { byCohort, type LegacyRecord } from "@/lib/legasi";
-import { takrif, tertinggiTiapKohort, warnaAksen } from "@/lib/legasi-tier";
+import { bahagian, takrif, tertinggiTiapKohort, warnaAksen } from "@/lib/legasi-tier";
 
 function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
   const { t, lang } = useLang();
   const p = takrif(r.tier);
+  const bhg = bahagian(r.stage);
   const aksen = warnaAksen(r.tier);
 
   return (
@@ -34,12 +35,12 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
         </div>
       )}
       <div className="flex flex-1 flex-col p-5">
-        {p && (
+        {(p || bhg) && (
           <div className="mb-3 flex flex-wrap items-center gap-2">
             {/* Label bertulis berada di sebelah warna, bukan digantikan olehnya.
                 Warna sahaja tidak boleh menjadi satu-satunya cara membaca
                 peringkat sesuatu rekod. */}
-            <span
+            {p && <span
               className="rounded-full px-2.5 py-1 font-sans text-[10px] font-bold uppercase tracking-widest"
               style={
                 p.padat
@@ -48,7 +49,15 @@ function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
               }
             >
               {lang === "en" ? p.namaEn : p.nama}
-            </span>
+            </span>}
+            {/* Peringkat menjawab setinggi mana; bahagian menjawab bila.
+                "Kebangsaan" bermaksud perkara berbeza bagi budak sepuluh tahun
+                berbanding pemain lepas sekolah. */}
+            {bhg && (
+              <span className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
+                {lang === "en" ? bhg.namaEn : bhg.nama}
+              </span>
+            )}
             {tertinggi && (
               <span className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
                 ▲ {t("Tertinggi kohort", "Highest of cohort")}
