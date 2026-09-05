@@ -39,6 +39,8 @@ type Semakan = {
   panjangPerihal: number;
   blokJsonLd: number;
   jsonLdSah: boolean;
+  /** Benar apabila halaman langsung tidak dapat dicapai, bukan cacat. */
+  rangkaianGagal?: boolean;
   masalah: string[];
 };
 
@@ -46,13 +48,8 @@ function ambilTag(html: string, re: RegExp): string | null {
   return html.match(re)?.[1]?.trim() ?? null;
 }
 
-async function periksa(url: string): Promise<Semakan> {
-  const masalah: string[] = [];
-  let status: number | null = null;
-  let html = "";
-
-  try {
-    const res = await fetch(url, {
+async function ambil(url: string): Promise<{ status: number; html: string }> {
+  const res = await fetch(url, {
       redirect: "follow",
       headers: {
         // Minta sebagai Googlebot: Next melangkau penstriman metadata untuk
@@ -61,22 +58,41 @@ async function periksa(url: string): Promise<Semakan> {
         "User-Agent":
           "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
       },
-      signal: AbortSignal.timeout(15_000),
-    });
-    status = res.status;
-    html = await res.text();
-  } catch (e) {
-    return {
-      url,
-      status: null,
-      canonical: null,
-      canonicalPadan: false,
-      panjangTajuk: 0,
-      panjangPerihal: 0,
-      blokJsonLd: 0,
-      jsonLdSah: false,
-      masalah: [`Tidak dapat dicapai: ${String(e)}`],
-    };
+    signal: AbortSignal.timeout(20_000),
+  });
+  return { status: res.status, html: await res.text() };
+}
+
+async function periksa(url: string): Promise<Semakan> {
+  const masalah: string[] = [];
+  let status: number | null = null;
+  let html = "";
+
+  // Satu percubaan semula sebelum mengisytiharkan halaman tidak dapat dicapai.
+  // Tanpa ini satu sekatan rangkaian sekejap dilaporkan sebagai kecacatan
+  // laman — dan laporan yang menjerit serigala setiap hari ialah laporan yang
+  // orang belajar untuk abaikan. Itu kegagalan yang SAMA seperti metrik palsu
+  // yang digantikan oleh fail ini.
+  try {
+    ({ status, html } = await ambil(url));
+  } catch {
+    try {
+      await new Promise((r) => setTimeout(r, 1500));
+      ({ status, html } = await ambil(url));
+    } catch (e) {
+      return {
+        url,
+        status: null,
+        canonical: null,
+        canonicalPadan: false,
+        panjangTajuk: 0,
+        panjangPerihal: 0,
+        blokJsonLd: 0,
+        jsonLdSah: false,
+        rangkaianGagal: true,
+        masalah: [`Tidak dapat dicapai selepas dua percubaan: ${String(e)}`],
+      };
+    }
   }
 
   if (status !== 200) masalah.push(`Status HTTP ${status}, sepatutnya 200.`);
@@ -124,8 +140,31 @@ async function periksa(url: string): Promise<Semakan> {
     panjangPerihal: perihal.length,
     blokJsonLd: blok.length,
     jsonLdSah,
+    rangkaianGagal: false,
     masalah,
   };
+}
+
+/**
+ * Jalankan semakan beberapa pada satu masa, bukan semuanya serentak.
+ *
+ * `Promise.all` ke atas kesemua sebelas alamat membuka sebelas sambungan
+ * serentak, dan pada talian yang sempit sebahagiannya tamat masa dengan
+ * sendirinya. Audit itu kemudian melaporkan halaman yang sihat sebagai rosak,
+ * dan halaman yang berbeza setiap kali dijalankan. Tiga pada satu masa
+ * menyiapkan kerja dalam had masa fungsi tanpa menyebabkan kegagalannya
+ * sendiri.
+ */
+async function berkelompok<T, R>(
+  senarai: T[],
+  serentak: number,
+  kerja: (t: T) => Promise<R>
+): Promise<R[]> {
+  const hasil: R[] = [];
+  for (let i = 0; i < senarai.length; i += serentak) {
+    hasil.push(...(await Promise.all(senarai.slice(i, i + serentak).map(kerja))));
+  }
+  return hasil;
 }
 
 export async function jalankanAudit() {
@@ -145,7 +184,7 @@ export async function jalankanAudit() {
     ...legasi.slice(0, 2).map((r) => canonical(`/legasi/${r.slug}`)),
   ];
 
-  const semakan = await Promise.all(sampel.map(periksa));
+  const semakan = await berkelompok(sampel, 3, periksa);
 
   // Infrastruktur: sitemap, robots, suapan dan kunci IndexNow benar-benar hidup?
   const infraUrls = [
@@ -165,7 +204,12 @@ export async function jalankanAudit() {
     })
   );
 
-  const berMasalah = semakan.filter((s) => s.masalah.length > 0);
+  const berMasalah = semakan.filter((s) => s.masalah.length > 0 && !s.rangkaianGagal);
+  // Halaman yang tidak dapat dicapai dilaporkan berasingan. Ia mungkin laman
+  // yang tumbang, tetapi lebih kerap ia rangkaian antara sini dan sana — dan
+  // mencampurkannya dengan kecacatan sebenar menjadikan kedua-duanya sukar
+  // dipercayai.
+  const takDapatDicapai = semakan.filter((s) => s.rangkaianGagal);
 
   return {
     ok: berMasalah.length === 0 && infra.every((i) => i.ok),
@@ -175,6 +219,7 @@ export async function jalankanAudit() {
       halamanDiperiksa: semakan.length,
       halamanBersih: semakan.length - berMasalah.length,
       halamanBerMasalah: berMasalah.length,
+      halamanTakDapatDicapai: takDapatDicapai.length,
       jumlahMasalah: semakan.reduce((n, s) => n + s.masalah.length, 0),
       artikelTersiar: news.length,
       rekodLegasiTersiar: legasi.length,
@@ -183,6 +228,7 @@ export async function jalankanAudit() {
     // Hanya halaman yang benar-benar mempunyai sesuatu yang salah — supaya
     // laporan ini boleh dibaca sekilas dan tidak dipenuhi tanda ✓.
     masalah: berMasalah.map((s) => ({ url: s.url, status: s.status, masalah: s.masalah })),
+    takDapatDicapai: takDapatDicapai.map((s) => ({ url: s.url, nota: s.masalah[0] })),
     semuaSemakan: semakan,
     nota:
       "Kedudukan kata kunci tidak dilaporkan di sini kerana ia tidak boleh diukur dari pelayan ini. " +

@@ -70,7 +70,7 @@ export default function ProfilLegasiView({
                           : { background: p.lembut, color: aksen }
                       }
                     >
-                      {t("Peringkat", "Level")} {lang === "en" ? p.namaEn : p.nama} · {p.ringkas}
+                      {t("Peringkat", "Level")} {lang === "en" ? p.namaEn : p.nama}
                     </span>
                   </p>
                 )}
