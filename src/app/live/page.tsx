@@ -2,12 +2,22 @@ import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
 import LiveBoard from "@/components/live/LiveBoard";
+import JsonLd from "@/components/JsonLd";
 import { createPublicSupabase } from "@/lib/supabase/public";
+import { canonical, ogHalaman, SITE_NAME } from "@/lib/seo";
+import { breadcrumbs, graf } from "@/lib/jsonld";
 
 export const metadata: Metadata = {
-  title: "Live — Perlawanan Stingers Hockey",
+  title: `Live — Perlawanan Hoki ${SITE_NAME}`,
   description:
-    "Keputusan perlawanan terkini, rumusan season, penjaring & assist terbanyak pasukan Stingers Hockey.",
+    "Keputusan perlawanan hoki terkini, rumusan musim, penjaring dan assist terbanyak pasukan Stingers Hockey, SK Taman Desaminium.",
+  alternates: { canonical: canonical("/live") },
+  openGraph: ogHalaman({
+    title: `Live — Perlawanan Hoki ${SITE_NAME}`,
+    description:
+      "Keputusan perlawanan hoki terkini dan rumusan musim pasukan Stingers Hockey.",
+    path: "/live",
+  }),
 };
 
 // Sentiasa segar (live).
@@ -29,6 +39,7 @@ export default async function LivePage() {
 
   return (
     <>
+      <JsonLd json={graf(breadcrumbs([{ nama: "Live" }]))} />
       <Navigation />
       <main className="flex-1">
         <LiveBoard

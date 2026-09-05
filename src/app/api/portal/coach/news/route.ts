@@ -7,6 +7,7 @@ import { sendPush } from "@/lib/push";
 import { makeSlug } from "@/lib/slug";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireCoachApi } from "@/lib/portal-guard";
+import { beritahuEnjinCarian } from "@/lib/indexnow";
 
 // Pastikan slug unik (tambah -2, -3, … jika bertindih).
 async function uniqueSlug(supabase: SupabaseClient, base: string): Promise<string> {
@@ -117,6 +118,11 @@ export async function POST(request: Request) {
   revalidatePath("/");
   revalidatePath("/berita");
 
+  // Enjin carian diberitahu serta-merta, bukan menunggu cron harian. Artikel
+  // berita bernilai pada hari ia terbit; diindeks tiga hari kemudian bermakna
+  // terlepas keseluruhan tempoh orang mencarinya.
+  beritahuEnjinCarian(["/", "/berita", `/berita/${slug}`]);
+
   return NextResponse.json({ ok: true });
 }
 
@@ -147,16 +153,26 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ ok: false, error: "Data tidak sah." }, { status: 422 });
   }
   const supabase = await createServerSupabase();
-  const { error } = await supabase
+  // Slug dipulangkan supaya alamat artikel yang disunting boleh dihantar
+  // semula ke IndexNow — teks yang diperbetulkan tidak berguna jika enjin
+  // carian masih memaparkan versi lama.
+  const { data: updated, error } = await supabase
     .from("news")
     .update({ title: parsed.data.title, body: parsed.data.body || null })
-    .eq("id", parsed.data.id);
+    .eq("id", parsed.data.id)
+    .select("slug")
+    .maybeSingle();
   if (error) {
     console.error("[coach/news] edit gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal kemas kini berita." }, { status: 403 });
   }
   revalidatePath("/");
   revalidatePath("/berita");
+  const slugDisunting = (updated as { slug?: string | null } | null)?.slug;
+  if (slugDisunting) revalidatePath(`/berita/${slugDisunting}`);
+  beritahuEnjinCarian(
+    slugDisunting ? ["/", "/berita", `/berita/${slugDisunting}`] : ["/", "/berita"]
+  );
   return NextResponse.json({ ok: true });
 }
 
@@ -176,11 +192,25 @@ export async function DELETE(request: Request) {
   }
 
   const supabase = await createServerSupabase();
+  // Slug diambil SEBELUM padam — selepas itu ia hilang, dan tanpa slug kita
+  // tidak dapat memberitahu enjin carian bahawa alamat itu sudah tiada.
+  const { data: sebelum } = await supabase
+    .from("news")
+    .select("slug")
+    .eq("id", id)
+    .maybeSingle();
   const { error } = await supabase.from("news").delete().eq("id", id);
   if (error) {
     console.error("[coach/news] padam gagal:", error.message);
     return NextResponse.json({ ok: false, error: "Gagal padam." }, { status: 403 });
   }
+  const slugDipadam = (sebelum as { slug?: string | null } | null)?.slug;
+  if (slugDipadam) revalidatePath(`/berita/${slugDipadam}`);
+  // IndexNow menerima alamat yang sudah dibuang juga — 404 dijumpai lebih
+  // cepat, jadi pautan mati keluar dari hasil carian lebih awal.
+  beritahuEnjinCarian(
+    slugDipadam ? ["/", "/berita", `/berita/${slugDipadam}`] : ["/", "/berita"]
+  );
   // Buang notifikasi berita berkaitan supaya tak tertinggal di loceng.
   await supabase.from("notifications").delete().eq("ref_type", "news").eq("ref_id", id);
   revalidatePath("/");

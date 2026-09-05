@@ -1,143 +1,91 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { canonical } from "@/lib/seo";
+import { getAllNews } from "@/lib/news-data";
+import { getPublishedRecords } from "@/lib/legasi-data";
+import { hantarIndexNow } from "@/lib/indexnow";
 
-// Auto-SEO Boost Automation Engine
-// Runs on schedule to boost ranking organically
+// ============================================================================
+// Cron SEO harian — menghantar apa yang BERUBAH kepada enjin carian.
+//
+// Apa yang route ini dahulunya lakukan, dan kenapa ia digantikan sepenuhnya:
+//
+//   • Ia memanggil `google.com/ping?sitemap=…`. Google membuang endpoint itu
+//     pada Jun 2023. Ia membalas HTTP 404 hari ini — disahkan. Setiap larian
+//     cron sejak itu melaporkan "✓ Requested" sambil bercakap dengan halaman
+//     ralat.
+//   • Ia menjana tajuk untuk tiga artikel yang tidak wujud
+//     ("Panduan Lengkap Bermain Hoki", "Tips Nutrisi…") dan mengembalikannya
+//     dalam JSON. Tiada apa yang pernah menulis kandungan itu ke mana-mana.
+//     Alamat yang dituntutnya, /blog/<timestamp>, tidak pernah wujud.
+//   • Ia membina "socialPayload" yang tidak pernah dihantar ke mana-mana.
+//
+//   Kesimpulan: laporan yang mengembalikan empat tanda ✓ untuk kerja yang
+//   tidak berlaku. Metrik SEO yang menipu lebih teruk daripada tiada metrik,
+//   sebab ia menghentikan orang daripada menyiasat kenapa kedudukan tidak naik.
+//
+// Yang di bawah ini melakukan satu perkara yang benar-benar berkesan:
+// mengenal pasti alamat yang berubah dalam tempoh terkini dan menghantarnya
+// ke IndexNow. Balasannya membawa kod status HTTP sebenar, bukan tanda ✓.
+// ============================================================================
 
-const HOKI_KEYWORDS = [
-  "hoki malaysia",
-  "hoki sekolah",
-  "latihan hoki",
-  "kejohanan hoki",
-  "pasukan hoki",
-  "stingers hockey",
-  "hoki seri kembangan",
-  "hoki selangor",
-];
+export const dynamic = "force-dynamic";
 
-const AUTO_CONTENT = [
-  {
-    title: "Panduan Lengkap Bermain Hoki untuk Pemula",
-    keywords: ["panduan hoki", "latihan hoki", "teknik hoki"],
-    description: "Belajar bermain hoki dari pemula. Stingers Hockey berkongsi tips dan teknik latihan hoki berkualitas.",
-  },
-  {
-    title: "Kejohanan Hoki Terkini: MSSD 2026 Stingers Hockey",
-    keywords: ["kejohanan hoki", "MSSD hoki", "stingers hockey"],
-    description: "Kemas kini kejohanan hoki terbaru. SK Taman Desaminium melakar sejarah di MSSD 2026.",
-  },
-  {
-    title: "Tips Nutrisi untuk Pemain Hoki Profesional",
-    keywords: ["nutrisi hoki", "latihan hoki", "pemain profesional"],
-    description: "Nutrisi terbaik untuk pemain hoki. Stingers Hockey berkongsi panduan diet atlet.",
-  },
-];
+// Tetingkap "baru berubah". Cron berjalan setiap hari; 48 jam memberi satu
+// larian bertindih, jadi satu larian yang tersasar tidak menjatuhkan artikel.
+const TETINGKAP_JAM = 48;
 
-// 1. Auto-request Google indexing
-async function requestGoogleIndexing(url: string) {
-  try {
-    // This would use Google Indexing API (requires setup)
-    // For now, we ping Google Search Console notification
-    const response = await fetch(
-      `https://www.google.com/ping?sitemap=${encodeURIComponent(url)}`,
-      { method: "GET" }
-    );
-    return response.ok;
-  } catch (error) {
-    console.error("Indexing request failed:", error);
-    return false;
+async function jalankan() {
+  const sejak = Date.now() - TETINGKAP_JAM * 60 * 60 * 1000;
+
+  const [news, legasi] = await Promise.all([getAllNews(), getPublishedRecords()]);
+
+  const beritaBaharu = news.filter((n) => new Date(n.publishedAt).getTime() >= sejak);
+  const legasiBaharu = legasi.filter(
+    (r) => r.publishedAt && new Date(r.publishedAt).getTime() >= sejak
+  );
+
+  // Halaman senarai berubah setiap kali kandungan anaknya berubah, jadi ia
+  // hanya dihantar apabila memang ada sesuatu yang baharu untuk dilihat.
+  const urls: string[] = [];
+  if (beritaBaharu.length > 0) urls.push(canonical("/"), canonical("/berita"));
+  if (legasiBaharu.length > 0) urls.push(canonical("/legasi"));
+  urls.push(...beritaBaharu.map((n) => canonical(`/berita/${n.slug}`)));
+  urls.push(...legasiBaharu.map((r) => canonical(`/legasi/${r.slug}`)));
+
+  const hasil = await hantarIndexNow(urls);
+
+  return {
+    ok: hasil.ok,
+    pada: new Date().toISOString(),
+    tetingkapJam: TETINGKAP_JAM,
+    berubah: {
+      berita: beritaBaharu.length,
+      legasi: legasiBaharu.length,
+    },
+    indexnow: {
+      statusHttp: hasil.status,
+      urlDihantar: hasil.dihantar,
+      nota: hasil.nota,
+    },
+    // Bila tiada apa yang berubah, tidak menghantar apa-apa ialah hasil yang
+    // BETUL — bukan kegagalan.
+    urls,
+  };
+}
+
+export async function GET(request: Request) {
+  const secret = process.env.CRON_SECRET;
+  if (secret && request.headers.get("authorization") !== `Bearer ${secret}`) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
-}
 
-// 2. Auto-generate SEO metadata
-function generateSEOMetadata(index: number) {
-  const content = AUTO_CONTENT[index % AUTO_CONTENT.length];
-  return {
-    title: `${content.title} | Stingers Hockey - Hoki.my`,
-    description: content.description,
-    keywords: [...content.keywords, "hoki", "hoki malaysia", "hoki.my"],
-    og: {
-      title: content.title,
-      description: content.description,
-      url: `https://hoki.my/blog/${index}`,
-    },
-  };
-}
-
-// 3. Auto-generate schema markup
-function generateSchema(index: number) {
-  const content = AUTO_CONTENT[index % AUTO_CONTENT.length];
-  return {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: content.title,
-    description: content.description,
-    image: "https://hoki.my/images/logo-white.png",
-    datePublished: new Date().toISOString(),
-    dateModified: new Date().toISOString(),
-    author: {
-      "@type": "Organization",
-      name: "Stingers Hockey",
-      url: "https://hoki.my",
-    },
-    keywords: content.keywords.join(", "),
-  };
-}
-
-export async function GET(request: NextRequest) {
   try {
-    // 1. Request sitemap indexing
-    const sitemapIndexed = await requestGoogleIndexing(
-      "https://hoki.my/sitemap.xml"
-    );
-
-    // 2. Generate metadata for social sharing
-    const metadata = generateSEOMetadata(Date.now());
-
-    // 3. Generate schema for current content
-    const schema = generateSchema(Date.now());
-
-    // 4. Auto-trigger social sharing (webhook)
-    const socialPayload = {
-      title: metadata.title,
-      description: metadata.description,
-      url: "https://hoki.my",
-      hashtags: ["#hoki", "#hokimy", "#stingershockey", "#malaysia"],
-    };
-
-    return NextResponse.json({
-      status: "SEO Boost Active",
-      timestamp: new Date().toISOString(),
-      actions: {
-        sitemapIndexing: sitemapIndexed ? "✓ Requested" : "⚠ Failed",
-        metadataRefresh: "✓ Generated",
-        schemaMarkup: "✓ Enhanced",
-        socialSharing: "✓ Ready",
-      },
-      data: {
-        metadata,
-        schema,
-        socialPayload,
-      },
-      nextRun: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), // 6 hours
-    });
+    return NextResponse.json(await jalankan());
   } catch (error) {
-    console.error("SEO Boost Error:", error);
+    console.error("[seo/auto-boost] gagal:", error);
     return NextResponse.json(
-      { error: "SEO Boost failed", details: String(error) },
+      { ok: false, error: String(error) },
       { status: 500 }
     );
   }
-}
-
-// Cron endpoint - triggered by external cron service
-export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization");
-
-  // Simple auth check
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  // Run auto-boost
-  return GET(request);
 }

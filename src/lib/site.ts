@@ -21,8 +21,22 @@ export const contact = {
     "Persiaran Desaminium 1, Taman Desaminium, 43300 Seri Kembangan, Selangor",
 };
 
+// Profil sosial. Biarkan kosong sehingga alamat sebenar diketahui.
+//
+// Nilai-nilai ini dahulunya "https://facebook.com/" dan seumpamanya — halaman
+// UTAMA rangkaian tersebut, bukan profil pasukan. Tiga ikon di footer semuanya
+// menghantar pengunjung ke Facebook.com. Ia juga akan menjadi jawapan yang
+// salah kepada `sameAs` dalam structured data: memberitahu Google bahawa
+// pasukan ini "juga dikenali sebagai" facebook.com mengelirukan pengecaman
+// entiti dan bukannya membantu.
+//
+// Footer menyembunyikan mana-mana ikon yang alamatnya kosong, jadi mengisi
+// satu baris di sini sudah cukup untuk ia muncul semula.
 export const social = {
-  facebook: "https://facebook.com/", // TODO: pautan sebenar
-  instagram: "https://instagram.com/", // TODO: pautan sebenar
-  x: "https://x.com/", // TODO: pautan sebenar
+  facebook: "",
+  instagram: "",
+  x: "",
 };
+
+/** Profil yang benar-benar wujud — untuk `sameAs` structured data. */
+export const socialSebenar = Object.values(social).filter(Boolean);
