@@ -8,6 +8,8 @@ import SeasonResultView, {
   type LivePlayer,
 } from "@/components/live/SeasonResultView";
 import ShareButton from "@/components/ShareButton";
+import { useLang } from "@/lib/i18n";
+import { istilah } from "@/lib/kamus";
 
 type Season = { id: string; name: string; team: string };
 type Achievement = {
@@ -17,7 +19,14 @@ type Achievement = {
   player_id: string | null;
   event: string | null;
 };
-const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
+const teamLabel = (team: string | undefined, lang: string) =>
+  team === "perempuan"
+    ? lang === "en"
+      ? "Girls"
+      : "Perempuan"
+    : lang === "en"
+      ? "Boys"
+      : "Lelaki";
 
 export default function LiveBoard({
   seasons,
@@ -33,6 +42,7 @@ export default function LiveBoard({
   achievements: Achievement[];
 }) {
   const router = useRouter();
+  const { lang, t } = useLang();
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
 
   // Auto-segar setiap 60s (live).
@@ -61,7 +71,9 @@ export default function LiveBoard({
             </span>
             Live
           </span>
-          <h1 className="display mt-3 text-5xl leading-none text-paper sm:text-6xl">Perlawanan</h1>
+          <h1 className="display mt-3 text-5xl leading-none text-paper sm:text-6xl">
+            {t("Perlawanan", "Matches")}
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {seasons.length > 0 && (
@@ -72,24 +84,31 @@ export default function LiveBoard({
             >
               {seasons.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} — {teamLabel(s.team)}
+                  {istilah(s.name, lang)} — {teamLabel(s.team, lang)}
                 </option>
               ))}
             </select>
           )}
-          <ShareButton title="Perlawanan Live — Stingers Hockey" />
+          <ShareButton
+            title={t(
+              "Perlawanan Live — Stingers Hockey",
+              "Live Matches — Stingers Hockey"
+            )}
+          />
         </div>
       </div>
 
       {seasons.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-line bg-bg-soft/50 p-8 text-center">
-          <p className="font-sans text-paper/90">Tiada perlawanan live sekarang.</p>
+          <p className="font-sans text-paper/90">
+            {t("Tiada perlawanan live sekarang.", "No live matches right now.")}
+          </p>
           <p className="mt-1 font-sans text-sm text-muted">
-            Lihat keputusan season lepas di halaman{" "}
+            {t("Lihat keputusan season lepas di halaman", "See past season results on the")}{" "}
             <a href="/keputusan" className="text-amber hover:underline">
-              Keputusan
+              {t("Keputusan", "Results")}
             </a>
-            .
+            {t(".", " page.")}
           </p>
         </div>
       ) : (

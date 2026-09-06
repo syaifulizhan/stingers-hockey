@@ -53,15 +53,15 @@ export default function Navigation() {
         }`}
       >
         <nav
-          aria-label="Navigasi utama"
+          aria-label={t("Navigasi utama", "Main navigation")}
           className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6"
         >
           {/* Logo */}
-          <Link href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
+          <Link href="/#top" className="flex items-center gap-3" aria-label={t("Stingers Hockey — ke atas", "Stingers Hockey — back to top")}>
             {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks bila tiada */}
             <img
               src="/images/logo.png"
-              alt="Logo Stingers Hockey"
+              alt={t("Logo Stingers Hockey", "Stingers Hockey logo")}
               className="h-9 w-9 object-contain"
               onError={(e) => {
                 (e.currentTarget as HTMLImageElement).style.display = "none";
@@ -113,7 +113,7 @@ export default function Navigation() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Buka menu"
+            aria-label={t("Buka menu", "Open menu")}
             className="text-paper md:hidden"
           >
             <Menu className="h-7 w-7" />

@@ -49,6 +49,11 @@ export default async function BeritaArchivePage() {
       <Navigation />
       <main className="flex-1">
         <BeritaArchiveView
+          // `translations` MESTI dibawa melalui peta ini. getAllNews sudah
+          // membacanya dan BeritaArchiveView sudah tahu menggunakannya, tetapi
+          // medan yang digugurkan di sini tidak pernah sampai — setiap kad
+          // arkib kekal Melayu walaupun pil EN ditekan. Ini kelas pepijat yang
+          // sama seperti lajur yang tidak diminta dalam Berita.tsx.
           news={news.map((n) => ({
             id: n.id,
             title: n.title,
@@ -56,6 +61,7 @@ export default async function BeritaArchivePage() {
             image_url: n.imageUrl,
             published_at: n.publishedAt,
             slug: n.slug,
+            translations: n.translations,
           }))}
         />
       </main>

@@ -48,6 +48,15 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLang(kesanBahasa());
   }, []);
 
+  // `<html lang>` dirender sebagai "ms" oleh pelayan dan tidak pernah berubah
+  // dengan sendirinya. Pembaca skrin memilih suara daripada atribut itu, dan
+  // "Terjemah halaman ini" pelayar mempercayainya — jadi halaman Inggeris yang
+  // masih mengisytiharkan dirinya Melayu dibaca dengan sebutan yang salah dan
+  // ditawarkan terjemahan yang salah.
+  useEffect(() => {
+    document.documentElement.lang = lang === "en" ? "en" : "ms";
+  }, [lang]);
+
   const toggle = () =>
     setLang((l) => {
       const next: Lang = l === "ms" ? "en" : "ms";
@@ -66,7 +75,21 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
 export function useLang(): Ctx {
   const c = useContext(LangCtx);
-  // Fallback selamat (cth jika dipakai di luar provider) → kekal BM.
-  if (!c) return { lang: "ms", toggle: () => {}, t: (ms) => ms };
+  if (!c) {
+    // Fallback selamat → kekal BM, supaya komponen tidak meletup.
+    //
+    // Tetapi diam ialah masalahnya. InstallPrompt dirender sebagai ADIK kepada
+    // LanguageProvider dalam layout: ia memanggil t() dengan sempurna, jatuh ke
+    // sini, dan kekal Melayu selamanya sementara setiap halaman lain bertukar.
+    // Tiada ralat, tiada amaran — hanya satu kotak yang tidak pernah mengikut
+    // pil. Dalam pembangunan ia kini menjerit, supaya penyedia yang tertinggal
+    // ditemui semasa menulis dan bukan oleh pelawat.
+    if (process.env.NODE_ENV !== "production") {
+      console.warn(
+        "[i18n] useLang() dipanggil di luar <LanguageProvider>. Komponen ini akan kekal Bahasa Melayu walaupun pil EN ditekan. Alihkannya ke dalam penyedia."
+      );
+    }
+    return { lang: "ms", toggle: () => {}, t: (ms) => ms };
+  }
   return c;
 }

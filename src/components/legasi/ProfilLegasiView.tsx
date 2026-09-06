@@ -9,7 +9,8 @@ import ShareButton from "@/components/ShareButton";
 import { legacyUrl, type LegacyRecord } from "@/lib/legasi";
 import { waybackUrl } from "@/lib/legasi-arkib-url";
 import { bahagian, takrif, warnaAksen } from "@/lib/legasi-tier";
-import { pilih } from "@/lib/pilih-bahasa";
+import { pilih, pilihIstilah } from "@/lib/pilih-bahasa";
+import { istilah } from "@/lib/kamus";
 
 export default function ProfilLegasiView({
   r,
@@ -27,8 +28,9 @@ export default function ProfilLegasiView({
 
   const p = takrif(r.tier);
   const bhg = bahagian(r.stage);
-  const keputusan = pilih(lang, r.result, r.translations, "result");
-  const kejohanan = pilih(lang, r.event, r.translations, "event");
+  const keputusan = pilihIstilah(lang, r.result, r.translations, "result");
+  const kejohanan = pilihIstilah(lang, r.event, r.translations, "event");
+  const kategori = pilihIstilah(lang, r.category, r.translations, "category");
   const cerita = pilih(lang, r.story, r.translations, "story");
   const petikan = pilih(lang, r.quoteText, r.translations, "quoteText");
 
@@ -116,7 +118,7 @@ export default function ProfilLegasiView({
               </Reveal>
               <Reveal delay={0.2}>
                 <p className="mt-6 font-sans text-sm uppercase tracking-wider text-muted">
-                  {[r.category, r.school].filter(Boolean).join("  ·  ")}
+                  {[kategori, r.school].filter(Boolean).join("  ·  ")}
                 </p>
                 <p className="mt-2 font-sans text-xs font-semibold uppercase tracking-wider text-amber-deep">
                   {t("Rekod", "Record")} {r.recordNo}
@@ -204,7 +206,11 @@ export default function ProfilLegasiView({
                           s.peak ? "text-paper" : "text-muted"
                         }`}
                       >
-                        {s.what}
+                        {/* Langkah Perjalanan tidak pernah dihantar ke enjin
+                            terjemahan — ia hidup dalam jsonb bersarang, bukan
+                            lajur teks. Ia juga tepat bentuk yang kamus dibina
+                            untuk: "Naib Johan • Kejohanan Hoki MSSD". */}
+                        {istilah(s.what, lang)}
                       </span>
                     </li>
                   ))}

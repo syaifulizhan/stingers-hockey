@@ -102,10 +102,10 @@ export function computePostage(itemCount: number, s: PostageSettings): number {
 // { jersi:1, hustle_gear:1 }) dan peratus atas subtotal. Bila beberapa layak,
 // ambil yang beri potongan terbesar.
 export const DISCOUNT_CATEGORIES = [
-  { id: "jersi", label: "Jersi" },
-  { id: "hustle_gear", label: "Hustle Gear" },
-  { id: "jersi_lama", label: "Jersi Lama" },
-  { id: "hustle_lama", label: "Hustle Gear Lama" },
+  { id: "jersi", label: "Jersi", labelEn: "Jersey" },
+  { id: "hustle_gear", label: "Hustle Gear", labelEn: "Hustle Gear" },
+  { id: "jersi_lama", label: "Jersi Lama", labelEn: "Past Jersey" },
+  { id: "hustle_lama", label: "Hustle Gear Lama", labelEn: "Past Hustle Gear" },
 ] as const;
 
 export type DiscountRule = {
@@ -151,8 +151,13 @@ export function bestDiscount(
 }
 
 // Huraian syarat untuk paparan, cth "2 × Jersi" atau "Jersi + Hustle Gear".
-export function describeRequirements(reqs: Record<string, number | string> | null): string {
-  const labels = Object.fromEntries(DISCOUNT_CATEGORIES.map((c) => [c.id, c.label]));
+export function describeRequirements(
+  reqs: Record<string, number | string> | null,
+  lang = "ms"
+): string {
+  const labels = Object.fromEntries(
+    DISCOUNT_CATEGORIES.map((c) => [c.id, lang === "en" ? c.labelEn : c.label])
+  );
   return Object.entries(reqs ?? {})
     .filter(([, q]) => n(q) > 0)
     .map(([c, q]) => (n(q) > 1 ? `${n(q)} × ` : "") + (labels[c] ?? c))

@@ -110,7 +110,7 @@ export default function ShareButton({
               <span className="font-sans text-sm font-semibold text-paper">
                 {heading ?? t("Kongsi berita", "Share article")}
               </span>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Tutup" className="text-muted hover:text-paper">
+              <button type="button" onClick={() => setOpen(false)} aria-label={t("Tutup", "Close")} className="text-muted hover:text-paper">
                 <XIcon className="h-4 w-4" />
               </button>
             </div>

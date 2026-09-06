@@ -24,6 +24,11 @@ export const KAMUS: Record<string, string> = {
   "tempat kedua": "Second Place",
   "tempat ketiga": "Third Place",
   "tempat keempat": "Fourth Place",
+  // Bentuk bernombor yang ditaip jurulatih dalam garis masa Perjalanan.
+  "tempat ke-2": "Second Place",
+  "tempat ke-3": "Third Place",
+  "tempat ke-4": "Fourth Place",
+  "johan plate": "Plate Champion",
   "kapten": "Captain",
   "penjaring terbanyak": "Top Scorer",
   "pemain terbaik": "Best Player",
@@ -42,6 +47,9 @@ export const KAMUS: Record<string, string> = {
   "15 tahun": "Under 15",
   "18 tahun": "Under 18",
   "kejohanan hoki": "Hockey Championship",
+  // Melayu meletakkan penerang selepas kepala frasa, Inggeris sebelumnya —
+  // jadi frasa penuh mesti disenaraikan, bukan dibina dari dua perkataan.
+  "kejohanan terbuka": "Open Championship",
   "kejohanan": "Championship",
   // Frasa penuh mesti didahulukan: bahasa Melayu meletakkan kepala frasa di
   // hadapan ("Piala Pengetua") dan Inggeris di belakang ("Principal's Cup"),
@@ -54,9 +62,28 @@ export const KAMUS: Record<string, string> = {
   "kumpulan": "Group",
   "peringkat": "Stage",
   "pusingan": "Round",
-  "sekolah": "School",
+  "penalti strok": "Penalty Stroke",
+  "penalti sudut": "Penalty Corner",
+  // "sekolah" SENGAJA tiada di sini. Ia hampir tidak pernah berdiri sendiri:
+  // ia sebahagian nama khas ("Sekolah Sukan Negeri Selangor"), dan
+  // menggantikannya menghasilkan "PRINCIPAL'S CUP SCHOOL SUKAN NEGERI
+  // SELANGOR" — nama sekolah sebenar, dirosakkan separuh jalan.
   "hoki": "Hockey",
   "terbuka": "Open",
+  // Nota edisi jersi ("JERSI PEGAWAI") dipaparkan dalam galeri Legasi Jersi.
+  "jersi pegawai": "Officials Jersey",
+  "jersi": "Jersey",
+  "pegawai": "Official",
+  // Nama musim yang ditaip jurulatih ("Musim 2026", "Latihan Musim Panas")
+  // muncul dalam pemilih di /live dan /keputusan.
+  "musim": "Season",
+  "latihan": "Training",
+  "persahabatan": "Friendly",
+  "liga": "League",
+  "pemain terbaik keseluruhan": "Overall Best Player",
+  "pemberi assist terbanyak": "Top Assister",
+  "penjaring": "Scorer",
+  "assist terbanyak": "Top Assister",
 };
 
 /**

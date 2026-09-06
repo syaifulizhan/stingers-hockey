@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import SmartImg from "@/components/SmartImg";
+import { useLang } from "@/lib/i18n";
 
 export default function NewsImageCarousel({
   images,
@@ -10,6 +11,7 @@ export default function NewsImageCarousel({
   images: string[];
   title: string;
 }) {
+  const { t } = useLang();
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +82,7 @@ export default function NewsImageCarousel({
             key={i}
             type="button"
             onClick={() => goTo(i)}
-            aria-label={`Gambar ${i + 1}`}
+            aria-label={t(`Gambar ${i + 1}`, `Image ${i + 1}`)}
             className={`rounded-full transition-all duration-300 ease-out ${
               i === active
                 ? "h-1.5 w-6 bg-amber"
