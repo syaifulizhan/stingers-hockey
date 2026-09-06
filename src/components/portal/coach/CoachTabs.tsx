@@ -27,7 +27,11 @@ export default function CoachTabs({ tabs }: { tabs: Tab[] }) {
 
   return (
     <div className="mt-6">
-      <div className="sticky top-0 top-safe z-30 -mx-6 flex gap-1 overflow-x-auto border-b border-line bg-ink/95 px-6 py-2.5 backdrop-blur">
+      <div // Legap SEPENUHNYA, bukan bg-ink/95. Lima peratus ketelusan sudah cukup
+        // untuk teks di sebaliknya menembus keluar semasa menatal, dan pada
+        // saiz teks kecil ia kelihatan seperti nav yang tersorok di belakang
+        // kandungan dan bukan kesan kaca yang disengajakan.
+        className="sticky top-0 top-safe z-30 -mx-6 flex gap-1 overflow-x-auto border-b border-line bg-ink px-6 py-3">
         {tabs.map((t) => (
           <button
             key={t.id}
