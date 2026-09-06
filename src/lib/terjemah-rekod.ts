@@ -1,5 +1,6 @@
 import "server-only";
 import { terjemahMedan } from "@/lib/terjemah";
+import { jantinaDariNama } from "@/lib/jantina";
 
 // ============================================================================
 // Membina blok terjemahan yang disimpan pada setiap rekod.
@@ -44,6 +45,11 @@ export async function terjemahLegasi(r: {
   event?: string | null;
 }): Promise<Terjemahan | null> {
   const lindung = lindungNama(r.fullName, r.nameFirst, r.nameLast, r.quoteBy);
+  // "binti"/"bin" dalam nama ialah fakta, bukan tekaan. Rekod legasi ialah
+  // biografi subjek-tunggal, jadi setiap kata ganti dalam cerita dan petikan
+  // merujuk orang yang sama — selamat untuk diseragamkan. quoteBy SENGAJA
+  // tidak dimasukkan: itu nama jurulatih, bukan subjek rekod.
+  const jantina = jantinaDariNama(r.fullName, r.nameFirst, r.nameLast);
   const en = await terjemahMedan(
     {
       story: r.story,
@@ -53,6 +59,7 @@ export async function terjemahLegasi(r: {
       event: r.event,
     },
     lindung,
+    jantina,
   );
   return Object.keys(en).length > 0 ? { en } : null;
 }

@@ -1,5 +1,6 @@
 import "server-only";
 import { dariKamus, medanPendek, terlaluPendek } from "@/lib/kamus";
+import { seragamkanKataGanti, type Jantina } from "@/lib/jantina";
 
 // ============================================================================
 // TERJEMAHAN AUTOMATIK — Bahasa Melayu ke Bahasa Inggeris.
@@ -295,14 +296,24 @@ export async function terjemah(
   return gabung || null;
 }
 
-/** Terjemah beberapa medan sekaligus; medan yang gagal ditinggalkan keluar. */
+/**
+ * Terjemah beberapa medan sekaligus; medan yang gagal ditinggalkan keluar.
+ *
+ * `jantina` hanya untuk teks subjek-tunggal (biografi legasi). Bahasa Melayu
+ * tiada kata ganti berjantina, jadi perkhidmatan MESTI meneka dan tekaannya
+ * tidak menentu — kadang bertukar di tengah perenggan yang sama. Bila
+ * pemanggil tahu jantina subjek daripada namanya, tekaan itu dibetulkan
+ * SEBELUM pengesahan, jadi apa yang disahkan ialah apa yang disimpan.
+ */
 export async function terjemahMedan(
   medan: Record<string, string | null | undefined>,
-  lindungTambahan: string[] = []
+  lindungTambahan: string[] = [],
+  jantina: Jantina | null = null
 ): Promise<Record<string, string>> {
   const hasil: Record<string, string> = {};
   for (const [kunci, nilai] of Object.entries(medan)) {
-    const en = await terjemah(nilai, lindungTambahan);
+    const mentah = await terjemah(nilai, lindungTambahan);
+    const en = mentah ? seragamkanKataGanti(mentah, jantina) : mentah;
     if (!en) continue;
     // Tapisan terakhir. Medan yang tidak lulus TIDAK disimpan, jadi halaman
     // jatuh balik ke bahasa Melayu dan tiada siapa perlu menyemaknya dengan

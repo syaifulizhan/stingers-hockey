@@ -115,6 +115,72 @@ function dariKamus(teks) {
 
 const terlaluPendek = (t) => t.trim().split(/\s+/).length <= 3;
 
+// ── Jantina dari nama ───────────────────────────────────────────────────
+// SALINAN src/lib/jantina.ts. Fail .mjs tidak boleh mengimport TS tanpa
+// pemuat, jadi logik ini digandakan seperti KAMUS di atas. Sumber kebenaran
+// ialah src/lib/jantina.ts — kemas kini kedua-duanya.
+//
+// Melayu tiada kata ganti berjantina; perkhidmatan terjemahan MESTI meneka,
+// dan ia meneka teruk (diperhati: "he ... his" sepanjang cerita seorang budak
+// perempuan, bertukar ke "she" di tengah petikan). "binti"/"bin" ialah penanda
+// nasab yang sudah tertulis dalam nama itu — fakta, bukan tekaan.
+function jantinaDariNama(...nama) {
+  const teks = nama.filter(Boolean).join(" ").toLowerCase();
+  if (!teks.trim()) return null;
+  if (/\b(binti|bte|bt)\b/.test(teks)) return "perempuan";
+  if (/\ba\/p\b|\banak perempuan\b/.test(teks)) return "perempuan";
+  if (/\bbin\b/.test(teks)) return "lelaki";
+  if (/\ba\/l\b|\banak lelaki\b/.test(teks)) return "lelaki";
+  return null; // tiada penanda → JANGAN sentuh apa-apa
+}
+
+const BUKAN_KATA_NAMA = new Set(["and","or","but","so","then","than","as","that","which","who","when","while","after","before","since","until","if","because","to","in","on","at","for","with","from","by","into","onto","again","too","also","yet","still","now","here","there","today","yesterday","tomorrow","back","out","up","down","off","is","was","are","were","has","have","had","will","would"]);
+const KATA_KERJA_OBJEK = new Set(["make","makes","made","let","lets","help","helps","helped","see","sees","saw","watch","watches","watched","hear","hears","heard","get","gets","got","have","has","had","want","wants","wanted","give","gives","gave","tell","tells","told"]);
+
+const KATA_KERJA_DASAR = new Set(["stand","win","play","score","grow","shine","succeed","go","come","run","feel","look","become","continue","keep","improve","develop","do","take","learn","train","lead","reach","rise","believe","try"]);
+
+function milikBukanObjek(sebelum, selepas) {
+  const m = selepas.match(/^\s+([A-Za-z']+)/);
+  if (!m) return false;
+  const seterusnya = m[1].toLowerCase();
+  if (BUKAN_KATA_NAMA.has(seterusnya)) return false;
+  // KEDUA-DUA hujung mesti sepadan; jika tidak "helped her team" -> "hers team".
+  const sblm = sebelum.match(/([A-Za-z']+)\s+$/);
+  if (sblm && KATA_KERJA_OBJEK.has(sblm[1].toLowerCase()) && KATA_KERJA_DASAR.has(seterusnya)) return false;
+  return true;
+}
+
+function ikutHurufBesar(asal, ganti) {
+  if (asal === asal.toUpperCase() && asal.length > 1) return ganti.toUpperCase();
+  if (asal[0] === asal[0].toUpperCase()) return ganti[0].toUpperCase() + ganti.slice(1);
+  return ganti;
+}
+
+function seragamkanKataGanti(teks, jantina) {
+  if (!teks || !jantina) return teks;
+  return teks.replace(/\b(he|him|his|himself|she|her|hers|herself)\b/gi, (padan, _g, indeks) => {
+    const rendah = padan.toLowerCase();
+    const selepas = teks.slice(indeks + padan.length);
+    const sebelum = teks.slice(0, indeks);
+    if (jantina === "perempuan") {
+      switch (rendah) {
+        case "he": return ikutHurufBesar(padan, "she");
+        case "him": return ikutHurufBesar(padan, "her");
+        case "his": return ikutHurufBesar(padan, milikBukanObjek(sebelum, selepas) ? "her" : "hers");
+        case "himself": return ikutHurufBesar(padan, "herself");
+        default: return padan;
+      }
+    }
+    switch (rendah) {
+      case "she": return ikutHurufBesar(padan, "he");
+      case "her": return ikutHurufBesar(padan, milikBukanObjek(sebelum, selepas) ? "his" : "him");
+      case "hers": return ikutHurufBesar(padan, "his");
+      case "herself": return ikutHurufBesar(padan, "himself");
+      default: return padan;
+    }
+  });
+}
+
 // Kamus hanya untuk medan berformula pendek. Tanpa pengawal ini ia memecah
 // badan artikel pada sengkang dan memulangkan teks Melayu sebagai terjemahan.
 const medanPendek = (t) => {
@@ -230,10 +296,13 @@ function sahkan(asal, hasil) {
   return { lulus: true };
 }
 
-async function medan(obj, lindung = []) {
+async function medan(obj, lindung = [], jantina = null) {
   const out = {};
   for (const [k, v] of Object.entries(obj)) {
-    const en = await terjemah(v, lindung);
+    const mentah = await terjemah(v, lindung);
+    // Betulkan tekaan jantina SEBELUM sahkan(), supaya apa yang disahkan
+    // ialah apa yang disimpan.
+    const en = mentah ? seragamkanKataGanti(mentah, jantina) : mentah;
     if (!en) continue;
     const semak = sahkan(v ?? "", en);
     if (!semak.lulus) { console.warn(`     ✗ medan ${k} ditolak: ${semak.sebab}`); continue; }
@@ -306,7 +375,10 @@ for (const r of legasi ?? []) {
   const pilihan = MEDAN
     ? Object.fromEntries(Object.entries(semua).filter(([k]) => MEDAN.includes(k)))
     : semua;
-  const en = await medan(pilihan, lindung);
+  // quoteBy SENGAJA tidak dimasukkan — itu nama jurulatih, bukan subjek rekod.
+  const jantina = jantinaDariNama(r.full_name, r.name_first, r.name_last);
+  if (jantina) console.log(`     jantina dari nama: ${jantina}`);
+  const en = await medan(pilihan, lindung, jantina);
   if (!Object.keys(en).length) { gagalL++; console.warn(`  ⚠ gagal: ${r.slug}`); continue; }
   const sediaL = (r.translations || {}).en || {};
   if (KERING) {
