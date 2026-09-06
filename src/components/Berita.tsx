@@ -15,7 +15,11 @@ export default async function Berita() {
   const supabase = createPublicSupabase();
   const { data } = await supabase
     .from("news")
-    .select("id, title, body, image_url, published_at, slug")
+    // `translations` MESTI diminta di sini. Komponen paparan sudah pun tahu
+    // cara menggunakannya, tetapi lajur yang tidak diminta tidak pernah
+    // sampai — kad kekal Melayu walaupun pil EN ditekan. Ini kali ketiga
+    // kelas yang sama muncul; lihat memori "audit seluruh codebase".
+    .select("id, title, body, image_url, published_at, slug, translations")
     .order("published_at", { ascending: false })
     .limit(9); // jalur bergerak — beri lebih banyak kad untuk digelung
 
