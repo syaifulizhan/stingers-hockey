@@ -32,157 +32,170 @@ export default function Navigation() {
     };
   }, [open]);
 
+  // Laci mudah alih dirender sebagai ADIK kepada <header>, bukan anaknya.
+  //
+  // Pengepala mendapat backdrop-blur sebaik halaman ditatal, dan
+  // backdrop-filter mencipta CONTAINING BLOCK untuk keturunan position:fixed.
+  // Semasa laci berada DI DALAM <header>, `inset-y-0`nya diukur terhadap kotak
+  // pengepala setinggi 81px dan bukan viewport: laci runtuh kepada 80px dan
+  // hanya baris pertama (pil BM/EN dan butang tutup) kelihatan.
+  //
+  // Di atas halaman tiada blur, jadi ia berfungsi di situ — itulah sebabnya
+  // ia hanya rosak SELEPAS menatal, sama pada telefon dan desktop.
   return (
-    <header
-      style={{ paddingTop: "env(safe-area-inset-top)" }}
-      className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
-        scrolled
-          ? "border-b border-line bg-ink/80 backdrop-blur-md"
-          : "border-b border-transparent bg-transparent"
-      }`}
-    >
-      <nav
-        aria-label="Navigasi utama"
-        className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6"
+    <>
+      <header
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+        className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+          scrolled
+            ? "border-b border-line bg-ink/80 backdrop-blur-md"
+            : "border-b border-transparent bg-transparent"
+        }`}
       >
-        {/* Logo */}
-        <Link href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
-          {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks bila tiada */}
-          <img
-            src="/images/logo.png"
-            alt="Logo Stingers Hockey"
-            className="h-9 w-9 object-contain"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-          <Wordmark className="text-xl" />
-        </Link>
-
-        {/* Pautan desktop */}
-        <ul className="hidden items-center gap-8 md:flex">
-          {navLinks.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="font-sans text-sm font-medium uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
-              >
-                {lang === "en" ? link.labelEn : link.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-
-        {/* Akaun desktop — ikut status login */}
-        <div className="hidden items-center gap-4 md:flex">
-          <LangToggle />
-          {isLoaded && isSignedIn ? (
-            <>
-              <Link
-                href="/portal/dashboard"
-                className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Portal
-              </Link>
-              <UserButton />
-            </>
-          ) : (
-            <Link
-              href="/portal"
-              className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
-            >
-              <LogIn className="h-4 w-4" />
-              {t("Log Masuk", "Log In")}
-            </Link>
-          )}
-        </div>
-
-        {/* Hamburger mobile */}
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Buka menu"
-          className="text-paper md:hidden"
+        <nav
+          aria-label="Navigasi utama"
+          className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6"
         >
-          <Menu className="h-7 w-7" />
-        </button>
-      </nav>
-
-      {/* Menu mobile (slide dari kanan) */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[60] bg-black/60 md:hidden"
+          {/* Logo */}
+          <Link href="/#top" className="flex items-center gap-3" aria-label="Stingers Hockey — ke atas">
+            {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks bila tiada */}
+            <img
+              src="/images/logo.png"
+              alt="Logo Stingers Hockey"
+              className="h-9 w-9 object-contain"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
             />
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="fixed inset-y-0 right-0 z-[61] flex w-72 flex-col gap-2 overflow-y-auto border-l border-line bg-bg-soft p-6 pt-safe-6 pb-safe-6 md:hidden"
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <LangToggle />
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  aria-label={t("Tutup menu", "Close menu")}
-                  className="text-paper"
-                >
-                  <X className="h-7 w-7" />
-                </button>
-              </div>
-              {navLinks.map((link) => (
+            <Wordmark className="text-xl" />
+          </Link>
+
+          {/* Pautan desktop */}
+          <ul className="hidden items-center gap-8 md:flex">
+            {navLinks.map((link) => (
+              <li key={link.href}>
                 <Link
-                  key={link.href}
                   href={link.href}
-                  onClick={() => setOpen(false)}
-                  className="display py-2 text-2xl text-paper transition-colors hover:text-amber"
+                  className="font-sans text-sm font-medium uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
                 >
                   {lang === "en" ? link.labelEn : link.label}
                 </Link>
-              ))}
-              {isLoaded && isSignedIn ? (
-                <>
-                  <Link
-                    href="/portal/dashboard"
-                    onClick={() => setOpen(false)}
-                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
-                  >
-                    <LayoutDashboard className="h-4 w-4" />
-                    {t("Portal Saya", "My Portal")}
-                  </Link>
-                  <SignOutButton redirectUrl="/">
-                    <button
-                      type="button"
-                      onClick={() => setOpen(false)}
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      {t("Log Keluar", "Log Out")}
-                    </button>
-                  </SignOutButton>
-                </>
-              ) : (
+              </li>
+            ))}
+          </ul>
+
+          {/* Akaun desktop — ikut status login */}
+          <div className="hidden items-center gap-4 md:flex">
+            <LangToggle />
+            {isLoaded && isSignedIn ? (
+              <>
                 <Link
-                  href="/portal"
-                  onClick={() => setOpen(false)}
-                  className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+                  href="/portal/dashboard"
+                  className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
                 >
-                  <LogIn className="h-4 w-4" />
-                  {t("Log Masuk", "Log In")}
+                  <LayoutDashboard className="h-4 w-4" />
+                  Portal
                 </Link>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </header>
+                <UserButton />
+              </>
+            ) : (
+              <Link
+                href="/portal"
+                className="inline-flex items-center gap-1.5 font-sans text-sm font-semibold uppercase tracking-wide text-paper/80 transition-colors hover:text-amber"
+              >
+                <LogIn className="h-4 w-4" />
+                {t("Log Masuk", "Log In")}
+              </Link>
+            )}
+          </div>
+
+          {/* Hamburger mobile */}
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label="Buka menu"
+            className="text-paper md:hidden"
+          >
+            <Menu className="h-7 w-7" />
+          </button>
+        </nav>
+
+        {/* Menu mobile (slide dari kanan) */}
+      </header>
+
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setOpen(false)}
+                className="fixed inset-0 z-[60] bg-black/60 md:hidden"
+              />
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", stiffness: 320, damping: 34 }}
+                className="fixed inset-y-0 right-0 z-[61] flex w-72 flex-col gap-2 overflow-y-auto border-l border-line bg-bg-soft p-6 pt-safe-6 pb-safe-6 md:hidden"
+              >
+                <div className="mb-6 flex items-center justify-between">
+                  <LangToggle />
+                  <button
+                    type="button"
+                    onClick={() => setOpen(false)}
+                    aria-label={t("Tutup menu", "Close menu")}
+                    className="text-paper"
+                  >
+                    <X className="h-7 w-7" />
+                  </button>
+                </div>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="display py-2 text-2xl text-paper transition-colors hover:text-amber"
+                  >
+                    {lang === "en" ? link.labelEn : link.label}
+                  </Link>
+                ))}
+                {isLoaded && isSignedIn ? (
+                  <>
+                    <Link
+                      href="/portal/dashboard"
+                      onClick={() => setOpen(false)}
+                      className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-amber px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-ink"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      {t("Portal Saya", "My Portal")}
+                    </Link>
+                    <SignOutButton redirectUrl="/">
+                      <button
+                        type="button"
+                        onClick={() => setOpen(false)}
+                        className="inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        {t("Log Keluar", "Log Out")}
+                      </button>
+                    </SignOutButton>
+                  </>
+                ) : (
+                  <Link
+                    href="/portal"
+                    onClick={() => setOpen(false)}
+                    className="mt-4 inline-flex items-center justify-center gap-2 rounded-full border border-line px-5 py-3 text-center font-sans text-sm font-semibold uppercase tracking-wider text-paper transition-colors hover:border-amber hover:text-amber"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    {t("Log Masuk", "Log In")}
+                  </Link>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+    </>
   );
 }
