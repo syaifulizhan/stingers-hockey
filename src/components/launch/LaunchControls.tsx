@@ -5,7 +5,7 @@ import { Printer, ArrowLeft } from "lucide-react";
 
 export default function LaunchControls() {
   return (
-    <div className="no-print sticky top-0 top-safe z-50 flex items-center justify-between border-b border-line bg-ink/95 px-6 py-3 backdrop-blur">
+    <div className="no-print sticky top-0 top-safe z-20 flex items-center justify-between border-b border-line bg-ink/95 px-6 py-3 backdrop-blur">
       <Link
         href="/"
         className="inline-flex items-center gap-1.5 font-sans text-sm text-muted transition-colors hover:text-amber"

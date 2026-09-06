@@ -57,6 +57,27 @@ body::before {
 }
 
 @layer utilities {
+  /* ── TANGGA Z-INDEX ────────────────────────────────────────────────────
+     Satu tangga untuk seluruh aplikasi. Nilai yang SERI adalah punca
+     pepijat, bukan kemalasan: apabila dua elemen berkongsi z-index, susunan
+     DOM yang menentukan — dan `Navigation` dirender di dalam {children}
+     manakala `InstallPrompt` dirender SELEPASNYA dalam layout, jadi pada
+     z-50 yang sama gesaan itu menang dan menutupi nav.
+
+     Sebelum menambah elemen bertindih, ambil satu anak tangga di sini.
+     JANGAN guna nombor yang sudah dipakai oleh lapisan lain.
+
+       10  kandungan halaman (Hero, LogoStory)
+       20  melekat dalam halaman (CoachTabs, LaunchControls, pita pratonton)
+       30  gesaan melayang (pil InstallPrompt)
+       40  latar gelap di bawah lapisan atas
+       50  chrome laman — pengepala Navigation
+       60  laci menu mudah alih + latarnya (mesti atasi pengepala)
+       70  dropdown & sheet (ShareButton, NotificationBell, MemberRow,
+           helaian iOS InstallPrompt) — dilabuhkan pada chrome, jadi di atasnya
+       80  tarik-untuk-segarkan
+       90  splash
+     ──────────────────────────────────────────────────────────────────── */
   /* ── Kawasan selamat (notch & Dynamic Island) ──────────────────────────
      Laman ini menetapkan viewportFit: "cover" dan dipasang sebagai PWA
      standalone, jadi kandungan web memanjang KE BAWAH Dynamic Island. Itu
