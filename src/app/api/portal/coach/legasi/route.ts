@@ -77,15 +77,31 @@ type Payload = Record<string, unknown>;
 
 function toRow(d: Partial<z.infer<typeof asasSchema>>): Payload {
   const row: Payload = {};
+
+  // Rentetan kosong menjadi null: itulah cara admin MENGOSONGKAN medan
+  // pilihan seperti petikan atau gambar.
   const set = (k: string, v: unknown) => {
     if (v !== undefined) row[k] = v === "" ? null : v;
+  };
+
+  // TETAPI name_first dan name_last ialah `text not null default ''` dalam
+  // skema. Menghantar null ke sana melanggar kekangan dan seluruh sisipan
+  // gagal dengan 23502 — yang dilaporkan kepada admin hanya sebagai "Gagal
+  // menyimpan rekod."
+  //
+  // Pepijat ini terpendam sejak awal: laluan POST wujud tetapi tiada apa
+  // dalam UI memanggilnya, jadi tiada siapa pernah mencipta rekod dengan
+  // kedua-dua medan itu kosong. Butang Tambah Rekod ialah pemanggil pertama,
+  // dan borangnya memang tidak mengumpul nama dipecah dua baris.
+  const setKekal = (k: string, v: unknown) => {
+    if (v !== undefined) row[k] = v ?? "";
   };
   set("slug", d.slug);
   set("record_no", d.recordNo);
   set("cohort", d.cohort);
   set("full_name", d.fullName);
-  set("name_first", d.nameFirst);
-  set("name_last", d.nameLast);
+  setKekal("name_first", d.nameFirst);
+  setKekal("name_last", d.nameLast);
   set("result", d.result);
   set("category", d.category);
   set("event", d.event);
@@ -142,12 +158,16 @@ export async function POST(request: Request) {
 
   if (error) {
     const dup = error.code === "23505";
+    // Ralat sebenar dilog. Tanpa ini, kegagalan bukan-pendua hanya kelihatan
+    // sebagai "Gagal menyimpan rekod." pada skrin dan tiada apa di mana-mana
+    // yang menyebut SEBABNYA — puncanya perlu diburu dengan tangan.
+    if (!dup) console.error("[coach/legasi] cipta gagal:", error.code, error.message);
     return NextResponse.json(
       {
         ok: false,
         error: dup
           ? "Slug atau nombor rekod itu sudah digunakan. Kedua-duanya mesti unik dan kekal."
-          : "Gagal menyimpan rekod.",
+          : `Gagal menyimpan rekod. (${error.code ?? "tiada kod"})`,
       },
       { status: dup ? 409 : 500 },
     );
@@ -244,10 +264,13 @@ export async function PATCH(request: Request) {
 
   if (error) {
     const dup = error.code === "23505";
+    if (!dup) console.error("[coach/legasi] kemas kini gagal:", error.code, error.message);
     return NextResponse.json(
       {
         ok: false,
-        error: dup ? "Slug atau nombor rekod itu sudah digunakan." : "Gagal mengemas kini rekod.",
+        error: dup
+          ? "Slug atau nombor rekod itu sudah digunakan."
+          : `Gagal mengemas kini rekod. (${error.code ?? "tiada kod"})`,
       },
       { status: dup ? 409 : 500 },
     );
