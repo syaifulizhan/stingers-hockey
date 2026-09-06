@@ -27,6 +27,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     try {
       const disimpan = localStorage.getItem("lang");
       if (disimpan === "en" || disimpan === "ms") {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLang(disimpan);
         return;
       }
@@ -38,6 +39,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     // Melayu mendapat Bahasa Inggeris tanpa perlu mencari pil dahulu.
     // SENGAJA tidak disimpan — hanya pilihan manusia yang disimpan, jadi
     // tekaan ini kekal boleh diperbaiki dan tidak pernah terkunci.
+    //
+    // setState di dalam effect memang menyebabkan satu render tambahan, dan
+    // di sini ia tidak dapat dielakkan: localStorage dan zon waktu hanya
+    // wujud di pelayar, jadi render pertama MESTI sepadan dengan HTML
+    // pelayan ("ms") sebelum boleh diperbetulkan. Membacanya semasa render
+    // akan memecahkan hydration.
     setLang(kesanBahasa());
   }, []);
 
