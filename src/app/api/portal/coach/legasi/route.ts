@@ -93,9 +93,14 @@ function toRow(d: Partial<z.infer<typeof asasSchema>>): Payload {
   // dalam UI memanggilnya, jadi tiada siapa pernah mencipta rekod dengan
   // kedua-dua medan itu kosong. Butang Tambah Rekod ialah pemanggil pertama,
   // dan borangnya memang tidak mengumpul nama dipecah dua baris.
+  // Guna setKekal untuk SETIAP lajur `not null` pada legacy_records. Setakat
+  // ini: name_first, name_last. Menambah lajur not-null baharu ke skema
+  // bermakna menambahnya ke sini juga — `set` biasa akan menghantar null dan
+  // seluruh sisipan gagal dengan 23502.
   const setKekal = (k: string, v: unknown) => {
     if (v !== undefined) row[k] = v ?? "";
   };
+
   set("slug", d.slug);
   set("record_no", d.recordNo);
   set("cohort", d.cohort);
