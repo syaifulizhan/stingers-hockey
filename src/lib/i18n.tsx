@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { kesanBahasa } from "@/lib/kesan-bahasa";
 
 export type Lang = "ms" | "en";
 
@@ -17,13 +18,27 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>("ms");
 
   useEffect(() => {
-    // Baca pilihan tersimpan selepas mount (elak hydration mismatch).
-    const apply = () => {
-      try {
-        if (localStorage.getItem("lang") === "en") setLang("en");
-      } catch {}
-    };
-    apply();
+    // Dibaca selepas mount, bukan semasa render, supaya HTML pelayan dan
+    // pelayaran pertama pelayar sepadan.
+    //
+    // Pilihan tersimpan MENGATASI pengesanan. Sebaik seseorang menyentuh pil
+    // itu, kita tidak pernah meneka untuk mereka lagi — walaupun mereka
+    // melancong dan zon waktunya berubah.
+    try {
+      const disimpan = localStorage.getItem("lang");
+      if (disimpan === "en" || disimpan === "ms") {
+        setLang(disimpan);
+        return;
+      }
+    } catch {
+      // Storan disekat; teruskan ke pengesanan.
+    }
+
+    // Lawatan pertama: teka dari peranti. Pelawat luar rantau yang bertutur
+    // Melayu mendapat Bahasa Inggeris tanpa perlu mencari pil dahulu.
+    // SENGAJA tidak disimpan — hanya pilihan manusia yang disimpan, jadi
+    // tekaan ini kekal boleh diperbaiki dan tidak pernah terkunci.
+    setLang(kesanBahasa());
   }, []);
 
   const toggle = () =>
