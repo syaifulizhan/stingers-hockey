@@ -45,12 +45,25 @@ export const ALL_MATCH_KEYS = [
 ].map((m) => m.key);
 
 // Keputusan perlawanan dari skor.
+//
+// Kedua-dua label dipulangkan, bukan satu yang dipilih di sini. Fungsi ini
+// dipanggil dari komponen pelayan (LiveBanner) DAN pelayar, dan bahasa hanya
+// diketahui di pelayar — jadi ia tidak boleh membuat pilihan itu. Pemanggil
+// yang tahu bahasa memilih melalui `labelKeputusan`.
 export function matchResult(
   our?: number | null,
   opp?: number | null
-): { label: string; tone: "win" | "loss" | "draw" } | null {
+): { label: string; labelEn: string; tone: "win" | "loss" | "draw" } | null {
   if (our == null || opp == null) return null;
-  if (our > opp) return { label: "Menang", tone: "win" };
-  if (our < opp) return { label: "Kalah", tone: "loss" };
-  return { label: "Seri", tone: "draw" };
+  if (our > opp) return { label: "Menang", labelEn: "Win", tone: "win" };
+  if (our < opp) return { label: "Kalah", labelEn: "Loss", tone: "loss" };
+  return { label: "Seri", labelEn: "Draw", tone: "draw" };
+}
+
+/** Label keputusan mengikut bahasa paparan semasa. */
+export function labelKeputusan(
+  r: { label: string; labelEn: string },
+  lang: string
+): string {
+  return lang === "en" ? r.labelEn : r.label;
 }

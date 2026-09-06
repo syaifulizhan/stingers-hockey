@@ -42,12 +42,15 @@ type Product = {
 
 const MATERIAL = ["Biasa", "Lycra"];
 
+// Label pil carta saiz. Kedua-dua bahasa disimpan bersama kerana pemalar ini
+// hidup di luar komponen, di mana t() tidak wujud — pemilihan berlaku semasa
+// render dalam SizeChartViewer.
 const JERSI_CHARTS = [
-  { key: "lengan_pendek", label: "Lengan Pendek" },
-  { key: "lengan_panjang", label: "Lengan Panjang" },
-  { key: "muslimah", label: "Muslimah" },
+  { key: "lengan_pendek", label: "Lengan Pendek", labelEn: "Short Sleeve" },
+  { key: "lengan_panjang", label: "Lengan Panjang", labelEn: "Long Sleeve" },
+  { key: "muslimah", label: "Muslimah", labelEn: "Muslimah" },
 ];
-const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz" }];
+const HUSTLE_CHARTS = [{ key: "standard", label: "Carta Saiz", labelEn: "Size Chart" }];
 type Variant = {
   id: string;
   label: string;
@@ -135,9 +138,11 @@ function SizeChartViewer({
   keys,
 }: {
   charts?: Record<string, string> | null;
-  keys: { key: string; label: string }[];
+  keys: { key: string; label: string; labelEn: string }[];
 }) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
+  const namaCarta = (k: { label: string; labelEn: string }) =>
+    lang === "en" ? k.labelEn : k.label;
   const [open, setOpen] = useState(false);
   const [sel, setSel] = useState(0);
   const avail = keys.filter((k) => charts?.[k.key]);
@@ -165,14 +170,14 @@ function SizeChartViewer({
                     i === sel ? "bg-amber text-ink" : "border border-line text-paper"
                   }`}
                 >
-                  {k.label}
+                  {namaCarta(k)}
                 </button>
               ))}
             </div>
           )}
           <a href={charts![cur.key]} target="_blank" rel="noopener noreferrer">
             {/* eslint-disable-next-line @next/next/no-img-element -- carta dari Storage */}
-            <img src={charts![cur.key]} alt={cur.label} className="max-h-[70vh] w-full rounded-md bg-paper object-contain" />
+            <img src={charts![cur.key]} alt={namaCarta(cur)} className="max-h-[70vh] w-full rounded-md bg-paper object-contain" />
           </a>
         </div>
       )}
@@ -722,7 +727,7 @@ function Checkout({
   settings: Settings;
   supabase: ReturnType<typeof createPublicSupabase>;
 }) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -836,7 +841,7 @@ function Checkout({
               <p className="font-sans text-xs text-muted">{ringgit(i.unit)} {t("seunit", "each")}</p>
             </div>
             <span className="shrink-0 font-sans text-sm font-semibold text-amber">{ringgit(i.unit * i.qty)}</span>
-            <button type="button" onClick={() => removeItem(i.key)} aria-label="Buang" className="shrink-0 text-muted hover:text-amber">
+            <button type="button" onClick={() => removeItem(i.key)} aria-label={t("Buang", "Remove")} className="shrink-0 text-muted hover:text-amber">
               <Trash2 className="h-4 w-4" />
             </button>
           </li>
@@ -897,7 +902,7 @@ function Checkout({
           <div className="mt-1.5 flex flex-col gap-0.5">
             {validDiscountRules(rules).map((r) => (
               <p key={r.id} className="font-sans text-xs text-muted">
-                {t("Diskaun", "Save")} {Number(r.percent)}% — {describeRequirements(r.requirements)}
+                {t("Diskaun", "Save")} {Number(r.percent)}% — {describeRequirements(r.requirements, lang)}
               </p>
             ))}
           </div>
@@ -938,7 +943,7 @@ function Checkout({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
           {settings.duitnow_qr_url ? (
             // eslint-disable-next-line @next/next/no-img-element -- QR dari Storage
-            <img src={settings.duitnow_qr_url} alt="QR DuitNow" className="h-44 w-44 shrink-0 rounded-lg border border-line bg-paper object-contain p-2" />
+            <img src={settings.duitnow_qr_url} alt={t("Kod QR DuitNow", "DuitNow QR code")} className="h-44 w-44 shrink-0 rounded-lg border border-line bg-paper object-contain p-2" />
           ) : (
             <div className="flex h-44 w-44 shrink-0 items-center justify-center rounded-lg border border-dashed border-line font-sans text-xs text-muted">
               {t("QR belum disediakan", "QR not set yet")}
@@ -957,7 +962,7 @@ function Checkout({
           <div className="relative inline-block">
             {/* eslint-disable-next-line @next/next/no-img-element -- pratonton */}
             <img src={preview} alt="" className="max-h-56 rounded-lg border border-line" />
-            <button type="button" onClick={() => { setFile(null); setPreview(null); }} aria-label="Buang" className="absolute right-2 top-2 rounded-full bg-ink/80 p-1.5 text-paper hover:bg-ink">
+            <button type="button" onClick={() => { setFile(null); setPreview(null); }} aria-label={t("Buang", "Remove")} className="absolute right-2 top-2 rounded-full bg-ink/80 p-1.5 text-paper hover:bg-ink">
               <X className="h-4 w-4" />
             </button>
           </div>

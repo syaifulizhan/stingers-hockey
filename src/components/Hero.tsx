@@ -132,7 +132,7 @@ export default function Hero() {
       {/* Penunjuk scroll */}
       <motion.a
         href="#tentang"
-        aria-label="Scroll ke bawah"
+        aria-label={t("Scroll ke bawah", "Scroll down")}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.6 }}

@@ -84,15 +84,15 @@ export default function About() {
           <div className="mt-14 grid gap-4 sm:grid-cols-2">
             <SmartImage
               src="/images/about-team1.jpg"
-              alt="Skuad Stingers Hockey"
-              label="Skuad Stingers"
+              alt={t("Skuad Stingers Hockey", "The Stingers Hockey squad")}
+              label={t("Skuad Stingers", "Stingers Squad")}
               className="aspect-[4/3] w-full rounded-2xl border border-line"
               sizes="(max-width: 640px) 100vw, 50vw"
             />
             <SmartImage
               src="/images/about-team2.jpg"
-              alt="Pasukan Stingers Hockey"
-              label="Pasukan Stingers"
+              alt={t("Pasukan Stingers Hockey", "The Stingers Hockey team")}
+              label={t("Pasukan Stingers", "Stingers Team")}
               className="aspect-[4/3] w-full rounded-2xl border border-line"
               sizes="(max-width: 640px) 100vw, 50vw"
             />

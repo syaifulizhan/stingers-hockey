@@ -1,6 +1,6 @@
 "use client";
 
-import { matchResult } from "@/lib/match";
+import { labelKeputusan, matchResult } from "@/lib/match";
 import { useLang } from "@/lib/i18n";
 import { istilah } from "@/lib/kamus";
 
@@ -53,6 +53,7 @@ function record(matches: LiveMatch[]) {
 }
 
 function ResultBadge({ our, opp }: { our: number | null; opp: number | null }) {
+  const { lang } = useLang();
   const r = matchResult(our, opp);
   if (!r) return null;
   return (
@@ -65,7 +66,7 @@ function ResultBadge({ our, opp }: { our: number | null; opp: number | null }) {
             : "bg-red-500/20 text-red-400"
       }`}
     >
-      {r.label}
+      {labelKeputusan(r, lang)}
     </span>
   );
 }
@@ -116,14 +117,17 @@ export default function SeasonResultView({
   achievements?: LiveAchievement[];
   showLatest?: boolean;
 }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
   // Kategori dan kejohanan diterjemah dari kamus tempatan — serta-merta dan
   // tanpa kuota. Lawan dan tempat SENGAJA tidak disentuh: "SK Seri Selangor"
   // ialah nama sekolah dan "SSNS, Seksyen 11, Shah Alam" ialah alamat.
   // Menterjemahkannya bukan membantu sesiapa, ia merosakkan maklumat.
-  const bm = (t: string | null) => istilah(t, lang);
+  const bm = (teks: string | null) => istilah(teks, lang);
 
-  const nameById = new Map(players.map((p) => [p.clerk_user_id, p.name || "Ahli"]));
+  // Nama gantian bila baris pemain tiada nama. Ia teks antara muka, bukan
+  // data — jadi ia mengikut bahasa paparan seperti label lain.
+  const tanpaNama = t("Ahli", "Member");
+  const nameById = new Map(players.map((p) => [p.clerk_user_id, p.name || tanpaNama]));
   const ids = new Set(matches.map((m) => m.id));
   const rec = record(matches);
 
@@ -138,7 +142,7 @@ export default function SeasonResultView({
   }
   const top = (key: string, n = 3) =>
     Object.entries(tot)
-      .map(([uid, m]) => ({ name: nameById.get(uid) || "Ahli", value: m[key] ?? 0 }))
+      .map(([uid, m]) => ({ name: nameById.get(uid) || tanpaNama, value: m[key] ?? 0 }))
       .filter((x) => x.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, n);
@@ -146,7 +150,7 @@ export default function SeasonResultView({
   const contributors = (matchId: string, key: string) =>
     stats
       .filter((s) => s.match_id === matchId && (s.stats[key] ?? 0) > 0)
-      .map((s) => `${nameById.get(s.user_id) || "Ahli"} (${s.stats[key]})`);
+      .map((s) => `${nameById.get(s.user_id) || tanpaNama} (${s.stats[key]})`);
 
   const latest = sorted[0];
 
@@ -155,7 +159,7 @@ export default function SeasonResultView({
       {showLatest && latest && (
         <div className="mt-10 rounded-3xl border border-amber/40 bg-amber/5 p-6 sm:p-8">
           <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
-            Perlawanan Terkini
+            {t("Perlawanan Terkini", "Latest Match")}
           </p>
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
             <span className="display text-2xl text-paper sm:text-3xl">Stingers</span>
@@ -183,14 +187,14 @@ export default function SeasonResultView({
       {achievements.length > 0 && (
         <div className="mt-6 rounded-2xl border border-amber/40 bg-amber/5 p-5">
           <p className="font-sans text-xs font-semibold uppercase tracking-wider text-amber">
-            🏆 Pencapaian
+            🏆 {t("Pencapaian", "Achievements")}
           </p>
           <div className="mt-2 flex flex-col gap-1">
             {achievements.map((a, i) => (
               <p key={i} className="font-sans text-sm text-paper">
-                <span className="font-semibold">{a.award}</span>
-                {a.player_id ? ` — ${nameById.get(a.player_id) || "Ahli"}` : ""}
-                {a.event ? <span className="text-muted"> · {a.event}</span> : null}
+                <span className="font-semibold">{bm(a.award)}</span>
+                {a.player_id ? ` — ${nameById.get(a.player_id) || tanpaNama}` : ""}
+                {a.event ? <span className="text-muted"> · {bm(a.event)}</span> : null}
               </p>
             ))}
           </div>
@@ -200,12 +204,12 @@ export default function SeasonResultView({
       {/* Rumusan */}
       <div className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-6">
         {[
-          { l: "Main", v: rec.played },
-          { l: "Menang", v: rec.win },
-          { l: "Seri", v: rec.draw },
-          { l: "Kalah", v: rec.loss },
-          { l: "Jaring", v: rec.gf },
-          { l: "Kemasukan", v: rec.ga },
+          { l: t("Main", "Played"), v: rec.played },
+          { l: t("Menang", "Won"), v: rec.win },
+          { l: t("Seri", "Drawn"), v: rec.draw },
+          { l: t("Kalah", "Lost"), v: rec.loss },
+          { l: t("Jaring", "For"), v: rec.gf },
+          { l: t("Kemasukan", "Against"), v: rec.ga },
         ].map((x) => (
           <div key={x.l} className="rounded-xl border border-line bg-bg-soft/50 py-3 text-center">
             <div className="display text-2xl text-amber">{x.v}</div>
@@ -216,21 +220,35 @@ export default function SeasonResultView({
 
       {/* Peneraju */}
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <LeaderCard title="Penjaring Terbanyak" unit="gol" rows={top("goals")} />
-        <LeaderCard title="Assist Terbanyak" unit="assist" rows={top("assists")} />
-        <LeaderCard title="Save Terbanyak" unit="save" rows={top("save")} />
+        <LeaderCard
+          title={t("Penjaring Terbanyak", "Top Scorers")}
+          unit={t("gol", "goals")}
+          rows={top("goals")}
+        />
+        <LeaderCard
+          title={t("Assist Terbanyak", "Most Assists")}
+          unit={t("assist", "assists")}
+          rows={top("assists")}
+        />
+        <LeaderCard
+          title={t("Save Terbanyak", "Most Saves")}
+          unit={t("save", "saves")}
+          rows={top("save")}
+        />
       </div>
 
       {/* Senarai perlawanan */}
       <div className="mt-6 flex flex-col gap-2">
         {sorted.length === 0 && (
-          <p className="font-sans text-sm text-muted">Tiada perlawanan.</p>
+          <p className="font-sans text-sm text-muted">
+            {t("Tiada perlawanan.", "No matches yet.")}
+          </p>
         )}
         {sorted.map((m) => {
           const scorers = contributors(m.id, "goals");
           const lineup = stats
             .filter((s) => s.match_id === m.id && s.position)
-            .map((s) => `${nameById.get(s.user_id) || "Ahli"} (${s.position})`);
+            .map((s) => `${nameById.get(s.user_id) || tanpaNama} (${s.position})`);
           return (
             <div key={m.id} className="rounded-xl border border-line bg-bg-soft/50 p-4">
               <div className="flex items-center justify-between gap-3">

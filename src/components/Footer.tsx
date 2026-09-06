@@ -48,7 +48,7 @@ export default function Footer() {
               {/* eslint-disable-next-line @next/next/no-img-element -- logo statik kecil, fallback teks */}
               <img
                 src="/images/logo-white.png"
-                alt="Logo Stingers Hockey"
+                alt={t("Logo Stingers Hockey", "Stingers Hockey logo")}
                 className="h-10 w-10 object-contain"
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";

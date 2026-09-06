@@ -51,8 +51,11 @@ export default function LogoStory() {
         <Reveal className="flex justify-center">
           <SmartImage
             src="/images/kisah-logo.png"
-            alt="Logo Stingers Hockey berbanding kelulut Terminata sebenar"
-            label="Kisah Logo"
+            alt={t(
+              "Logo Stingers Hockey berbanding kelulut Terminata sebenar",
+              "The Stingers Hockey logo beside a real Terminata stingless bee"
+            )}
+            label={t("Kisah Logo", "Logo Story")}
             className="aspect-square w-full max-w-md rounded-2xl border border-line"
             sizes="(max-width: 1024px) 100vw, 40vw"
             fit="cover"

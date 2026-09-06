@@ -8,6 +8,8 @@ import SeasonResultView, {
 } from "@/components/live/SeasonResultView";
 import { matchResult } from "@/lib/match";
 import ShareButton from "@/components/ShareButton";
+import { useLang } from "@/lib/i18n";
+import { istilah } from "@/lib/kamus";
 
 type Season = { id: string; name: string; team: string };
 type Achievement = {
@@ -17,7 +19,14 @@ type Achievement = {
   player_id: string | null;
   event: string | null;
 };
-const teamLabel = (t?: string) => (t === "perempuan" ? "Perempuan" : "Lelaki");
+const teamLabel = (team: string | undefined, lang: string) =>
+  team === "perempuan"
+    ? lang === "en"
+      ? "Girls"
+      : "Perempuan"
+    : lang === "en"
+      ? "Boys"
+      : "Lelaki";
 
 export default function ResultsBoard({
   seasons,
@@ -32,6 +41,7 @@ export default function ResultsBoard({
   players: LivePlayer[];
   achievements: Achievement[];
 }) {
+  const { lang, t } = useLang();
   const [seasonId, setSeasonId] = useState(seasons[0]?.id ?? "");
 
   const seasonMatches = useMemo(
@@ -62,9 +72,11 @@ export default function ResultsBoard({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <span className="font-sans text-sm font-semibold uppercase tracking-[0.3em] text-amber">
-            Arkib
+            {t("Arkib", "Archive")}
           </span>
-          <h1 className="display mt-3 text-5xl leading-none text-paper sm:text-6xl">Keputusan</h1>
+          <h1 className="display mt-3 text-5xl leading-none text-paper sm:text-6xl">
+            {t("Keputusan", "Results")}
+          </h1>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {seasons.length > 0 && (
@@ -75,32 +87,37 @@ export default function ResultsBoard({
             >
               {seasons.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} — {teamLabel(s.team)}
+                  {istilah(s.name, lang)} — {teamLabel(s.team, lang)}
                 </option>
               ))}
             </select>
           )}
-          <ShareButton title="Keputusan — Stingers Hockey" />
+          <ShareButton title={t("Keputusan — Stingers Hockey", "Results — Stingers Hockey")} />
         </div>
       </div>
 
       {seasons.length === 0 ? (
         <div className="mt-12 rounded-2xl border border-line bg-bg-soft/50 p-8 text-center">
-          <p className="font-sans text-paper/90">Belum ada season yang ditutup.</p>
+          <p className="font-sans text-paper/90">
+            {t("Belum ada season yang ditutup.", "No season has been closed yet.")}
+          </p>
           <p className="mt-1 font-sans text-sm text-muted">
-            Lihat perlawanan semasa di halaman{" "}
+            {t("Lihat perlawanan semasa di halaman", "See current matches on the")}{" "}
             <a href="/live" className="text-amber hover:underline">
               Live
             </a>
-            .
+            {t(".", " page.")}
           </p>
         </div>
       ) : (
         <>
           <p className="mt-6 font-sans text-sm text-paper/90">
-            Rekod keseluruhan: {overall.played} perlawanan ·{" "}
-            <span className="text-amber">{overall.win} menang</span> · {overall.draw} seri ·{" "}
-            {overall.loss} kalah
+            {t("Rekod keseluruhan:", "Overall record:")} {overall.played}{" "}
+            {t("perlawanan", "matches")} ·{" "}
+            <span className="text-amber">
+              {overall.win} {t("menang", "won")}
+            </span>{" "}
+            · {overall.draw} {t("seri", "drawn")} · {overall.loss} {t("kalah", "lost")}
           </p>
           <SeasonResultView
             matches={seasonMatches}

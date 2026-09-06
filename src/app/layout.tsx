@@ -154,12 +154,20 @@ export default function RootLayout({
       >
         <body className="min-h-full flex flex-col bg-ink text-paper">
           <JsonLd json={grafLaman} />
-          <LanguageProvider>{children}</LanguageProvider>
-          <PullToRefresh />
-          <LogoutRefresh />
-          <SplashScreen />
-          <ServiceWorker />
-          <InstallPrompt />
+          {/* SEMUA yang boleh memaparkan teks mesti berada di dalam penyedia
+              ini. InstallPrompt dahulunya adik kepadanya: ia memanggil t()
+              dengan betul, tetapi useLang() jatuh ke fallback "kekal BM"nya
+              secara senyap, jadi gesaan pasang app kekal Melayu selepas pil EN
+              ditekan sedangkan seluruh halaman bertukar. Tiada ralat — hanya
+              satu kotak yang tidak pernah bertukar. */}
+          <LanguageProvider>
+            {children}
+            <PullToRefresh />
+            <LogoutRefresh />
+            <SplashScreen />
+            <ServiceWorker />
+            <InstallPrompt />
+          </LanguageProvider>
           <Analytics />
         </body>
       </html>

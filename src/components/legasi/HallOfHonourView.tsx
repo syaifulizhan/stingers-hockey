@@ -7,13 +7,13 @@ import { useLang } from "@/lib/i18n";
 import ShareButton from "@/components/ShareButton";
 import { byCohort, type LegacyRecord } from "@/lib/legasi";
 import { bahagian, takrif, tertinggiTiapKohort, warnaAksen } from "@/lib/legasi-tier";
-import { pilih } from "@/lib/pilih-bahasa";
+import { pilihIstilah } from "@/lib/pilih-bahasa";
 
 function KadLegasi({ r, tertinggi }: { r: LegacyRecord; tertinggi: boolean }) {
   const { t, lang } = useLang();
-  const keputusan = pilih(lang, r.result, r.translations, "result");
-  const kejohanan = pilih(lang, r.event, r.translations, "event");
-  const kategori = pilih(lang, r.category, r.translations, "category");
+  const keputusan = pilihIstilah(lang, r.result, r.translations, "result");
+  const kejohanan = pilihIstilah(lang, r.event, r.translations, "event");
+  const kategori = pilihIstilah(lang, r.category, r.translations, "category");
   const p = takrif(r.tier);
   const bhg = bahagian(r.stage);
   const aksen = warnaAksen(r.tier);

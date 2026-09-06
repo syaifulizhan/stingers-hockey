@@ -6,6 +6,7 @@ import { jerseys, type Jersey } from "@/lib/jerseys";
 import SmartImage from "@/components/ui/SmartImage";
 import Reveal from "@/components/ui/Reveal";
 import { useLang } from "@/lib/i18n";
+import { istilah } from "@/lib/kamus";
 
 export default function JerseyGallery({
   items,
@@ -14,7 +15,10 @@ export default function JerseyGallery({
   items?: Jersey[];
   variant?: "jersi" | "hustle";
 }) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
+  // Nama kejohanan dan nota edisi ialah medan pendek berformula ("Kejohanan
+  // Hoki MSSD"), jadi kamus tempatan boleh mengendalikannya tanpa kuota.
+  // Kawasan dan tempat SENGAJA dibiarkan: itu nama tempat.
   // Jersi: fallback ke senarai statik jika kosong. Hustle: tiada fallback.
   const data =
     variant === "hustle" ? items ?? [] : items && items.length > 0 ? items : jerseys;
@@ -107,7 +111,7 @@ export default function JerseyGallery({
           >
             <SmartImage
               src={j.image}
-              alt={`Jersi ${j.name} (${j.year})`}
+              alt={t(`Jersi ${j.name} (${j.year})`, `${j.name} jersey (${j.year})`)}
               label={j.name}
               className="aspect-[3/4] w-full"
               sizes="290px"
@@ -115,12 +119,12 @@ export default function JerseyGallery({
             />
             <div className="p-5">
               <p className="font-sans text-xs font-semibold uppercase tracking-widest text-amber">
-                {[j.tournament, j.year].filter(Boolean).join(" · ")}
+                {[istilah(j.tournament, lang), j.year].filter(Boolean).join(" · ")}
               </p>
               <h3 className="display mt-2 text-2xl text-paper">{j.name}</h3>
               {j.note && (
                 <p className="mt-1 font-sans text-xs uppercase tracking-wide text-muted">
-                  {j.note}
+                  {istilah(j.note, lang)}
                 </p>
               )}
               <p className="mt-2 font-sans text-sm leading-snug text-muted">
