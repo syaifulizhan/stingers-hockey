@@ -108,7 +108,7 @@ export default function InstallPrompt() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 24 }}
-            className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-6 sm:justify-end"
+            className="fixed inset-x-0 bottom-0 z-30 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-6 sm:justify-end"
           >
             <div className="flex items-center gap-2 rounded-full border border-amber/40 bg-bg-soft/95 p-1.5 pl-4 shadow-lg backdrop-blur-md">
               <span className="font-sans text-sm font-medium text-paper/90">
@@ -144,14 +144,14 @@ export default function InstallPrompt() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIosSheet(false)}
-              className="fixed inset-0 z-40 bg-black/60"
+              className="fixed inset-0 z-[65] bg-black/60"
             />
             <motion.div
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 320, damping: 34 }}
-              className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border-t border-line bg-bg-soft p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
+              className="fixed inset-x-0 bottom-0 z-[70] rounded-t-2xl border-t border-line bg-bg-soft p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]"
             >
               <div className="mx-auto max-w-sm">
                 <div className="mb-5 flex items-center justify-between">

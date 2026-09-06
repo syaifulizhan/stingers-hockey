@@ -104,8 +104,8 @@ export default function ShareButton({
 
       {open && !hasNative && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 z-50 mt-2 w-64 rounded-xl border border-line bg-bg-soft p-4 shadow-xl">
+          <div className="fixed inset-0 z-[65]" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 z-[70] mt-2 w-64 rounded-xl border border-line bg-bg-soft p-4 shadow-xl">
             <div className="mb-3 flex items-center justify-between">
               <span className="font-sans text-sm font-semibold text-paper">
                 {heading ?? t("Kongsi berita", "Share article")}

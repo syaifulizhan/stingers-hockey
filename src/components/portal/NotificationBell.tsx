@@ -111,9 +111,9 @@ export default function NotificationBell() {
 
       {open && coords && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-[65]" onClick={() => setOpen(false)} />
           <div
-            className="fixed z-50 overflow-hidden rounded-xl border border-line bg-bg-soft shadow-xl"
+            className="fixed z-[70] overflow-hidden rounded-xl border border-line bg-bg-soft shadow-xl"
             style={{ top: coords.top, left: coords.left, width: coords.width }}
           >
             <div className="flex items-center justify-between border-b border-line px-4 py-3">

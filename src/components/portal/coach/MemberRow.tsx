@@ -222,8 +222,8 @@ export default function MemberRow({
 
             {menuOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={close} />
-                <div className="absolute right-0 z-50 mt-2 w-52 rounded-xl border border-line bg-bg-soft p-1.5 shadow-xl">
+                <div className="fixed inset-0 z-[65]" onClick={close} />
+                <div className="absolute right-0 z-[70] mt-2 w-52 rounded-xl border border-line bg-bg-soft p-1.5 shadow-xl">
                   <MenuItem
                     onClick={() => {
                       close();

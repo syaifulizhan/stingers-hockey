@@ -31,7 +31,7 @@ export default function SplashScreen() {
 
   return (
     <div
-      className="splash pointer-events-none fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-ink"
+      className="splash pointer-events-none fixed inset-0 z-[90] flex flex-col items-center justify-center gap-6 bg-ink"
       aria-hidden="true"
     >
       {/* eslint-disable-next-line @next/next/no-img-element -- splash kecil, fallback ke ikon jenama bila logo belum diimport */}
