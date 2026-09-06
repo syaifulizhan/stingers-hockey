@@ -7,6 +7,18 @@
 //
 // Selamat dijalankan berulang kali: baris yang sudah mempunyai terjemahan
 // dilangkau, jadi larian yang terputus separuh jalan boleh disambung.
+//
+// Penapis untuk tampalan bersasar (larian separa yang perlu disambung):
+//   --slug=a,b        hanya rekod legasi ini
+//   --medan=x,y       hanya medan ini (story, quoteText, result, category, event)
+//   --langkau-berita  jangan sentuh jadual berita langsung
+//
+// KENAPA PENAPIS MEDAN WUJUD. Medan pendek berformula (result, category,
+// event) dikendalikan pada masa render oleh kamus dalam src/lib/kamus.ts, dan
+// terjemahan TERSIMPAN mengatasi kamus itu. Menghantar medan sebegitu ke
+// perkhidmatan mesin lalu menyimpan hasilnya boleh MENGGANTIKAN keluaran kamus
+// yang baik dengan tekaan yang lebih teruk, secara kekal. Untuk medan pendek,
+// biarkan kamus bekerja; guna perkhidmatan untuk prosa sahaja.
 
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
@@ -31,6 +43,17 @@ function envDariFail() {
 const env = { ...envDariFail(), ...process.env };
 // --paksa: terjemah semula walaupun terjemahan sudah wujud.
 const PAKSA = process.argv.includes("--paksa");
+const LANGKAU_BERITA = process.argv.includes("--langkau-berita");
+// --kering: terjemah dan sahkan, papar hasilnya, TETAPI jangan tulis ke DB.
+// Menulis ke legacy_records ialah tindakan sehala pada jadual rekod kekal;
+// baca hasilnya dengan mata sendiri dahulu.
+const KERING = process.argv.includes("--kering");
+const senarai = (nama) => {
+  const a = process.argv.find((x) => x.startsWith(`--${nama}=`));
+  return a ? a.slice(nama.length + 3).split(",").map((x) => x.trim()).filter(Boolean) : null;
+};
+const SLUG = senarai("slug");
+const MEDAN = senarai("medan");
 const url = env.NEXT_PUBLIC_SUPABASE_URL;
 const anon = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const service = env.SUPABASE_SERVICE_ROLE_KEY;
@@ -220,10 +243,12 @@ async function medan(obj, lindung = []) {
 }
 
 // ── Berita ──────────────────────────────────────────────────────────────
-const { data: berita, error: eB } = await sb
-  .from("news")
-  .select("id, title, body, translations")
-  .order("published_at", { ascending: false });
+const { data: berita, error: eB } = LANGKAU_BERITA
+  ? { data: [], error: null }
+  : await sb
+      .from("news")
+      .select("id, title, body, translations")
+      .order("published_at", { ascending: false });
 if (eB) { console.error("✗ baca berita:", eB.message); process.exit(1); }
 
 let siap = 0, langkau = 0, gagal = 0;
@@ -236,6 +261,11 @@ for (const n of berita ?? []) {
   // daripada larian terdahulu. Diperhati pada data: cerita dan petikan legasi
   // hilang apabila hanya keputusan dan kategori sempat diterjemah.
   const sediaN = (n.translations || {}).en || {};
+  if (KERING) {
+    console.log(`  [kering] ${n.title.slice(0, 50)} → ${Object.keys(en).join(", ")}`);
+    siap++;
+    continue;
+  }
   const { error } = await sb
     .from("news")
     .update({ translations: { en: { ...sediaN, ...en } } })
@@ -244,7 +274,7 @@ for (const n of berita ?? []) {
   siap++;
   console.log(`  ✓ ${n.title.slice(0, 60)}`);
 }
-console.log(`\nBerita: ${siap} diterjemah, ${langkau} dilangkau, ${gagal} gagal.`);
+console.log(LANGKAU_BERITA ? "\nBerita: dilangkau (--langkau-berita)." : `\nBerita: ${siap} diterjemah, ${langkau} dilangkau, ${gagal} gagal.`);
 
 // ── Hall of Honour ──────────────────────────────────────────────────────
 const { data: legasi, error: eL } = await sb
@@ -255,17 +285,39 @@ if (eL) { console.error("✗ baca legasi:", eL.message); process.exit(1); }
 
 let siapL = 0, langkauL = 0, gagalL = 0;
 for (const r of legasi ?? []) {
-  if (!PAKSA && r.translations?.en?.story) { langkauL++; continue; }
+  if (SLUG && !SLUG.includes(r.slug)) { langkauL++; continue; }
+  // Dengan penapis medan, "sudah ada story" bukan lagi ujian yang betul —
+  // kita mungkin menampal medan lain pada rekod yang story-nya sudah ada.
+  const sudahAda = MEDAN
+    ? MEDAN.every((m) => r.translations?.en?.[m])
+    : Boolean(r.translations?.en?.story);
+  if (!PAKSA && sudahAda) { langkauL++; continue; }
   const lindung = [r.full_name, r.name_first, r.name_last, r.quote_by]
     .filter(Boolean)
     .flatMap((n) => [n, ...n.split(/\s+/)])
     .filter((w) => w.length > 2);
-  const en = await medan(
-    { story: r.story, quoteText: r.quote_text, result: r.result, category: r.category, event: r.event },
-    lindung,
-  );
+  const semua = {
+    story: r.story,
+    quoteText: r.quote_text,
+    result: r.result,
+    category: r.category,
+    event: r.event,
+  };
+  const pilihan = MEDAN
+    ? Object.fromEntries(Object.entries(semua).filter(([k]) => MEDAN.includes(k)))
+    : semua;
+  const en = await medan(pilihan, lindung);
   if (!Object.keys(en).length) { gagalL++; console.warn(`  ⚠ gagal: ${r.slug}`); continue; }
   const sediaL = (r.translations || {}).en || {};
+  if (KERING) {
+    console.log(`\n  [kering] ${r.slug} — tiada apa ditulis. Hasil untuk semakan:`);
+    for (const [k, v] of Object.entries(en)) {
+      console.log(`\n  ── ${k} ──\n${v}\n`);
+    }
+    console.log(`  medan akhir jika disimpan: ${Object.keys({ ...sediaL, ...en }).join(", ")}`);
+    siapL++;
+    continue;
+  }
   const { error } = await sb
     .from("legacy_records")
     .update({ translations: { en: { ...sediaL, ...en } } })
