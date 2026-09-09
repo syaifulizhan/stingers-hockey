@@ -1,17 +1,27 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Klien dicipta MALAS (lazy) — bukan pada skop modul.
+// Sebab: env hanya tersedia masa permintaan, bukan masa bina. Kelas pepijat ini
+// sudah dibaiki dua kali dalam repo ini ("Defer Supabase client initialization",
+// "Replace all supabase references with getSupabase()") — fail ini terlepas.
+let _sb: SupabaseClient | null = null;
+function getSupabase() {
+  if (!_sb) {
+    _sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+  }
+  return _sb;
+}
 
 const TABLE_NAME = "visitor_stats";
 const INITIAL_COUNT = 99235;
 
 async function ensureTable() {
   try {
-    const { data } = await supabase.from(TABLE_NAME).select("*").limit(1);
+    const { data } = await getSupabase().from(TABLE_NAME).select("*").limit(1);
     return true;
   } catch {
     return false;
@@ -20,14 +30,14 @@ async function ensureTable() {
 
 async function initializeCount() {
   try {
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from(TABLE_NAME)
       .select("total_count")
       .eq("id", 1)
       .single();
 
     if (!data) {
-      await supabase.from(TABLE_NAME).insert({
+      await getSupabase().from(TABLE_NAME).insert({
         id: 1,
         total_count: INITIAL_COUNT,
       });
@@ -43,7 +53,7 @@ export async function GET() {
   try {
     await ensureTable();
 
-    const { data, error } = await supabase
+    const { data, error } = await getSupabase()
       .from(TABLE_NAME)
       .select("total_count")
       .eq("id", 1)
@@ -68,7 +78,7 @@ export async function POST(request: NextRequest) {
   try {
     await ensureTable();
 
-    const { data: current } = await supabase
+    const { data: current } = await getSupabase()
       .from(TABLE_NAME)
       .select("total_count")
       .eq("id", 1)
@@ -76,7 +86,7 @@ export async function POST(request: NextRequest) {
 
     const newCount = (current?.total_count ?? INITIAL_COUNT) + 1;
 
-    const { data } = await supabase
+    const { data } = await getSupabase()
       .from(TABLE_NAME)
       .update({ total_count: newCount, updated_at: new Date() })
       .eq("id", 1)
