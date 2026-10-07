@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { motion } from "framer-motion";
 import { Bell, Check } from "lucide-react";
 
@@ -17,21 +17,24 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 type View = "prompt" | "flash" | "hidden";
 
+const noSubscribe = () => () => {};
+
+const pushSupported = () =>
+  typeof window !== "undefined" &&
+  "serviceWorker" in navigator &&
+  "PushManager" in window &&
+  "Notification" in window &&
+  !!VAPID;
+
 export default function PushToggle() {
-  const [supported, setSupported] = useState(false);
+  // false di pelayan & semasa hydration, nilai sebenar selepas itu.
+  const supported = useSyncExternalStore(noSubscribe, pushSupported, () => false);
   const [view, setView] = useState<View>("prompt");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const ok =
-      typeof window !== "undefined" &&
-      "serviceWorker" in navigator &&
-      "PushManager" in window &&
-      "Notification" in window &&
-      !!VAPID;
-    setSupported(ok);
-    if (ok) {
+    if (pushSupported()) {
       navigator.serviceWorker.ready
         .then((reg) => reg.pushManager.getSubscription())
         .then((sub) => {
