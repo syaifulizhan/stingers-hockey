@@ -1,10 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Tab = { id: string; label: string; content: React.ReactNode };
 
 const STORE_KEY = "coachActiveTab";
+
+// sessionStorage tiada event dalam tab yang sama — maklumkan pelanggan sendiri.
+const listeners = new Set<() => void>();
+const subscribe = (cb: () => void) => {
+  listeners.add(cb);
+  return () => {
+    listeners.delete(cb);
+  };
+};
 
 // Tab navigasi panel jurulatih — elak skrol panjang.
 // Kandungan dirender pelayan (server) & dihantar sebagai prop; tab tidak aktif
@@ -12,17 +21,18 @@ const STORE_KEY = "coachActiveTab";
 // Tab aktif disimpan di sessionStorage supaya kekal selepas router.refresh()
 // (cth: lepas cipta season/perlawanan), bukan melompat balik ke tab pertama.
 export default function CoachTabs({ tabs }: { tabs: Tab[] }) {
-  const [active, setActive] = useState(tabs[0]?.id ?? "");
-
-  // Pulihkan tab tersimpan selepas mount (elak hydration mismatch).
-  useEffect(() => {
-    const saved = sessionStorage.getItem(STORE_KEY);
-    if (saved && tabs.some((t) => t.id === saved)) setActive(saved);
-  }, [tabs]);
+  // Tab tersimpan dibaca selepas hydration sahaja (elak hydration mismatch).
+  const saved = useSyncExternalStore(
+    subscribe,
+    () => sessionStorage.getItem(STORE_KEY),
+    () => null
+  );
+  const active =
+    saved && tabs.some((t) => t.id === saved) ? saved : (tabs[0]?.id ?? "");
 
   const choose = (id: string) => {
-    setActive(id);
     sessionStorage.setItem(STORE_KEY, id);
+    listeners.forEach((cb) => cb());
   };
 
   return (

@@ -21,40 +21,40 @@ export default function ApprovalPendingPage() {
       return;
     }
 
+    const fetchApprovalStatus = async () => {
+      try {
+        const res = await fetch("/api/portal/profile");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.user?.approval_status === "approved") {
+            router.push("/portal");
+            return;
+          }
+          if (data.user?.approval_status === "rejected") {
+            setApprovalInfo({
+              status: "rejected",
+              requested_at: data.user?.created_at,
+              domain: data.user?.email?.split("@")[1] || "unknown",
+            });
+            return;
+          }
+          setApprovalInfo({
+            status: data.user?.approval_status || "pending",
+            requested_at: data.user?.created_at,
+            domain: data.user?.email?.split("@")[1] || "unknown",
+          });
+        }
+      } catch (err) {
+        console.error("Gagal ambil status approval:", err);
+      }
+    };
+
     if (isLoaded && userId) {
       fetchApprovalStatus();
       const interval = setInterval(fetchApprovalStatus, 2000);
       return () => clearInterval(interval);
     }
   }, [isLoaded, userId, router]);
-
-  const fetchApprovalStatus = async () => {
-    try {
-      const res = await fetch("/api/portal/profile");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.user?.approval_status === "approved") {
-          router.push("/portal");
-          return;
-        }
-        if (data.user?.approval_status === "rejected") {
-          setApprovalInfo({
-            status: "rejected",
-            requested_at: data.user?.created_at,
-            domain: data.user?.email?.split("@")[1] || "unknown",
-          });
-          return;
-        }
-        setApprovalInfo({
-          status: data.user?.approval_status || "pending",
-          requested_at: data.user?.created_at,
-          domain: data.user?.email?.split("@")[1] || "unknown",
-        });
-      }
-    } catch (err) {
-      console.error("Gagal ambil status approval:", err);
-    }
-  };
 
   if (!isLoaded) {
     return (

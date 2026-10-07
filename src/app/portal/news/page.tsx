@@ -12,6 +12,10 @@ type NewsRow = {
   published_at: string;
 };
 
+// Berita "Baru" = diterbitkan dalam 7 hari lepas.
+const isBaru = (publishedAt: string) =>
+  Date.now() - new Date(publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+
 export default async function PortalNewsArchivePage() {
   await requireApprovedPage();
   const supabase = await createServerSupabase();
@@ -76,8 +80,7 @@ export default async function PortalNewsArchivePage() {
                   </p>
                 )}
               </div>
-              {Date.now() - new Date(n.published_at).getTime() <
-                7 * 24 * 60 * 60 * 1000 && (
+              {isBaru(n.published_at) && (
                 <span className="shrink-0 rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
                   Baru
                 </span>

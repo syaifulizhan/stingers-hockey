@@ -66,6 +66,10 @@ type AttendanceRow = {
 // Sentiasa render segar — elak Router Cache sajikan data lama selepas navigasi.
 export const dynamic = "force-dynamic";
 
+// Berita "Baru" = diterbitkan dalam 7 hari lepas.
+const isBaru = (publishedAt: string) =>
+  Date.now() - new Date(publishedAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+
 export default async function DashboardPage() {
   // GATE: wajib log masuk DAN diluluskan admin. Redirect jika tidak.
   // Ini berlaku SEBELUM sebarang data disentuh — tiada kebocoran RSC.
@@ -345,8 +349,7 @@ export default async function DashboardPage() {
                     {new Date(n.published_at).toLocaleDateString("ms-MY")}
                   </p>
                 </div>
-                {Date.now() - new Date(n.published_at).getTime() <
-                  7 * 24 * 60 * 60 * 1000 && (
+                {isBaru(n.published_at) && (
                   <span className="shrink-0 rounded-full bg-amber/20 px-2 py-0.5 font-sans text-[0.6rem] font-bold uppercase tracking-wide text-amber">
                     Baru
                   </span>

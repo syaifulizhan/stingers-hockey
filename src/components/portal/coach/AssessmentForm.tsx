@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ASSESSMENT_METRICS,
@@ -44,9 +44,7 @@ export default function AssessmentForm({
   const isGK = !!selectedPlayer?.is_goalkeeper;
   const availableTypes = ASSESSMENT_TYPES.filter((t) => t !== "skill_gk" || isGK);
 
-  useEffect(() => {
-    if (type === "skill_gk" && !isGK) setType("skill_field");
-  }, [type, isGK]);
+  if (type === "skill_gk" && !isGK) setType("skill_field");
 
   // Pra-isi slider dengan skor terkini pemain (atau 5 jika belum ada).
   const prefill = useMemo(() => {
@@ -56,10 +54,13 @@ export default function AssessmentForm({
     return init;
   }, [playerId, type, latest, metrics]);
 
-  useEffect(() => {
+  // Dibandingkan semasa render (bukan dalam effect) — elak render berganda.
+  const [prefillLama, setPrefillLama] = useState<typeof prefill | null>(null);
+  if (prefillLama !== prefill) {
+    setPrefillLama(prefill);
     setScores(prefill);
     setMsg(null);
-  }, [prefill]);
+  }
 
   const save = async () => {
     if (!playerId) return;

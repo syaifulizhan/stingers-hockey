@@ -108,6 +108,9 @@ async function bacaLegasi(supabase: Awaited<ReturnType<typeof createServerSupaba
   return { data: [], error: null };
 }
 
+// Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
+const isPastDue = (t: TaskRow) => !!t.due_date && Date.now() > myEndOfDay(t.due_date);
+
 export default async function CoachPage() {
   // Pengawal: hanya coach/admin boleh masuk.
   // GATE: log masuk + diluluskan + peranan jurulatih/admin.
@@ -377,8 +380,6 @@ export default async function CoachPage() {
     arr.push(s);
     subsByTask.set(s.task_id, arr);
   }
-  // Tamat = lepas 11:59:59pm waktu Malaysia (+08:00) pada tarikh akhir.
-  const isPastDue = (t: TaskRow) => !!t.due_date && Date.now() > myEndOfDay(t.due_date);
   // Task lepas tarikh akhir = arkib (hantaran kuncup dalam task itu).
   // Hantaran task AKTIF kekal di seksyen "Semak Hantaran" di bawah.
   const pastDueTaskIds = new Set(tasks.filter(isPastDue).map((t) => t.id));

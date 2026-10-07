@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Pencil, ChevronDown } from "lucide-react";
 import { matchMetrics, matchResult, HOCKEY_POSITIONS } from "@/lib/match";
@@ -114,10 +114,12 @@ export default function MatchPanel({
     [matches, seasonId]
   );
 
-  // Reset pilihan match bila season tukar.
-  useEffect(() => {
+  // Reset pilihan match bila season tukar (dibandingkan semasa render, bukan dalam effect).
+  const [seasonLama, setSeasonLama] = useState<string | null>(null);
+  if (seasonLama !== seasonId) {
+    setSeasonLama(seasonId);
     setMatchId(seasonMatches[0]?.id ?? "");
-  }, [seasonId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }
 
   const metrics = matchMetrics(!!gkById.get(playerId));
   const prefill = useMemo(() => {
@@ -126,11 +128,15 @@ export default function MatchPanel({
     for (const mtr of metrics) init[mtr.key] = prev[mtr.key] != null ? String(prev[mtr.key]) : "";
     return init;
   }, [matchId, playerId, statsByMatchUser, metrics]);
-  useEffect(() => {
+  const [prefillLama, setPrefillLama] = useState<typeof prefill | null>(null);
+  const [posLama, setPosLama] = useState<typeof posByMatchUser | null>(null);
+  if (prefillLama !== prefill || posLama !== posByMatchUser) {
+    setPrefillLama(prefill);
+    setPosLama(posByMatchUser);
     setVals(prefill);
     setPosition(posByMatchUser[`${matchId}:${playerId}`] ?? "");
     setMsg(null);
-  }, [prefill, posByMatchUser, matchId, playerId]);
+  }
 
   const createSeason = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -374,12 +380,13 @@ export default function MatchPanel({
   // Season ditutup dikuncupkan — hanya season terbuka kelihatan secara lalai.
   const closedCount = seasons.filter((s) => s.closed).length;
   const visibleSeasons = showClosed ? seasons : seasons.filter((s) => !s.closed);
-  useEffect(() => {
+  const [showClosedLama, setShowClosedLama] = useState<boolean | null>(null);
+  if (showClosedLama !== showClosed) {
+    setShowClosedLama(showClosed);
     if (!showClosed && seasons.find((s) => s.id === seasonId)?.closed) {
       setSeasonId(seasons.find((s) => !s.closed)?.id ?? "");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showClosed]);
+  }
 
   return (
     <div className="flex flex-col gap-8">
